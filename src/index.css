@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+* {
+    margin: 0;
+    padding: 0;
+
+  }
+.custom-login-modal .ant-modal-content {
+    border-radius: 8px;
+    overflow: hidden;
+    background-image: url("public/Screenshot 2024-12-24 132902.png");
+    background-size: cover;
+    width: 500px;
+}
+.custom-login-modal .ant-modal-body {
+    padding: 30px;
+    text-align: center;
+   
+}
