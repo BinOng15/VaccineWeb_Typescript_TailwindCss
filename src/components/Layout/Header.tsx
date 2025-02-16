@@ -1,52 +1,44 @@
-import React from "react";
+import React, { useState } from "react";
 import { FaShoppingCart, FaCalendarAlt, FaComments } from "react-icons/fa";
-// import { Link, useLocation, useNavigate } from "react-router-dom";
-// import { AuthContext } from "../../context/auth.context";
-
-// const { Header } = Layout;
-
-// interface AppHeaderProps {
-//   collapsed: boolean;
-//   setCollapsed: (collapsed: boolean) => void;
-//   loading: boolean;
-// }
+import { useNavigate } from "react-router-dom";
 
 const AppHeader: React.FC = () => {
-  // const { auth } = useContext(AuthContext);
-  // const location = useLocation();
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Giả sử bạn kiểm tra đăng nhập từ localStorage hoặc context
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState<boolean>(false); // Trạng thái mở menu avatar
 
-  // const handleLogout = () => {
-  //   localStorage.removeItem("token");
-  //   navigate("/login");
+  // Hàm kiểm tra trạng thái đăng nhập (dựa vào localStorage)
+  // const checkLoginStatus = () => {
+  //   const token = localStorage.getItem("token");
+  //   if (token) {
+  //     setIsLoggedIn(true);
+  //   }
   // };
 
-  // const avatarMenuItems = [
-  //   {
-  //     key: "1",
-  //     icon: <UserOutlined />,
-  //     label: <Link to="/user/dashboard">My Dashboard</Link>,
-  //   },
-  //   {
-  //     key: "2",
-  //     icon: <LogoutOutlined />,
-  //     label: (
-  //       <a
-  //         onClick={handleLogout}
-  //         style={{ display: "flex", alignItems: "center" }}
-  //       >
-  //         Logout
-  //       </a>
-  //     ),
-  //   },
-  // ];
+  // Hàm đăng xuất
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    navigate("/login"); // Điều hướng về trang đăng nhập
+  };
 
-  //const isHomePage = location.pathname === "/";
+  // Hàm điều hướng khi nhấn vào "Đăng nhập"
+  const handleLogin = () => {
+    navigate("/login");
+  };
+
+  // Hàm điều hướng khi nhấn vào "Đăng ký"
+  const handleRegister = () => {
+    navigate("/register");
+  };
+
+  // Hiển thị menu avatar khi người dùng nhấn vào avatar
+  const toggleAvatarMenu = () => {
+    setAvatarMenuOpen(!avatarMenuOpen);
+  };
 
   return (
     <header className="w-full mb-0">
-      {" "}
-      {/* Xóa khoảng cách giữa header và carousel */}
       {/* Top Bar */}
       <div className="flex items-center justify-between px-8 py-3 bg-white shadow-md border-b border-gray-200">
         {/* Logo */}
@@ -82,14 +74,54 @@ const AppHeader: React.FC = () => {
             <FaComments className="text-[#102A83]" />
             <span>Tư vấn</span>
           </button>
-          <button className="px-5 py-2 border border-[#102A83] text-[#102A83] rounded-full">
-            Đăng nhập
-          </button>
-          <button className="px-5 py-2 bg-[#102A83] text-white rounded-full">
-            Đăng ký
-          </button>
+
+          {/* Nếu người dùng đã đăng nhập, hiển thị avatar, ngược lại hiển thị đăng nhập */}
+          {isLoggedIn ? (
+            <div className="relative">
+              <img
+                src="avatar-placeholder.png" // Thay bằng đường dẫn ảnh avatar người dùng
+                alt="Avatar"
+                className="w-10 h-10 rounded-full cursor-pointer"
+                onClick={toggleAvatarMenu}
+              />
+              {avatarMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg">
+                  <ul>
+                    <li
+                      className="px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-100"
+                      onClick={() => navigate("/user/dashboard")}
+                    >
+                      My Dashboard
+                    </li>
+                    <li
+                      className="px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-100"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <button
+                className="px-5 py-2 border border-[#102A83] text-[#102A83] rounded-full"
+                onClick={handleLogin}
+              >
+                Đăng nhập
+              </button>
+              <button
+                className="px-5 py-2 bg-[#102A83] text-white rounded-full"
+                onClick={handleRegister}
+              >
+                Đăng ký
+              </button>
+            </>
+          )}
         </div>
       </div>
+
       {/* Bottom Navigation */}
       <nav className="bg-[#102A83] text-white flex justify-center space-x-20 py-3 font-medium">
         {[

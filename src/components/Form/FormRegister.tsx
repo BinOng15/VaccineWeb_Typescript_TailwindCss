@@ -1,29 +1,33 @@
-import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
 import React, { useState } from "react";
+import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
 import GoogleLoginButton from "../GoogleLoginButton";
 
-const FormLogin: React.FC = () => {
+const FormRegister: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
   const [rememberMe, setRememberMe] = useState<boolean>(false);
 
-  // Hàm đăng nhập (chưa thực hiện chức năng)
+  // Hàm đăng ký (chưa thực hiện chức năng)
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Email:", email);
     console.log("Password:", password);
+    console.log("Confirm Password:", confirmPassword);
     console.log("Remember Me:", rememberMe);
   };
 
-  // Hàm callback khi đăng nhập Google thành công
   return (
     <div
       className="flex items-center justify-center min-h-screen bg-cover bg-center"
       style={{ backgroundImage: "url(/image/loginBackground.png)" }}
     >
+      {" "}
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-center mb-6">Sign in</h2>
+        <h2 className="text-2xl font-bold text-center mb-6">Sign up</h2>
         <form onSubmit={handleSubmit}>
           {/* Email Input */}
           <div className="mb-5">
@@ -72,7 +76,39 @@ const FormLogin: React.FC = () => {
             </div>
           </div>
 
-          {/* Remember me and Forgot password */}
+          {/* Confirm Password Input */}
+          <div className="mb-4">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Confirm your password"
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-sm text-gray-600"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
+                  <EyeInvisibleOutlined />
+                ) : (
+                  <EyeOutlined />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Remember me */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <input
@@ -86,20 +122,18 @@ const FormLogin: React.FC = () => {
                 Remember me
               </label>
             </div>
-            <a href="#" className="text-sm text-blue-500">
-              Forgot password?
-            </a>
           </div>
 
-          {/* Sign In Button */}
+          {/* Sign Up Button */}
           <button
             type="submit"
             className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm"
           >
-            Sign in
+            Sign up
           </button>
         </form>
 
+        {/* Google Login Button */}
         <div className="mt-4 flex justify-center">
           <GoogleLoginButton />
         </div>
@@ -107,9 +141,9 @@ const FormLogin: React.FC = () => {
         {/* Bottom Links */}
         <div className="mt-4 text-center text-sm text-gray-600">
           <p>
-            Don’t have an account?{" "}
-            <a href="/register" className="text-blue-500">
-              Sign up
+            Already have an account?{" "}
+            <a href="/login" className="text-blue-500">
+              Sign in
             </a>
           </p>
         </div>
@@ -119,17 +153,9 @@ const FormLogin: React.FC = () => {
             Back to Homepage
           </a>
         </div>
-
-        {/* Google reCAPTCHA (for real apps, uncomment and integrate) */}
-        {/* <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500">
-            This page is protected by Google reCAPTCHA to ensure you're not a
-            bot. <a href="#">Learn more.</a>
-          </p>
-        </div> */}
       </div>
     </div>
   );
 };
 
-export default FormLogin;
+export default FormRegister;

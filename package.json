@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.2",
+    "@react-oauth/google": "^0.12.1",
     "antd": "^5.23.1",
+    "axios": "^1.7.9",
     "lottie-react": "^2.4.1",
     "perfume": "file:",
     "react": "^18.2.0",
@@ -20,6 +22,7 @@
     "react-router-dom": "^7.1.1"
   },
   "devDependencies": {
+    "@types/axios": "^0.9.36",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@types/react-router-dom": "^5.3.3",
