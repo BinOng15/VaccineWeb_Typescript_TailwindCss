@@ -20,7 +20,7 @@ const PreventionSection: React.FC = () => {
           alt="Prevention Background"
           className="w-full h-full object-cover"
         />
-
+//hhh 
         {/* Overlay xanh đậm */}
         <div className="absolute inset-0 bg-blue-900 bg-opacity-70 flex flex-col justify-center px-8 py-12 text-white">
           <p className="text-sm uppercase tracking-widest">
