@@ -16,6 +16,7 @@ import CustomerSidebar from "./components/Layout/SiderbarCustomer";
 import Loading from "./components/Loading";
 import { Content } from "antd/es/layout/layout";
 import { AuthContext } from "./context/auth.context";
+import CustomFooter from "./components/Layout/Footer";
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -128,6 +129,7 @@ const App: React.FC = () => {
           </Loading>
         </Layout>
       </Layout>
+      <CustomFooter />
     </Layout>
   );
 };
