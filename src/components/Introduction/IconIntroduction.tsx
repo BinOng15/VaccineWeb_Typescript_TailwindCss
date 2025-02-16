@@ -29,16 +29,17 @@ const IconIntroduction: React.FC = () => {
   return (
     <div className="flex flex-col md:flex-row justify-center items-center gap-28 p-6 rounded-xl  w-full  mx-auto">
       {benefits.map((benefit, index) => (
-        <div key={index} className="flex flex-col items-center text-center max-w-[200px]">
+        <div
+          key={index}
+          className="flex flex-col items-center text-center max-w-[200px]"
+        >
           {benefit.icon}
-          <p className="mt-3 text-sm font-medium text-gray-900">{benefit.text}</p>
+          <p className="mt-3 text-sm font-medium text-gray-900">
+            {benefit.text}
+          </p>
         </div>
-        
       ))}
     </div>
-    
-    
-    
   );
 };
 

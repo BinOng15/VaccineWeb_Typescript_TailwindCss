@@ -20,9 +20,12 @@ const router = createBrowserRouter([
       {
         path: "/Introduction",
         element: (
-          <AppRouter element={Introductionpage} allowedRoles={[ROLES.CUSTOMER]} />
+          <AppRouter
+            element={Introductionpage}
+            allowedRoles={[ROLES.CUSTOMER]}
+          />
         ),
-      }
+      },
     ],
   },
 ]);
