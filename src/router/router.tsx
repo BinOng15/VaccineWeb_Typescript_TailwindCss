@@ -4,6 +4,7 @@ import AppRouter from "./AppRouter";
 import Homepage from "../pages/Customer/Homepage";
 import { ROLES } from "../constants";
 import { AuthWrapper } from "../context/auth.context";
+import Introductionpage from "../pages/Customer/Introductionpage";
 
 const router = createBrowserRouter([
   {
@@ -16,6 +17,12 @@ const router = createBrowserRouter([
           <AppRouter element={Homepage} allowedRoles={[ROLES.CUSTOMER]} />
         ),
       },
+      {
+        path: "/Introduction",
+        element: (
+          <AppRouter element={Introductionpage} allowedRoles={[ROLES.CUSTOMER]} />
+        ),
+      }
     ],
   },
 ]);
