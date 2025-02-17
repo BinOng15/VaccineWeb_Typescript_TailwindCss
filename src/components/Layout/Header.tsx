@@ -21,8 +21,8 @@ const AppHeader: React.FC = () => {
   const menuItems = [
     { name: "Trang chủ", path: "/" },
     { name: "Giới thiệu", path: "/Introduction" },
-    { name: "Vắc xin cho trẻ em", path: "/vac-xin-tre-em" },
-    { name: "Gói vắc xin", path: "/goi-vac-xin" },
+    { name: "Vắc xin cho trẻ em", path: "/vaccine-types" },
+    { name: "Gói vắc xin", path: "vaccine-package" },
     { name: "Cẩm nang", path: "/cam-nang" },
     { name: "Bảng giá", path: "/bang-gia" },
     { name: "Liên hệ", path: "/lien-he" },

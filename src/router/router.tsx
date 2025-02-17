@@ -4,13 +4,15 @@ import AppRouter from "./AppRouter";
 import Homepage from "../pages/Customer/Homepage";
 import { ROLES } from "../constants";
 import { AuthWrapper } from "../context/auth.context";
-import Introductionpage from "../pages/Customer/Introductionpage";
+import Introductionpage from "../pages/Customer/IntroductionPage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import PaymentMethod from "../pages/Customer/Payment";
 import VaccineRegistationPage from "../pages/Customer/VaccineRegistationPage";
 import ManageVaccinationSchedule from "../pages/Staff/Vaccination/VaccinationRecord";
 import DoctorVaccinationManagement from "../pages/Doctor/DoctorVaccinationManagement";
+import VaccineTypesPage from "../pages/Customer/VaccineTypesPage";
+import VaccinePackagePage from "../pages/Customer/VaccinePackagePage";
 
 const router = createBrowserRouter([
   {
@@ -60,12 +62,31 @@ const router = createBrowserRouter([
           <AppRouter element={PaymentMethod} allowedRoles={[ROLES.CUSTOMER]} />
         ),
       },
+
       // Public routes
       {
         path: "/introduction",
         element: (
           <AppRouter
             element={Introductionpage}
+            allowedRoles={[ROLES.CUSTOMER]}
+          />
+        ),
+      },
+      {
+        path: "/vaccine-types",
+        element: (
+          <AppRouter
+            element={VaccineTypesPage}
+            allowedRoles={[ROLES.CUSTOMER]}
+          />
+        ),
+      },
+      {
+        path: "/vaccine-package",
+        element: (
+          <AppRouter
+            element={VaccinePackagePage}
             allowedRoles={[ROLES.CUSTOMER]}
           />
         ),
