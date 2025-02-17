@@ -1,5 +1,5 @@
 import React from "react";
-import { Select, Input, DatePicker, Button } from "antd";
+import { Select, Input, DatePicker} from "antd";
 
 const { Option } = Select;
 
@@ -50,14 +50,6 @@ const VaccineRegistration: React.FC = () => (
         </div>
       </div>
     </div>
-
-    {/* Button đăng ký */}
-    <Button
-      type="primary"
-      className="w-full mt-6 py-3 text-white bg-blue-500 hover:bg-blue-600"
-    >
-      Đăng ký tiêm
-    </Button>
   </div>
 );
 

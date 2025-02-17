@@ -26,7 +26,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/Regist",
+        path: "/Registration",
         element: (
           <AppRouter element={MainForm} allowedRoles={[ROLES.CUSTOMER]} />
         ),
