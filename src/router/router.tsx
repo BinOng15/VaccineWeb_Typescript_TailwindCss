@@ -7,6 +7,8 @@ import { AuthWrapper } from "../context/auth.context";
 import Introductionpage from "../pages/Customer/Introductionpage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
+import MainForm from "../pages/Customer/VaccineRegistForm";
+import PaymentMethod from "../pages/Customer/Payment";
 
 const router = createBrowserRouter([
   {
@@ -26,6 +28,19 @@ const router = createBrowserRouter([
             element={Introductionpage}
             allowedRoles={[ROLES.CUSTOMER]}
           />
+        ),
+      },
+
+      {
+        path: "/Registration",
+        element: (
+          <AppRouter element={MainForm} allowedRoles={[ROLES.CUSTOMER]} />
+        ),
+      },
+      {
+        path: "/Payment",
+        element: (
+          <AppRouter element={PaymentMethod} allowedRoles={[ROLES.CUSTOMER]} />
         ),
       },
     ],

@@ -6,6 +6,30 @@ const AppHeader: React.FC = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Giả sử bạn kiểm tra đăng nhập từ localStorage hoặc context
   const [avatarMenuOpen, setAvatarMenuOpen] = useState<boolean>(false); // Trạng thái mở menu avatar
+  // import { Link, useLocation, useNavigate } from "react-router-dom";
+  // import { AuthContext } from "../../context/auth.context";
+
+  // const { Header } = Layout;
+
+  // interface AppHeaderProps {
+  //   collapsed: boolean;
+  //   setCollapsed: (collapsed: boolean) => void;
+  //   loading: boolean;
+  // }
+
+  const Navigate = useNavigate();
+  const menuItems = [
+    { name: "Trang chủ", path: "/" },
+    { name: "Giới thiệu", path: "/Introduction" },
+    { name: "Vắc xin cho trẻ em", path: "/vac-xin-tre-em" },
+    { name: "Gói vắc xin", path: "/goi-vac-xin" },
+    { name: "Cẩm nang", path: "/cam-nang" },
+    { name: "Bảng giá", path: "/bang-gia" },
+    { name: "Liên hệ", path: "/lien-he" },
+  ];
+  // const { auth } = useContext(AuthContext);
+  // const location = useLocation();
+  // const navigate = useNavigate();
 
   // Hàm kiểm tra trạng thái đăng nhập (dựa vào localStorage)
   // const checkLoginStatus = () => {
@@ -124,18 +148,14 @@ const AppHeader: React.FC = () => {
 
       {/* Bottom Navigation */}
       <nav className="bg-[#102A83] text-white flex justify-center space-x-20 py-3 font-medium">
-        {[
-          "Trang chủ",
-          "Giới thiệu",
-          "Vắc xin cho trẻ em",
-          "Gói vắc xin",
-          "Cẩm nang",
-          "Bảng giá",
-          "Liên hệ",
-        ].map((item, index) => (
-          <a key={index} href="#" className="hover:underline">
-            {item}
-          </a>
+        {menuItems.map((item, index) => (
+          <button
+            key={index}
+            className="hover:underline"
+            onClick={() => Navigate(item.path)}
+          >
+            {item.name}
+          </button>
         ))}
       </nav>
     </header>
