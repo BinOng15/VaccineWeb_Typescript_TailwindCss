@@ -42,6 +42,7 @@ const ManageVaccinationSchedule: React.FC = () => {
       keyWord: keyword,
       status: status === "confirmed" ? true : false,
     };
+    console.log("Record updated successfully", data);
 
     // Sample data (replace with real API)
     const response = {

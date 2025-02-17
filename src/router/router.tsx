@@ -4,7 +4,7 @@ import AppRouter from "./AppRouter";
 import Homepage from "../pages/Customer/Homepage";
 import { ROLES } from "../constants";
 import { AuthWrapper } from "../context/auth.context";
-import Introductionpage from "../pages/Customer/IntroductionPage";
+import Introductionpage from "../pages/Customer/Introductionpage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import PaymentMethod from "../pages/Customer/Payment";

@@ -29,7 +29,7 @@ const CarouselVaccineTypes: React.FC = () => {
             <Input.Search
               placeholder="Tìm kiếm vaccine..."
               onSearch={handleSearch}
-              enterButton
+              enterButton={searchQuery}
               size="large"
             />
           </div>

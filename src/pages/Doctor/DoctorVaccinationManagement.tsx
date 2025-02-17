@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import { Table, Input, Button, Space, Row, Col, Select, Modal } from "antd";
 import { EditOutlined, ReloadOutlined } from "@ant-design/icons";
@@ -36,6 +37,7 @@ const DoctorVaccinationManagement: React.FC = () => {
       pageSize: pageSize,
       keyWord: keyword,
     };
+    console.log("Record updated successfully", data);
 
     // Sample data (replace with real API)
     const response = {

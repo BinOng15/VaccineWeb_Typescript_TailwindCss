@@ -10,6 +10,7 @@ const GoogleLoginButton: React.FC = () => {
   const [loading, setLoading] = useState(false); // State to manage modal visibility
   const handleSuccess = async (response: any) => {
     const googleId = response.credential;
+    localStorage.setItem("googleId", googleId);
 
     setLoading(true);
 
