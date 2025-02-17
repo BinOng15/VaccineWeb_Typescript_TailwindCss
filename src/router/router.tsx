@@ -5,6 +5,8 @@ import Homepage from "../pages/Customer/Homepage";
 import { ROLES } from "../constants";
 import { AuthWrapper } from "../context/auth.context";
 import Introductionpage from "../pages/Customer/Introductionpage";
+import MainForm from "../pages/Customer/VaccineRegistForm";
+import PaymentMethod from "../pages/Customer/Payment";
 
 const router = createBrowserRouter([
   {
@@ -21,6 +23,18 @@ const router = createBrowserRouter([
         path: "/Introduction",
         element: (
           <AppRouter element={Introductionpage} allowedRoles={[ROLES.CUSTOMER]} />
+        ),
+      },
+      {
+        path: "/Regist",
+        element: (
+          <AppRouter element={MainForm} allowedRoles={[ROLES.CUSTOMER]} />
+        ),
+      },
+      {
+        path: "/Payment",
+        element: (
+          <AppRouter element={PaymentMethod} allowedRoles={[ROLES.CUSTOMER]} />
         ),
       }
     ],
