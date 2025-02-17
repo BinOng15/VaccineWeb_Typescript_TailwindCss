@@ -7,40 +7,67 @@ import { AuthWrapper } from "../context/auth.context";
 import Introductionpage from "../pages/Customer/Introductionpage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
-import MainForm from "../pages/Customer/VaccineRegistForm";
 import PaymentMethod from "../pages/Customer/Payment";
+import VaccineRegistationPage from "../pages/Customer/VaccineRegistationPage";
+import ManageVaccinationSchedule from "../pages/Staff/Vaccination/VaccinationRecord";
+import DoctorVaccinationManagement from "../pages/Doctor/DoctorVaccinationManagement";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
     children: [
+      // Admin routes
       {
         path: "",
         element: (
           <AppRouter element={Homepage} allowedRoles={[ROLES.CUSTOMER]} />
         ),
       },
+      // Staff routes
       {
-        path: "/Introduction",
+        path: "staff/vaccination-record",
+        element: (
+          <AppRouter
+            element={ManageVaccinationSchedule}
+            allowedRoles={[ROLES.STAFF]}
+          />
+        ),
+      },
+      // Doctor routes
+      {
+        path: "doctor/vaccination-management",
+        element: (
+          <AppRouter
+            element={DoctorVaccinationManagement}
+            allowedRoles={[ROLES.DOCTOR]}
+          />
+        ),
+      },
+      // Customer routes
+      {
+        path: "/vaccine-registration",
+        element: (
+          <AppRouter
+            element={VaccineRegistationPage}
+            allowedRoles={[ROLES.CUSTOMER]}
+          />
+        ),
+      },
+      {
+        path: "/payment",
+        element: (
+          <AppRouter element={PaymentMethod} allowedRoles={[ROLES.CUSTOMER]} />
+        ),
+      },
+      // Public routes
+      {
+        path: "/introduction",
         element: (
           <AppRouter
             element={Introductionpage}
             allowedRoles={[ROLES.CUSTOMER]}
           />
-        ),
-      },
-
-      {
-        path: "/Registration",
-        element: (
-          <AppRouter element={MainForm} allowedRoles={[ROLES.CUSTOMER]} />
-        ),
-      },
-      {
-        path: "/Payment",
-        element: (
-          <AppRouter element={PaymentMethod} allowedRoles={[ROLES.CUSTOMER]} />
         ),
       },
     ],

@@ -56,6 +56,10 @@ const AppHeader: React.FC = () => {
     navigate("/register");
   };
 
+  const handleVaccineRegister = () => {
+    navigate("/vaccine-registration");
+  };
+
   // Hiển thị menu avatar khi người dùng nhấn vào avatar
   const toggleAvatarMenu = () => {
     setAvatarMenuOpen(!avatarMenuOpen);
@@ -90,7 +94,10 @@ const AppHeader: React.FC = () => {
             <FaShoppingCart className="text-[#102A83]" />
             <span className="text-sm">Đặt mua vắc xin</span>
           </button>
-          <button className="flex items-center font-semibold space-x-2">
+          <button
+            className="flex items-center font-semibold space-x-2"
+            onClick={handleVaccineRegister}
+          >
             <FaCalendarAlt className="text-[#102A83]" />
             <span>Đăng ký tiêm</span>
           </button>
