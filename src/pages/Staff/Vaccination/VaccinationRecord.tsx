@@ -190,7 +190,8 @@ const ManageVaccinationSchedule: React.FC = () => {
   ];
 
   return (
-    <div>
+    <div className="mt-10 ml-10 mr-10">
+      <h2 className="text-2xl font-bold mb-6">QUẢN LÝ TIÊM CHỦNG CHO STAFF</h2>
       <Tabs
         className="custom-tabs"
         defaultActiveKey="confirmed"
