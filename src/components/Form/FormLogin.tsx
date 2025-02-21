@@ -23,7 +23,7 @@ const FormLogin: React.FC = () => {
       style={{ backgroundImage: "url(/image/loginBackground.png)" }}
     >
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-center mb-6">Sign in</h2>
+        <h2 className="text-2xl font-bold text-center mb-6">Đăng nhập</h2>
         <form onSubmit={handleSubmit}>
           {/* Email Input */}
           <div className="mb-5">
@@ -31,7 +31,7 @@ const FormLogin: React.FC = () => {
               htmlFor="email"
               className="block text-sm font-semibold text-gray-700 mb-2"
             >
-              Email or phone number
+              Email hoặc số điện thoại
             </label>
             <input
               type="text"
@@ -39,7 +39,7 @@ const FormLogin: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your email or phone number"
+              placeholder="Nhập email hoặc số điện thoại"
               required
             />
           </div>
@@ -50,7 +50,7 @@ const FormLogin: React.FC = () => {
               htmlFor="password"
               className="block text-sm font-semibold text-gray-700 mb-2"
             >
-              Password
+              Mật khẩu
             </label>
             <div className="relative">
               <input
@@ -59,7 +59,7 @@ const FormLogin: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your password"
+                placeholder="Nhập mật khẩu"
                 required
               />
               <button
@@ -83,11 +83,11 @@ const FormLogin: React.FC = () => {
                 className="mr-2"
               />
               <label htmlFor="remember" className="text-sm text-gray-700">
-                Remember me
+                Ghi nhớ tài khoản
               </label>
             </div>
             <a href="#" className="text-sm text-blue-500">
-              Forgot password?
+              Quên mật khẩu?
             </a>
           </div>
 
@@ -96,7 +96,7 @@ const FormLogin: React.FC = () => {
             type="submit"
             className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm"
           >
-            Sign in
+            Đăng nhập
           </button>
         </form>
 
@@ -107,16 +107,16 @@ const FormLogin: React.FC = () => {
         {/* Bottom Links */}
         <div className="mt-4 text-center text-sm text-gray-600">
           <p>
-            Don’t have an account?{" "}
+            Bạn chưa có tài khoản?{" "}
             <a href="/register" className="text-blue-500">
-              Sign up
+              Đăng ký ngay
             </a>
           </p>
         </div>
 
         <div className="mt-4 text-center text-sm text-gray-600">
           <a href="/" className="text-blue-500">
-            Back to Homepage
+            Trở lại trang chủ
           </a>
         </div>
 

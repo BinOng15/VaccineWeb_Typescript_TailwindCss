@@ -9,7 +9,6 @@ const FormRegister: React.FC = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
-  const [rememberMe, setRememberMe] = useState<boolean>(false);
 
   // Hàm đăng ký (chưa thực hiện chức năng)
   const handleSubmit = (e: React.FormEvent) => {
@@ -17,7 +16,6 @@ const FormRegister: React.FC = () => {
     console.log("Email:", email);
     console.log("Password:", password);
     console.log("Confirm Password:", confirmPassword);
-    console.log("Remember Me:", rememberMe);
   };
 
   return (
@@ -27,7 +25,7 @@ const FormRegister: React.FC = () => {
     >
       {" "}
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-center mb-6">Sign up</h2>
+        <h2 className="text-2xl font-bold text-center mb-6">Đăng ký</h2>
         <form onSubmit={handleSubmit}>
           {/* Email Input */}
           <div className="mb-5">
@@ -35,7 +33,7 @@ const FormRegister: React.FC = () => {
               htmlFor="email"
               className="block text-sm font-semibold text-gray-700 mb-2"
             >
-              Email or phone number
+              Email hoặc số điện thoại
             </label>
             <input
               type="text"
@@ -43,7 +41,7 @@ const FormRegister: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter your email or phone number"
+              placeholder="Nhập email hoặc số điện thoại"
               required
             />
           </div>
@@ -54,7 +52,7 @@ const FormRegister: React.FC = () => {
               htmlFor="password"
               className="block text-sm font-semibold text-gray-700 mb-2"
             >
-              Password
+              Mật khẩu
             </label>
             <div className="relative">
               <input
@@ -63,7 +61,7 @@ const FormRegister: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your password"
+                placeholder="Nhập mật khẩu"
                 required
               />
               <button
@@ -82,7 +80,7 @@ const FormRegister: React.FC = () => {
               htmlFor="confirmPassword"
               className="block text-sm font-semibold text-gray-700 mb-2"
             >
-              Confirm Password
+              Xác nhận mật khẩu
             </label>
             <div className="relative">
               <input
@@ -91,7 +89,7 @@ const FormRegister: React.FC = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Confirm your password"
+                placeholder="Xác nhận mật khẩu"
                 required
               />
               <button
@@ -109,7 +107,7 @@ const FormRegister: React.FC = () => {
           </div>
 
           {/* Remember me */}
-          <div className="flex items-center justify-between mb-4">
+          {/* <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -122,14 +120,14 @@ const FormRegister: React.FC = () => {
                 Remember me
               </label>
             </div>
-          </div>
+          </div> */}
 
           {/* Sign Up Button */}
           <button
             type="submit"
             className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm"
           >
-            Sign up
+            Đăng ký
           </button>
         </form>
 
@@ -141,16 +139,16 @@ const FormRegister: React.FC = () => {
         {/* Bottom Links */}
         <div className="mt-4 text-center text-sm text-gray-600">
           <p>
-            Already have an account?{" "}
+            Bạn đã có tài khoản?{" "}
             <a href="/login" className="text-blue-500">
-              Sign in
+              Đăng nhập ngay
             </a>
           </p>
         </div>
 
         <div className="mt-4 text-center text-sm text-gray-600">
           <a href="/" className="text-blue-500">
-            Back to Homepage
+            Trở lại trang chủ
           </a>
         </div>
       </div>
