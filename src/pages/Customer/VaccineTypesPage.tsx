@@ -4,7 +4,7 @@ import VaccineTypes from "../../components/Vaccine/VaccineTypes";
 
 const VaccineTypesPage: React.FC = () => {
   return (
-    <div>
+    <div className="mb-10">
       <CarouselVaccineTypes />
       <VaccineTypes />
     </div>

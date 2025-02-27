@@ -51,7 +51,7 @@ const router = createBrowserRouter([
       },
       // Customer routes
       {
-        path: "/vaccine-registration",
+        path: "customer/vaccine-registration",
         element: (
           <AppRouter
             element={VaccineRegistationPage}
@@ -60,18 +60,29 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/payment",
+        path: "customer/payment",
         element: (
           <AppRouter element={PaymentMethod} allowedRoles={[ROLES.CUSTOMER]} />
         ),
       },
-       {
-        path: "/vaccinationschedule",
+      {
+        path: "customer/vaccinationschedule",
         element: (
-          <AppRouter element={VaccinationSchedule} allowedRoles={[ROLES.CUSTOMER]} />
+          <AppRouter
+            element={VaccinationSchedule}
+            allowedRoles={[ROLES.CUSTOMER]}
+          />
         ),
       },
-
+      {
+        path: "customer/vaccine-profile",
+        element: (
+          <AppRouter
+            element={VaccineProfilePage}
+            allowedRoles={[ROLES.CUSTOMER]}
+          />
+        ),
+      },
       // Public routes
       {
         path: "/introduction",
@@ -101,19 +112,19 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/vaccine-price",
+        path: "/vaccination-schedule",
         element: (
           <AppRouter
-            element={VaccinePricePage}
+            element={VaccinationSchedule}
             allowedRoles={[ROLES.CUSTOMER]}
           />
         ),
       },
-       {
-        path: "/vaccine-profile",
+      {
+        path: "/vaccine-price",
         element: (
           <AppRouter
-            element={VaccineProfilePage}
+            element={VaccinePricePage}
             allowedRoles={[ROLES.CUSTOMER]}
           />
         ),
