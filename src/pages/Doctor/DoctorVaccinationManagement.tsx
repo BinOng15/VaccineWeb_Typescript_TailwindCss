@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import { Table, Input, Button, Space, Row, Col, Select, Modal } from "antd";
-import { EditOutlined, ReloadOutlined } from "@ant-design/icons";
+import { EditOutlined, EyeOutlined, ReloadOutlined } from "@ant-design/icons";
 import moment from "moment";
 
 const { Search } = Input;
@@ -10,8 +10,11 @@ const { Option } = Select;
 interface VaccinationRecord {
   id: number;
   childName: string;
-  birthDate: string;
+  dob: string;
+  gender: string;
   registrationDate: string;
+  vaccineName: string;
+  dose: string;
   vaccinationStatus: boolean; // Đã tiêm hoặc chưa tiêm
   reactionStatus: boolean; // Có hoặc không phản ứng
   reactionNote: string; // Ghi chú phản ứng
@@ -29,6 +32,10 @@ const DoctorVaccinationManagement: React.FC = () => {
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [reactionStatus, setReactionStatus] = useState<boolean | null>(null);
   const [reactionNote, setReactionNote] = useState("");
+  const [selectedDetail, setSelectedDetail] =
+    useState<VaccinationRecord | null>(null);
+
+  const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
 
   // Fetch vaccination records from API (mô phỏng dữ liệu)
   const fetchRecords = async (page = 1, pageSize = 5, keyword = "") => {
@@ -45,8 +52,12 @@ const DoctorVaccinationManagement: React.FC = () => {
         {
           id: 1,
           childName: "Nguyễn Văn A",
-          birthDate: "2018-02-25",
+          dob: "2018-02-25",
+          gender: "Nam",
           registrationDate: "2023-10-01",
+          vaccineName: "Vaccine A",
+          dose: "1",
+          doctor_name: "Dư Trần Vĩnh Hưng",
           vaccinationStatus: true,
           reactionStatus: true,
           reactionNote: "Nổi ban nhẹ",
@@ -54,8 +65,12 @@ const DoctorVaccinationManagement: React.FC = () => {
         {
           id: 2,
           childName: "Trần Thị B",
-          birthDate: "2019-03-15",
+          dob: "2019-03-15",
+          gender: "Nữ",
           registrationDate: "2023-10-02",
+          vaccineName: "Vaccine B",
+          dose: "2",
+          doctor_name: "Nguyễn Minh Triết",
           vaccinationStatus: false,
           reactionStatus: false,
           reactionNote: "",
@@ -113,6 +128,57 @@ const DoctorVaccinationManagement: React.FC = () => {
     setReactionNote("");
   };
 
+  // Handle detail modal
+  const handleDetailModalOpen = (record: VaccinationRecord) => {
+    setSelectedDetail(record);
+    setIsDetailModalVisible(true);
+  };
+
+  const detailModal = (
+    <Modal
+      title="Chi tiết lịch tiêm"
+      visible={isDetailModalVisible}
+      onCancel={() => setIsDetailModalVisible(false)}
+      footer={null}
+    >
+      {selectedDetail && (
+        <div>
+          <p>
+            <strong>Họ và tên:</strong> {selectedDetail.childName}
+          </p>
+          <p>
+            <strong>Ngày sinh:</strong>{" "}
+            {moment(selectedDetail.dob).format("DD-MM-YYYY")}
+          </p>
+          <p>
+            <strong>Giới tính:</strong> {selectedDetail.gender}
+          </p>
+          <p>
+            <strong>Vắc xin:</strong> {selectedDetail.vaccineName}
+          </p>
+          <p>
+            <strong>Mũi tiêm:</strong> {selectedDetail.dose}
+          </p>
+          <p>
+            <strong>Ngày đăng ký:</strong>{" "}
+            {moment(selectedDetail.registrationDate).format("DD-MM-YYYY")}
+          </p>
+          <p>
+            <strong>Trạng thái:</strong>{" "}
+            {selectedDetail.vaccinationStatus ? "Đã tiêm" : "Chưa tiêm"}
+          </p>
+          <p>
+            <strong>Phản ứng:</strong>{" "}
+            {selectedDetail.reactionStatus ? "Có phản ứng" : "Không phản ứng"}
+          </p>
+          <p>
+            <strong>Ghi chú:</strong> {selectedDetail.reactionNote}
+          </p>
+        </div>
+      )}
+    </Modal>
+  );
+
   // Handle Save Changes
   const handleSaveChanges = () => {
     const updatedRecords = records.map((record) => {
@@ -159,13 +225,23 @@ const DoctorVaccinationManagement: React.FC = () => {
     {
       title: "Ngày sinh",
       dataIndex: "birthDate",
-      render: (birthDate: string) => moment(birthDate).format("YYYY-MM-DD"),
+      render: (birthDate: string) => moment(birthDate).format("DD-MM-YYYY"),
     },
     {
       title: "Ngày đăng ký tiêm",
       dataIndex: "registrationDate",
       render: (registrationDate: string) =>
-        moment(registrationDate).format("YYYY-MM-DD"),
+        moment(registrationDate).format("DD-MM-YYYY"),
+    },
+    {
+      title: "Tên/Gói vắc xin",
+      dataIndex: "vaccineName",
+      key: "vaccineName",
+    },
+    {
+      title: "Mũi tiêm",
+      dataIndex: "dose",
+      key: "dose",
     },
     {
       title: "Trạng thái",
@@ -189,18 +265,27 @@ const DoctorVaccinationManagement: React.FC = () => {
       ),
     },
     {
-      title: "Note",
+      title: "Ghi chú",
       dataIndex: "reactionNote",
       key: "reactionNote",
     },
     {
-      title: "Action",
+      title: "Hành động",
       key: "action",
       render: (_: any, record: VaccinationRecord) => (
-        <EditOutlined
-          onClick={() => handleEditModalOpen(record.id)}
-          style={{ color: "black", cursor: "pointer" }}
-        />
+        <Space size="middle">
+          {/* Nút xem chi tiết */}
+          <EyeOutlined
+            onClick={() => handleDetailModalOpen(record)}
+            style={{ color: "blue", cursor: "pointer" }}
+          />
+
+          {/* Nút chỉnh sửa */}
+          <EditOutlined
+            onClick={() => handleEditModalOpen(record.id)}
+            style={{ color: "black", cursor: "pointer" }}
+          />
+        </Space>
       ),
     },
   ];
@@ -270,6 +355,7 @@ const DoctorVaccinationManagement: React.FC = () => {
           </Col>
         </Row>
       </Modal>
+      {detailModal}
     </div>
   );
 };
