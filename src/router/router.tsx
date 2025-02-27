@@ -14,6 +14,8 @@ import DoctorVaccinationManagement from "../pages/Doctor/DoctorVaccinationManage
 import VaccineTypesPage from "../pages/Customer/VaccineTypesPage";
 import VaccinePackagePage from "../pages/Customer/VaccinePackagePage";
 import VaccinationSchedule from "../components/Vaccine/vaccinationschedule";
+import VaccinePricePage from "../pages/Customer/VaccinePricePage";
+import VaccineProfilePage from "../pages/Customer/VaccineProfilePage";
 
 const router = createBrowserRouter([
   {
@@ -94,6 +96,24 @@ const router = createBrowserRouter([
         element: (
           <AppRouter
             element={VaccinePackagePage}
+            allowedRoles={[ROLES.CUSTOMER]}
+          />
+        ),
+      },
+      {
+        path: "/vaccine-price",
+        element: (
+          <AppRouter
+            element={VaccinePricePage}
+            allowedRoles={[ROLES.CUSTOMER]}
+          />
+        ),
+      },
+       {
+        path: "/vaccine-profile",
+        element: (
+          <AppRouter
+            element={VaccineProfilePage}
             allowedRoles={[ROLES.CUSTOMER]}
           />
         ),
