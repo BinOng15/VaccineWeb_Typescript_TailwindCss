@@ -21,3 +21,33 @@
     text-align: center;
    
 }
+
+/* Đặt độ rộng cố định cho các cột khác ngoài cột đầu tiên */
+.table-fixed {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.table-fixed th,
+.table-fixed td {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+
+.table-fixed td {
+  text-align: center;
+  white-space: normal; /* Cho phép nội dung xuống dòng */
+  word-wrap: break-word; /* Chia từ nếu cần */
+}
+
+/* Cột đầu tiên linh hoạt */
+.table-fixed td:first-child {
+  white-space: nowrap;
+}
+
+/* Các tiêu đề cột sẽ căn giữa */
+.table-fixed th {
+  background-color: #1D4ED8; /* Màu xanh cho tiêu đề */
+  color: white;
+  text-align: center;
+}

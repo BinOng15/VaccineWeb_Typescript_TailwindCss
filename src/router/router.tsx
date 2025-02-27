@@ -13,6 +13,7 @@ import ManageVaccinationSchedule from "../pages/Staff/Vaccination/VaccinationRec
 import DoctorVaccinationManagement from "../pages/Doctor/DoctorVaccinationManagement";
 import VaccineTypesPage from "../pages/Customer/VaccineTypesPage";
 import VaccinePackagePage from "../pages/Customer/VaccinePackagePage";
+import VaccinationSchedule from "../components/Vaccine/vaccinationschedule";
 
 const router = createBrowserRouter([
   {
@@ -60,6 +61,12 @@ const router = createBrowserRouter([
         path: "/payment",
         element: (
           <AppRouter element={PaymentMethod} allowedRoles={[ROLES.CUSTOMER]} />
+        ),
+      },
+       {
+        path: "/vaccinationschedule",
+        element: (
+          <AppRouter element={VaccinationSchedule} allowedRoles={[ROLES.CUSTOMER]} />
         ),
       },
 
