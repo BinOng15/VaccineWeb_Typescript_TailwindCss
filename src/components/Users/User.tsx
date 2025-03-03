@@ -1,9 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
-import { Table, Input, Button, Space, Row, Col, Tabs } from "antd";
+import {
+  Table,
+  Input,
+  Button,
+  Space,
+  Row,
+  Col,
+  Tabs,
+  Modal,
+  message,
+} from "antd";
 import EditUserModal from "./EditUserModal";
 import AddUserModal from "./AddUserButton"; // Giả định tên file là AddUserButton.tsx
-import { EditOutlined, ReloadOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  ReloadOutlined,
+  EyeOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import { UserResponseDTO } from "../../models/User";
 import userService from "../../service/userService";
 
@@ -27,7 +42,9 @@ const UserComponent: React.FC = () => {
   const [activeTab, setActiveTab] = useState("activeUsers");
   const [isAddUserModalVisible, setIsAddUserModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [editingUserId, setEditingUserId] = useState<User | null>(null);
+  const [editedUser, setEditedUser] = useState<User | null>(null); // Thay vì editingUserId
+  const [isDetailModalVisible, setIsDetailModalVisible] = useState(false); // State cho modal chi tiết
+  const [selectedUser, setSelectedUser] = useState<User | null>(null); // User được chọn để xem chi tiết
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -41,7 +58,9 @@ const UserComponent: React.FC = () => {
               ? user.isActive === "Inactive" // Sử dụng number 0 cho Inactive
               : user.isActive === "Active" // Sử dụng number 1 cho Active
         )
-        .map((user) => ({ ...user, userId: user.id }));
+        .map((user) => {
+          return { ...user, userId: user.id };
+        });
       console.log("Filtered Users:", filteredUsers);
       setUsers(filteredUsers);
       setPagination({
@@ -51,6 +70,7 @@ const UserComponent: React.FC = () => {
       });
     } catch (error) {
       console.error("Error fetching users:", error);
+      message.error("Failed to fetch users: " + (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -87,15 +107,56 @@ const UserComponent: React.FC = () => {
   const handleCloseModal = () => {
     setIsAddUserModalVisible(false);
     setIsEditModalVisible(false);
-    setEditingUserId(null);
+    setEditedUser(null);
+    setIsDetailModalVisible(false); // Đóng modal chi tiết
+    setSelectedUser(null); // Reset user được chọn
   };
 
-  const handleEditUser = (userId: User) => {
-    console.log("Editing User with ID:", userId);
-    setEditingUserId(userId);
+  const handleUpdate = (user: User) => {
+    if (!user.id || typeof user.id !== "number") {
+      console.error("Invalid user in handleUpdate:", user);
+      message.error("Invalid user data for editing");
+      return;
+    }
+    console.log("Editing User with ID:", user.id);
+    setEditedUser(user);
     setIsEditModalVisible(true);
   };
 
+  const handleViewDetail = (user: User) => {
+    if (!user.id || typeof user.id !== "number") {
+      console.error("Dữ liệu người dùng không khả dụng:", user);
+      message.error("Dữ liệu người dùng không khả dụng");
+      return;
+    }
+    console.log("Viewing User with ID:", user.id);
+    setSelectedUser(user);
+    setIsDetailModalVisible(true);
+  };
+  const handleDelete = async (userId: number) => {
+    Modal.confirm({
+      title: "Bạn có chắc chắn muốn xóa người dùng này không?",
+      content: "Hành động này không thể hoàn tác.",
+      okText: "Có",
+      okType: "danger",
+      cancelText: "Không",
+      onOk: async () => {
+        try {
+          await userService.deleteUser(userId); // Giả sử userService có phương thức deleteUser
+          message.success("Người dùng đã được xóa thành công");
+          fetchUsers(); // Refresh danh sách người dùng sau khi xóa
+        } catch (error) {
+          console.error("Lỗi khi xóa người dùng:", error);
+          message.error(
+            "Không thể xóa người dùng: " + (error as Error).message
+          );
+        }
+      },
+      onCancel() {
+        console.log("Hủy xóa");
+      },
+    });
+  };
   const handleTabChange = (key: string) => {
     setActiveTab(key);
   };
@@ -107,39 +168,48 @@ const UserComponent: React.FC = () => {
       key: "email",
     },
     {
-      title: "Full Name",
+      title: "Tên đầy đủ",
       dataIndex: "fullName",
       key: "fullName",
     },
     {
-      title: "Status",
+      title: "Trạng thái",
       dataIndex: "isActive",
       key: "isActive",
-      render: (isActive: number) => (isActive === 1 ? "Active" : "Inactive"),
+      render: (isActive: string) =>
+        isActive === "Active" ? "Hoạt động" : "Không hoạt động",
     },
     {
-      title: "Phone Number",
+      title: "Số điện thoại",
       dataIndex: "phoneNumber",
       key: "phoneNumber",
     },
     {
-      title: "Address",
+      title: "Địa chỉ",
       dataIndex: "address",
       key: "address",
     },
     {
-      title: "Role",
+      title: "Vai trò",
       dataIndex: "role",
       key: "role",
     },
     {
-      title: "Action",
+      title: "Hành động",
       key: "action",
       render: (_: any, record: User) => (
         <span>
           <EditOutlined
-            onClick={() => handleEditUser(record)}
-            style={{ color: "black", cursor: "pointer" }}
+            onClick={() => handleUpdate(record)}
+            style={{ color: "black", cursor: "pointer", marginRight: 8 }}
+          />
+          <EyeOutlined
+            onClick={() => handleViewDetail(record)}
+            style={{ color: "blue", cursor: "pointer", marginRight: 8 }}
+          />
+          <DeleteOutlined
+            onClick={() => handleDelete(record.id)}
+            style={{ color: "red", cursor: "pointer" }}
           />
         </span>
       ),
@@ -153,12 +223,12 @@ const UserComponent: React.FC = () => {
         defaultActiveKey="activeUsers"
         onChange={handleTabChange}
       >
-        <TabPane tab="Active Users" key="activeUsers">
+        <TabPane tab="Người dùng hoạt động" key="activeUsers">
           <Row justify="space-between" style={{ marginBottom: 16 }}>
             <Col>
               <Space className="custom-search">
                 <Search
-                  placeholder="Search by keyword"
+                  placeholder="Tìm kiếm theo từ khóa"
                   onSearch={onSearch}
                   enterButton
                   allowClear
@@ -172,8 +242,12 @@ const UserComponent: React.FC = () => {
               </Space>
             </Col>
             <Col>
-              <Button className="custom-button" onClick={handleAddUser}>
-                Add User
+              <Button
+                type="primary"
+                className="custom-button"
+                onClick={handleAddUser}
+              >
+                Thêm mới người dùng
               </Button>
             </Col>
           </Row>
@@ -192,24 +266,27 @@ const UserComponent: React.FC = () => {
             onChange={handleTableChange}
           />
         </TabPane>
-        <TabPane tab="Deleted Users" key="deletedUsers">
+        <TabPane tab="Người dùng vô hiệu hóa" key="deletedUsers">
           <Row justify="space-between" style={{ marginBottom: 16 }}>
             <Col>
               <Space>
                 <Search
-                  placeholder="Search by keyword"
+                  placeholder="Tìm kiếm theo từ khóa"
                   onSearch={onSearch}
                   enterButton
                   allowClear
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
                 />
-                <Button onClick={handleReset}>Reset</Button>
+                <ReloadOutlined
+                  onClick={handleReset}
+                  style={{ fontSize: "24px", cursor: "pointer" }}
+                />{" "}
               </Space>
             </Col>
             <Col>
               <Button type="primary" onClick={handleAddUser}>
-                Add User
+                Thêm mới người dùng
               </Button>
             </Col>
           </Row>
@@ -236,14 +313,51 @@ const UserComponent: React.FC = () => {
         refreshUsers={fetchUsers}
       />
 
-      {editingUserId && (
+      {editedUser && (
         <EditUserModal
-          user={editingUserId}
+          user={editedUser}
           visible={isEditModalVisible}
           onClose={handleCloseModal}
           refreshUsers={fetchUsers}
         />
       )}
+
+      {/* Modal để xem chi tiết thông tin user */}
+      <Modal
+        title="User Details"
+        visible={isDetailModalVisible}
+        onCancel={handleCloseModal}
+        footer={null}
+      >
+        {selectedUser && (
+          <div style={{ padding: 16 }}>
+            <p>
+              <strong>Email:</strong> {selectedUser.email || "N/A"}
+            </p>
+            <p>
+              <strong>Full Name:</strong> {selectedUser.fullName || "N/A"}
+            </p>
+            <p>
+              <strong>Status:</strong>{" "}
+              {selectedUser.isActive === "Active" ? "Active" : "Inactive"}
+            </p>
+            <p>
+              <strong>Phone Number:</strong> {selectedUser.phoneNumber || "N/A"}
+            </p>
+            <p>
+              <strong>Address:</strong> {selectedUser.address || "N/A"}
+            </p>
+            <p>
+              <strong>Role:</strong>{" "}
+              {selectedUser.role === 2
+                ? "Staff"
+                : selectedUser.role === 3
+                ? "Doctor"
+                : "N/A"}
+            </p>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

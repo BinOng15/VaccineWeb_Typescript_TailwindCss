@@ -42,24 +42,25 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
         phoneNumber: values.phoneNumber,
         address: values.address,
         dateOfBirth: dateOfBirth, // Định dạng ISO 8601
-        role: values.role === "Staff" ? 3 : 2, // Ánh xạ "Staff" -> 3, "Doctor" -> 2
+        role: values.role === "Nhân viên" ? 3 : 2, // Ánh xạ "Nhân viên" -> 3, "Bác sĩ" -> 2
       };
 
-      console.log("User Data to Send:", userData); // Debug dữ liệu gửi lên
+      console.log("Dữ liệu người dùng để gửi:", userData); // Debug dữ liệu gửi lên
       await userService.createSystemUser(userData);
       notification.success({
-        message: "Success",
-        description: "User created successfully!",
+        message: "Thành công",
+        description: "Người dùng đã được tạo thành công!",
       });
 
       form.resetFields();
       refreshUsers();
       onClose();
     } catch (error: any) {
-      console.error("Error creating user:", error.response?.data);
+      console.error("Lỗi khi tạo người dùng:", error.response?.data);
       notification.error({
-        message: "Error",
-        description: error?.response?.data?.message || "Failed to create user!",
+        message: "Lỗi",
+        description:
+          error?.response?.data?.message || "Không thể tạo người dùng!",
       });
     }
   };
@@ -71,7 +72,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
 
   return (
     <Modal
-      title="Add User"
+      title="THÊM MỚI NGƯỜI DÙNG"
       open={visible}
       onCancel={handleCancel}
       footer={null}
@@ -81,68 +82,92 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
           label="Email"
           name="email"
           rules={[
-            { required: true, message: "Please input the email!" },
-            { type: "email", message: "Please enter a valid email!" },
+            { required: true, message: "Vui lòng nhập email của người dùng!" },
+            { type: "email", message: "Vui lòng nhập email hợp lệ!" },
           ]}
         >
-          <Input />
+          <Input placeholder="Nhập email của người dùng" />
         </Form.Item>
         <Form.Item
-          label="Password"
+          label="Mật khẩu"
           name="password"
           rules={[
-            { required: true, message: "Please input the password!" },
-            { min: 6, message: "Password must be at least 6 characters!" },
+            {
+              required: true,
+              message: "Vui lòng nhập mật khẩu của người dùng!",
+            },
+            { min: 6, message: "Mật khẩu phải có ít nhất 6 ký tự!" },
           ]}
         >
-          <Input.Password />
+          <Input.Password placeholder="Nhập mật khẩu của người dùng" />
         </Form.Item>
         <Form.Item
-          label="Name"
+          label="Tên đầy đủ"
           name="name"
-          rules={[{ required: true, message: "Please input the name!" }]}
+          rules={[
+            {
+              required: true,
+              message: "Vui lòng nhập tên đầy đủ của người dùng!",
+            },
+          ]}
         >
-          <Input />
+          <Input placeholder="Nhập tên đầy đủ của người dùng" />
         </Form.Item>
         <Form.Item
-          label="Phone Number"
+          label="Số điện thoại"
           name="phoneNumber"
           rules={[
-            { required: true, message: "Please input the phone number!" },
+            {
+              required: true,
+              message: "Vui lòng nhập số điện thoại của người dùng!",
+            },
           ]}
         >
-          <Input />
+          <Input placeholder="Nhập số điện thoại của người dùng" />
         </Form.Item>
         <Form.Item
-          label="Address"
+          label="Địa chỉ"
           name="address"
-          rules={[{ required: true, message: "Please input the address!" }]}
+          rules={[
+            {
+              required: true,
+              message: "Vui lòng nhập địa chỉ của người dùng!",
+            },
+          ]}
         >
-          <Input />
+          <Input placeholder="Nhập địa chỉ của người dùng" />
         </Form.Item>
         <Form.Item
-          label="Date of Birth"
+          label="Ngày sinh"
           name="dateOfBirth"
           rules={[
-            { required: true, message: "Please select the date of birth!" },
+            {
+              required: true,
+              message: "Vui lòng chọn ngày sinh của người dùng!",
+            },
           ]}
         >
-          <DatePicker style={{ width: "100%" }} />
+          <DatePicker placeholder="Chọn ngày sinh" style={{ width: "100%" }} />
         </Form.Item>
         <Form.Item
-          label="Role"
+          label="Vai trò"
           name="role"
-          rules={[{ required: true, message: "Please select a role!" }]}
+          rules={[
+            {
+              required: true,
+              message: "Vui lòng chọn vai trò của người dùng!",
+            },
+          ]}
         >
-          <Select placeholder="Select a role">
-            <Option value="Staff">Staff</Option>
-            <Option value="Doctor">Doctor</Option>
+          <Select placeholder="Chọn vai trò">
+            <Option value="Nhân viên">Nhân viên</Option>
+            <Option value="Bác sĩ">Bác sĩ</Option>
           </Select>
         </Form.Item>
 
         <Form.Item>
           <Button type="primary" htmlType="submit">
-            Submit
+            Thêm mới
           </Button>
         </Form.Item>
       </Form>

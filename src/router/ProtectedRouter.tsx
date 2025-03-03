@@ -11,6 +11,12 @@ const AdminPage = React.lazy(() => import("../pages/Admin/AdminPage"));
 const UserManagement = React.lazy(
   () => import("../pages/Admin/UserManagement")
 );
+const VaccineManagement = React.lazy(
+  () => import("../pages/Admin/VaccineManagement")
+);
+const DiseaseManagement = React.lazy(
+  () => import("../pages/Admin/DiseaseManagement")
+);
 //-------------------------------------------------Staff------------------------------------------------
 const DashboardStaff = React.lazy(
   () => import("../pages/Staff/DashboardStaff")
@@ -89,6 +95,24 @@ const AppRouter = () => {
               element={
                 <ProtectedRouter
                   element={<UserManagement />}
+                  allowedRoles={["Admin"]}
+                />
+              }
+            />
+            <Route
+              path="/admin/manage-vaccine"
+              element={
+                <ProtectedRouter
+                  element={<VaccineManagement />}
+                  allowedRoles={["Admin"]}
+                />
+              }
+            />
+            <Route
+              path="/admin/manage-disease"
+              element={
+                <ProtectedRouter
+                  element={<DiseaseManagement />}
                   allowedRoles={["Admin"]}
                 />
               }

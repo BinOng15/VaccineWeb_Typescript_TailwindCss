@@ -1,8 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
-import { Modal, Form, Input, Select, Button, DatePicker, message } from "antd";
+import React, { useState, useEffect } from "react";
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  Button,
+  DatePicker,
+  Upload,
+  message,
+} from "antd";
+import { UploadOutlined } from "@ant-design/icons";
 import moment from "moment";
-import FileUploader from "../../util/FileUploader";
 import userService from "../../service/userService";
 import { UpdateUserDTO, UserResponseDTO } from "../../models/User";
 
@@ -26,31 +35,18 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
   const [imageUploading, setImageUploading] = useState<boolean>(false);
 
+  // Khởi tạo form với dữ liệu user khi modal mở
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userData: UserResponseDTO = await userService.getUserById(
-          user.id
-        );
-        console.log("Fetched User Data:", userData); // Debug dữ liệu từ API
-        form.setFieldsValue({
-          fullName: userData.fullName,
-          email: userData.email,
-          dateOfBirth: userData.dateOfBirth
-            ? moment(userData.dateOfBirth)
-            : null,
-          address: userData.address,
-          phoneNumber: userData.phoneNumber,
-          role: userData.role, // Sử dụng role từ dữ liệu (2 hoặc 3)
-        });
-        setImageUrl(undefined); // Backend không trả imgUrl, để trống
-      } catch (error) {
-        message.error("Failed to fetch user data: " + (error as Error).message);
-      }
-    };
-
-    if (visible) {
-      fetchUserData();
+    if (visible && user) {
+      form.setFieldsValue({
+        fullName: user.fullName,
+        email: user.email,
+        dateOfBirth: user.dateOfBirth ? moment(user.dateOfBirth) : null,
+        address: user.address,
+        phoneNumber: user.phoneNumber,
+        role: user.role, // Sử dụng role từ dữ liệu (2 hoặc 3)
+      });
+      setImageUrl(undefined); // Backend không trả imgUrl, để trống (nếu cần, bạn có thể lấy từ API nếu có)
     }
   }, [user, visible, form]);
 
@@ -58,7 +54,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     setImageUploading(true);
     try {
       setImageUrl(url);
-      message.success("Image uploaded successfully");
+      message.success("Hình ảnh đã được tải lên thành công");
     } finally {
       setImageUploading(false);
     }
@@ -67,7 +63,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   const handleSubmit = async (values: any) => {
     setLoading(true);
     try {
-      // Chuyển đổi dateOfBirth từ DatePicker thành định dạng ISO 8601
       const dateOfBirth = values.dateOfBirth
         ? moment(values.dateOfBirth).toISOString()
         : moment().toISOString();
@@ -81,13 +76,19 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         role: values.role, // Sử dụng role từ form (2 hoặc 3)
       };
 
-      console.log("Updated Data to Send:", updatedData); // Debug dữ liệu gửi lên
-      await userService.updateUser(user.id, updatedData);
-      message.success("User updated successfully");
-      refreshUsers();
-      onClose();
+      console.log("Dữ liệu người dùng đã cập nhật để gửi:", updatedData); // Debug dữ liệu gửi lên
+      const success = await userService.updateUser(user.id, updatedData); // Giả sử updateUser trả về boolean
+      if (success) {
+        message.success("Người dùng đã được cập nhật thành công");
+        refreshUsers();
+        onClose();
+      } else {
+        message.error("Không thể cập nhật người dùng");
+      }
     } catch (error) {
-      message.error("Failed to update user: " + (error as Error).message);
+      message.error(
+        "Không thể cập nhật người dùng: " + (error as Error).message
+      );
     } finally {
       setLoading(false);
     }
@@ -100,83 +101,96 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 
   return (
     <Modal
-      title="Edit User"
+      title="Chỉnh sửa Người dùng"
       visible={visible}
       onCancel={handleCancel}
       footer={null}
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <Form.Item
-            label="Profile Picture"
-            style={{ display: "inline-block" }}
-          >
-            <FileUploader
-              onUploadSuccess={handleUploadSuccess}
-              defaultImage={imageUrl}
-            />
+          <Form.Item label="Hình ảnh Hồ sơ" style={{ display: "inline-block" }}>
+            <Upload
+              beforeUpload={() => false} // Ngăn upload tự động
+              maxCount={1}
+              accept="image/*"
+              defaultFileList={
+                imageUrl
+                  ? [
+                      {
+                        uid: `-${Date.now()}`, // Tạo uid duy nhất sử dụng timestamp
+                        name: "current-image.jpg",
+                        status: "done",
+                        url: imageUrl,
+                      },
+                    ]
+                  : []
+              }
+              onChange={({ file }) => {
+                if (file.status === "done" && file.response) {
+                  handleUploadSuccess(file.response.url); // Giả sử FileUploader trả về URL
+                }
+              }}
+            >
+              <Button icon={<UploadOutlined />}>Tải lên Hình ảnh</Button>
+            </Upload>
           </Form.Item>
         </div>
 
         <Form.Item
-          label="Full Name"
+          label="Họ và Tên"
           name="fullName"
-          rules={[{ required: true, message: "Please input the full name!" }]}
+          rules={[{ required: true, message: "Vui lòng nhập họ và tên!" }]}
         >
-          <Input placeholder="Enter your full name" />
+          <Input placeholder="Nhập họ và tên của bạn" />
         </Form.Item>
 
         <Form.Item
           label="Email"
           name="email"
           rules={[
-            { required: true, message: "Please input the email!" },
-            { type: "email", message: "Please enter a valid email!" },
+            { required: true, message: "Vui lòng nhập email!" },
+            { type: "email", message: "Vui lòng nhập email hợp lệ!" },
           ]}
         >
-          <Input placeholder="Enter your email" disabled />{" "}
+          <Input placeholder="Nhập email của bạn" disabled />{" "}
           {/* Có thể disable nếu email không được chỉnh sửa */}
         </Form.Item>
 
         <Form.Item
-          label="Date of Birth"
+          label="Ngày Sinh"
           name="dateOfBirth"
-          rules={[
-            { required: true, message: "Please select the date of birth!" },
-          ]}
+          rules={[{ required: true, message: "Vui lòng chọn ngày sinh!" }]}
         >
           <DatePicker
             style={{ width: "100%" }}
-            placeholder="Select your date of birth"
+            placeholder="Chọn ngày sinh của bạn"
           />
         </Form.Item>
 
         <Form.Item
-          label="Address"
+          label="Địa chỉ"
           name="address"
-          rules={[{ required: true, message: "Please input the address!" }]}
+          rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}
         >
-          <Input placeholder="Enter your address" />
+          <Input placeholder="Nhập địa chỉ của bạn" />
         </Form.Item>
 
         <Form.Item
-          label="Phone Number"
+          label="Số điện thoại"
           name="phoneNumber"
-          rules={[
-            { required: true, message: "Please input the phone number!" },
-          ]}
+          rules={[{ required: true, message: "Vui lòng nhập số điện thoại!" }]}
         >
-          <Input placeholder="Enter your phone number" />
+          <Input placeholder="Nhập số điện thoại của bạn" />
         </Form.Item>
 
         <Form.Item
-          label="Role"
+          label="Vai trò"
           name="role"
-          rules={[{ required: true, message: "Please select a role!" }]}
+          rules={[{ required: true, message: "Vui lòng chọn vai trò!" }]}
         >
-          <Select placeholder="Select your role">
-            <Option value={2}>Staff</Option>
-            <Option value={3}>Doctor</Option>
+          <Select placeholder="Chọn vai trò của bạn">
+            <Option value={2}>Nhân viên</Option>
+            <Option value={3}>Bác sĩ</Option>
           </Select>
         </Form.Item>
 
@@ -187,7 +201,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             loading={loading}
             disabled={imageUploading}
           >
-            Update
+            Cập nhật
           </Button>
         </Form.Item>
       </Form>

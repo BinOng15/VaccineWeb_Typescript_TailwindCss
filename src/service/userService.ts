@@ -63,9 +63,10 @@ const userService = {
   },
 
   // Cập nhật thông tin người dùng
-  updateUser: async (id: number, userData: UpdateUserDTO): Promise<void> => {
+  updateUser: async (id: number, userData: UpdateUserDTO): Promise<boolean> => {
     try {
-      await axiosInstance.put(`api/User/update-user-by-id/${id}`, userData);
+      const response: AxiosResponse = await axiosInstance.put(`api/User/update-user-by-id/${id}`, userData);
+      return response.data.success;
     } catch (error) {
       console.error(`Error updating user ${id}:`, error);
       throw error;

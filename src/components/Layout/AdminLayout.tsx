@@ -1,6 +1,5 @@
 import { Layout } from "antd";
 import React, { useState } from "react";
-import CustomFooter from "./Footer";
 import { Content } from "antd/es/layout/layout";
 import HeaderAdmin from "./HeaderAdmin";
 import Sider from "antd/es/layout/Sider";
@@ -39,7 +38,6 @@ const AdminLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </Content>
         </Layout>
       </Layout>
-      <CustomFooter />
     </Layout>
   );
 };
