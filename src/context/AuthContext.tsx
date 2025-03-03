@@ -1,5 +1,5 @@
 /* eslint-disable no-useless-catch */
-import React, { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useState } from "react";
 import { AuthContextType, User } from "../models/User";
 import { authServiceLogin, getCurrentUser } from "../service/authService";
 
