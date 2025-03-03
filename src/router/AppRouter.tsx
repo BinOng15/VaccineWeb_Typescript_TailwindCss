@@ -1,7 +1,5 @@
 // import React, { useContext } from "react";
-// import { AuthContext } from "../context/auth.context";
 // import { ROLES } from "../constants";
-// import Homepage from "../pages/Customer/Homepage";
 // import { Navigate } from "react-router-dom";
 
 // interface PrivateRouteProps {
@@ -13,20 +11,15 @@
 //   element: Component,
 //   allowedRoles,
 // }) => {
-//   const { auth, appLoading } = useContext(AuthContext);
+//   const context = useContext(AuthContext1);
+//   if (!context) {
+//     throw new Error("AuthContext must be used within an AuthProvider");
+//   }
 
-//   // // Thiết lập mặc định là CUSTOMER nếu chưa đăng nhập
-//   // React.useEffect(() => {
-//   //   if (!auth.isAuthenticated) {
-//   //     setAuth({
-//   //       isAuthenticated: true,
-//   //       user: { name: "Test Customer", role: ROLES.CUSTOMER },
-//   //     });
-//   //   }
-//   // }, [auth.isAuthenticated, setAuth]);
+//   const { auth, appLoading } = context;
 
 //   if (appLoading) {
-//     return <div></div>;
+//     return <div>Loading...</div>;
 //   }
 
 //   const userRole = auth?.user?.role;
@@ -35,8 +28,7 @@
 //   if (!userRole) {
 //     // Nếu không đăng nhập và trang yêu cầu quyền admin, điều hướng về trang đăng nhập
 //     if (allowedRoles.includes(ROLES.ADMIN)) {
-//       //return <Navigate to="/login" replace />;
-//       return <Homepage />; // Nếu chưa đăng nhập, hiển thị Homepage ngay
+//       return <Navigate to="/login" replace />;
 //     }
 
 //     return <Component />;
@@ -57,20 +49,25 @@
 //     return <Navigate to="/staff/dashboard" replace />;
 //   }
 
+//   // Nếu người dùng là doctor nhưng truy cập vào trang không dành cho doctor, điều hướng về trang doctor
+//   if (userRole === ROLES.DOCTOR && !allowedRoles.includes(ROLES.DOCTOR)) {
+//     return <Navigate to="/doctor/dashboard" replace />;
+//   }
+
 //   // Điều hướng người dùng không có quyền về trang chủ
 //   return <Navigate to="/" replace />;
 // };
 
+// // export default AppRouter;
+// // import React from "react";
+
+// // interface PrivateRouteProps {
+// //   element: React.ComponentType;
+// //   allowedRoles: string[];
+// // }
+
+// // const AppRouter: React.FC<PrivateRouteProps> = ({ element: Component }) => {
+// //   return <Component />;
+// // };
+
 // export default AppRouter;
-import React from "react";
-
-interface PrivateRouteProps {
-  element: React.ComponentType;
-  allowedRoles: string[];
-}
-
-const AppRouter: React.FC<PrivateRouteProps> = ({ element: Component }) => {
-  return <Component />;
-};
-
-export default AppRouter;

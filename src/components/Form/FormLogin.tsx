@@ -1,22 +1,73 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import { Form, Button, notification, Input } from "antd";
 import GoogleLoginButton from "../GoogleLoginButton";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { authServiceLogin, getCurrentUser } from "../../service/authService";
 
-const FormLogin: React.FC = () => {
+const FormLogin = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [rememberMe, setRememberMe] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
+  const { user, setUser } = useAuth();
 
-  // Hàm đăng nhập (chưa thực hiện chức năng)
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Email:", email);
-    console.log("Password:", password);
-    console.log("Remember Me:", rememberMe);
+  const handleLogin = async (values: { email: string; password: string }) => {
+    try {
+      setLoading(true);
+      const token = await authServiceLogin(values.email, values.password);
+      if (token) {
+        const userData = await getCurrentUser(token);
+        if (userData) {
+          setUser(userData);
+          sessionStorage.setItem("user", JSON.stringify(userData));
+          sessionStorage.setItem("accessToken", token); // Lưu token vào localStorage nếu cần
+          notification.success({
+            message: "Login Successful",
+          });
+          // Điều hướng một lần duy nhất với replace: true
+          navigate("/", { replace: true });
+        }
+      }
+    } catch (error: any) {
+      notification.error({
+        message: "Login Failed",
+        description:
+          error.message || "Invalid email or password. Please try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Hàm callback khi đăng nhập Google thành công
+  // Tối ưu useEffect để chỉ chạy khi user thay đổi, và dùng replace: true
+  useEffect(() => {
+    if (user) {
+      let destination = "/";
+      switch (user.role) {
+        case "Admin":
+          destination = "/admin/dashboard";
+          break;
+        case "Doctor":
+          destination = "/doctor/dashboard";
+          break;
+        case "Staff":
+          destination = "/staff/dashboard";
+          break;
+        case "Customer":
+          destination = "/";
+          break;
+        default:
+          console.log("Unknown role:", user.role);
+          break;
+      }
+      navigate(destination, { replace: true }); // Sử dụng replace: true để tránh thêm vào history
+    }
+  }, [user, navigate]); // Chỉ phụ thuộc vào user và navigate
+
   return (
     <div
       className="flex items-center justify-center min-h-screen bg-cover bg-center"
@@ -24,62 +75,53 @@ const FormLogin: React.FC = () => {
     >
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold text-center mb-6">Đăng nhập</h2>
-        <form onSubmit={handleSubmit}>
-          {/* Email Input */}
+        <Form name="login_form" onFinish={handleLogin} layout="vertical">
           <div className="mb-5">
-            <label
-              htmlFor="email"
-              className="block text-sm font-semibold text-gray-700 mb-2"
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                { required: true, message: "Hãy nhập email của bạn!" },
+                { type: "email", message: "Vui lòng nhập email hợp lệ!" },
+              ]}
             >
-              Email hoặc số điện thoại
-            </label>
-            <input
-              type="text"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Nhập email hoặc số điện thoại"
-              required
-            />
+              <Input
+                type="text"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Nhập email của bạn"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </Form.Item>
           </div>
-
-          {/* Password Input */}
           <div className="mb-4">
-            <label
-              htmlFor="password"
-              className="block text-sm font-semibold text-gray-700 mb-2"
+            <Form.Item
+              name="password"
+              label="Mật khẩu"
+              rules={[
+                { required: true, message: "Mật khẩu không được để trống!" },
+              ]}
             >
-              Mật khẩu
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
+              <Input.Password
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Nhập mật khẩu"
-                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                iconRender={(visible) =>
+                  visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+                }
               />
-              <button
-                type="button"
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-sm text-gray-600"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-              </button>
-            </div>
+            </Form.Item>
           </div>
-
-          {/* Remember me and Forgot password */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <input
                 type="checkbox"
                 id="remember"
                 checked={rememberMe}
-                onChange={() => setRememberMe(!rememberMe)}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="mr-2"
               />
               <label htmlFor="remember" className="text-sm text-gray-700">
@@ -90,43 +132,46 @@ const FormLogin: React.FC = () => {
               Quên mật khẩu?
             </a>
           </div>
-
-          {/* Sign In Button */}
-          <button
-            type="submit"
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={loading}
+            block
             className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm"
           >
             Đăng nhập
-          </button>
-        </form>
-
+          </Button>
+        </Form>
         <div className="mt-4 flex justify-center">
           <GoogleLoginButton />
         </div>
-
-        {/* Bottom Links */}
         <div className="mt-4 text-center text-sm text-gray-600">
           <p>
             Bạn chưa có tài khoản?{" "}
-            <a href="/register" className="text-blue-500">
+            <a
+              href="/register"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/register", { replace: true });
+              }}
+              className="text-blue-500"
+            >
               Đăng ký ngay
             </a>
           </p>
         </div>
-
         <div className="mt-4 text-center text-sm text-gray-600">
-          <a href="/" className="text-blue-500">
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("/", { replace: true });
+            }}
+            className="text-blue-500"
+          >
             Trở lại trang chủ
           </a>
         </div>
-
-        {/* Google reCAPTCHA (for real apps, uncomment and integrate) */}
-        {/* <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500">
-            This page is protected by Google reCAPTCHA to ensure you're not a
-            bot. <a href="#">Learn more.</a>
-          </p>
-        </div> */}
       </div>
     </div>
   );

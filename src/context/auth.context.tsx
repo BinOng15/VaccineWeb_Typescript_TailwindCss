@@ -2,7 +2,6 @@ import { createContext, useState, ReactNode } from "react";
 
 interface User {
   id: number; // should be lowercase 'number'
-  imgUrl: string;
   email: string;
   name: string;
   role: string;
@@ -28,7 +27,6 @@ export const AuthContext = createContext<AuthContextType>({
     isAuthenticated: false,
     user: {
       id: 0, // default value for id
-      imgUrl: "",
       email: "",
       name: "",
       role: "",
@@ -50,7 +48,6 @@ export const AuthWrapper = ({ children }: AuthWrapperProps) => {
     isAuthenticated: false,
     user: {
       id: 0, // default value for id
-      imgUrl: "", // default value for imgUrl
       email: "",
       name: "",
       role: "",
