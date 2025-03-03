@@ -16,7 +16,7 @@ const AppHeader: React.FC = () => {
     {
       name: "Cẩm nang",
       subMenu: [
-        { name: "Lịch tiêm chủng cho trẻ em", path: "/vaccinationschedule" },
+        { name: "Lịch tiêm chủng cho trẻ em", path: "/vaccination-schedule" },
         {
           name: "Quá trình tiêm chủng cho trẻ em",
           path: "/cam-nang/huong-dan",
@@ -25,7 +25,7 @@ const AppHeader: React.FC = () => {
         { name: "Các gói vắc xin cho trẻ em", path: "/vaccine-package" },
       ],
     },
-    { name: "Bảng giá", path: "/bang-gia" },
+    { name: "Bảng giá", path: "/vaccine-price" },
     { name: "Liên hệ", path: "/lien-he" },
   ];
 
@@ -63,7 +63,12 @@ const AppHeader: React.FC = () => {
     <header className="w-full mb-0 relative z-50">
       <div className="flex items-center justify-between px-8 py-3 bg-white shadow-md border-b border-gray-200">
         <div className="flex items-center space-x-3">
-          <img src="logo/vaccine.png" alt="Vaccine Logo" className="h-12" />
+          <img
+            src="logo/vaccine.png"
+            alt="Vaccine Logo"
+            className="h-12"
+            onClick={() => navigate("")}
+          />
           <img src="image/asset1.png" alt="Asset one" className="h-12" />
           <span className="text-xl font-bold">
             <span className="text-[#009EE0]">Vì sức khỏe</span>{" "}
@@ -85,7 +90,12 @@ const AppHeader: React.FC = () => {
             onClick={() => handleNavigate("/vaccine-purchase")}
           >
             <FaShoppingCart className="text-[#102A83]" />
-            <span className="text-sm">Đặt mua vắc xin</span>
+            <span
+              className="text-sm"
+              onClick={() => navigate("/vaccine-types")}
+            >
+              Đặt mua vắc xin
+            </span>
           </button>
           <button
             className="flex items-center font-semibold space-x-2"
