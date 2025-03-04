@@ -28,8 +28,6 @@ const FormLogin = () => {
           notification.success({
             message: "Login Successful",
           });
-          // Điều hướng một lần duy nhất với replace: true
-          navigate("/", { replace: true });
         }
       }
     } catch (error: any) {

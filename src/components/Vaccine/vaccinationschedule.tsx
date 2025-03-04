@@ -1,4 +1,5 @@
 import React from "react";
+import MainLayout from "../Layout/MainLayout";
 
 const vaccineData = [
   {
@@ -58,102 +59,106 @@ const vaccineData = [
 
 const VaccinationSchedule: React.FC = () => {
   return (
-    <div className="p-4 max-w-6xl mx-auto mb-10">
-      <h2 className="text-xl font-bold text-center bg-gray-200 p-2 rounded-t-lg">
-        LỊCH TIÊM CHỦNG CHO TRẺ
-      </h2>
-      <div className="overflow-x-auto bg-white border border-gray-300">
-        <table className="w-full table-auto">
-          <thead>
-            <tr className="bg-blue-900 text-white">
-              <th className="border px-4 py-2 no-ellipsis" rowSpan={2}>
-                Tuổi / Vaccine
-              </th>
-              <th className="border px-4 py-2 " colSpan={9}>
-                Tháng
-              </th>
-              <th className="border px-4 py-2 no-ellipsis" colSpan={6}>
-                Tuổi
-              </th>
-            </tr>
-            <tr className="bg-blue-900 text-white">
-              {[
-                "Sơ sinh",
-                "2",
-                "3",
-                "4",
-                "5",
-                "6",
-                "7",
-                "8",
-                "9",
-                "10-11",
-                "12",
-                "2",
-                "3-4",
-                "5-6",
-                "7-8",
-              ].map((month) => (
-                <th key={month} className="border px-2 py-1">
-                  {month}
+    <MainLayout>
+      <div className="p-4 max-w-6xl mx-auto mb-10">
+        <h2 className="text-xl font-bold text-center bg-gray-200 p-2 rounded-t-lg">
+          LỊCH TIÊM CHỦNG CHO TRẺ
+        </h2>
+        <div className="overflow-x-auto bg-white border border-gray-300">
+          <table className="w-full table-auto">
+            <thead>
+              <tr className="bg-blue-900 text-white">
+                <th className="border px-4 py-2 no-ellipsis" rowSpan={2}>
+                  Tuổi / Vaccine
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {vaccineData.map((row, index) => (
-              <tr key={index} className="odd:bg-gray-100">
-                <td className="border px-4 py-2 font-medium">{row.vaccine}</td>
-                {row.vaccine === "Cúm" ? (
-                  <>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center" colSpan={12}>
-                      {row.schedule[4]}
-                    </td>
-                  </>
-                ) : row.vaccine === "Tiêu chảy do Rota Virus" ? (
-                  <>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center" colSpan={4}>
-                      {row.schedule[1]}
-                    </td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                  </>
-                ) : row.vaccine === "Bại liệt" ? (
-                  <>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center"></td>
-                    <td className="border px-2 py-1 text-center" colSpan={12}>
-                      {row.schedule[4]}
-                    </td>
-                  </>
-                ) : (
-                  row.schedule.map((cell, i) => (
-                    <td key={i} className="border px-2 py-1 text-center">
-                      {cell}
-                    </td>
-                  ))
-                )}
+                <th className="border px-4 py-2 " colSpan={9}>
+                  Tháng
+                </th>
+                <th className="border px-4 py-2 no-ellipsis" colSpan={6}>
+                  Tuổi
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+              <tr className="bg-blue-900 text-white">
+                {[
+                  "Sơ sinh",
+                  "2",
+                  "3",
+                  "4",
+                  "5",
+                  "6",
+                  "7",
+                  "8",
+                  "9",
+                  "10-11",
+                  "12",
+                  "2",
+                  "3-4",
+                  "5-6",
+                  "7-8",
+                ].map((month) => (
+                  <th key={month} className="border px-2 py-1">
+                    {month}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {vaccineData.map((row, index) => (
+                <tr key={index} className="odd:bg-gray-100">
+                  <td className="border px-4 py-2 font-medium">
+                    {row.vaccine}
+                  </td>
+                  {row.vaccine === "Cúm" ? (
+                    <>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center" colSpan={12}>
+                        {row.schedule[4]}
+                      </td>
+                    </>
+                  ) : row.vaccine === "Tiêu chảy do Rota Virus" ? (
+                    <>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center" colSpan={4}>
+                        {row.schedule[1]}
+                      </td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                    </>
+                  ) : row.vaccine === "Bại liệt" ? (
+                    <>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center"></td>
+                      <td className="border px-2 py-1 text-center" colSpan={12}>
+                        {row.schedule[4]}
+                      </td>
+                    </>
+                  ) : (
+                    row.schedule.map((cell, i) => (
+                      <td key={i} className="border px-2 py-1 text-center">
+                        {cell}
+                      </td>
+                    ))
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

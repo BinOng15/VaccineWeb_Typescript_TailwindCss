@@ -11,26 +11,44 @@ const AdminPage = React.lazy(() => import("../pages/Admin/AdminPage"));
 const UserManagement = React.lazy(
   () => import("../pages/Admin/UserManagement")
 );
-const VaccineManagement = React.lazy(
-  () => import("../pages/Admin/VaccineManagement")
-);
-const DiseaseManagement = React.lazy(
-  () => import("../pages/Admin/DiseaseManagement")
-);
+
 //-------------------------------------------------Staff------------------------------------------------
 const DashboardStaff = React.lazy(
   () => import("../pages/Staff/DashboardStaff")
+);
+const VaccineManagement = React.lazy(
+  () => import("../pages/Staff/Vaccine/VaccineManagement")
+);
+const DiseaseManagement = React.lazy(
+  () => import("../pages/Staff/Disease/DiseaseManagement")
 );
 //-------------------------------------------------Doctor-----------------------------------------------
 const DashboardDoctor = React.lazy(
   () => import("../pages/Doctor/DashboardDoctor")
 );
 //-------------------------------------------------Cútomer----------------------------------------------
-
+const VaccineRegistationPage = React.lazy(
+  () => import("../pages/Customer/VaccineRegistationPage")
+);
 //-------------------------------------------------Public-----------------------------------------------
 const Homepage = React.lazy(() => import("../pages/Customer/Homepage"));
 const LoginPage = React.lazy(() => import("../pages/LoginPage"));
 const RegisterPage = React.lazy(() => import("../pages/RegisterPage"));
+const VaccineTypesPage = React.lazy(
+  () => import("../pages/Customer/VaccineTypesPage")
+);
+const VaccinePackagePage = React.lazy(
+  () => import("../pages/Customer/VaccinePackagePage")
+);
+const VaccinationSchedule = React.lazy(
+  () => import("../components/Vaccine/vaccinationschedule")
+);
+const VaccinePrice = React.lazy(
+  () => import("../components/Vaccine/VaccinePrice")
+);
+const Introductionpage = React.lazy(
+  () => import("../pages/Customer/Introductionpage")
+);
 
 interface ProtectedRouteProps {
   element: JSX.Element;
@@ -71,6 +89,15 @@ const AppRouter = () => {
             <Route path="/" element={<Homepage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/vaccine-types" element={<VaccineTypesPage />} />
+            <Route path="/vaccine-package" element={<VaccinePackagePage />} />
+            <Route
+              path="/vaccination-schedule"
+              element={<VaccinationSchedule />}
+            />
+            <Route path="/vaccine-price" element={<VaccinePrice />} />
+            <Route path="/Introduction" element={<Introductionpage />} />
+
             {/*----------------------------ADMIN---------------------------------*/}
             <Route
               path="/admin/dashboard"
@@ -99,30 +126,31 @@ const AppRouter = () => {
                 />
               }
             />
-            <Route
-              path="/admin/manage-vaccine"
-              element={
-                <ProtectedRouter
-                  element={<VaccineManagement />}
-                  allowedRoles={["Admin"]}
-                />
-              }
-            />
-            <Route
-              path="/admin/manage-disease"
-              element={
-                <ProtectedRouter
-                  element={<DiseaseManagement />}
-                  allowedRoles={["Admin"]}
-                />
-              }
-            />
+
             {/*----------------------------STAFF---------------------------------*/}
             <Route
               path="/staff/dashboard"
               element={
                 <ProtectedRouter
                   element={<DashboardStaff />}
+                  allowedRoles={["Staff"]}
+                />
+              }
+            />
+            <Route
+              path="/staff/manage-vaccine"
+              element={
+                <ProtectedRouter
+                  element={<VaccineManagement />}
+                  allowedRoles={["Staff"]}
+                />
+              }
+            />
+            <Route
+              path="/staff/manage-disease"
+              element={
+                <ProtectedRouter
+                  element={<DiseaseManagement />}
                   allowedRoles={["Staff"]}
                 />
               }
@@ -138,6 +166,15 @@ const AppRouter = () => {
               }
             />
             {/*----------------------------CUSTOMER------------------------------*/}
+            <Route
+              path="/vaccine-registration"
+              element={
+                <ProtectedRouter
+                  element={<VaccineRegistationPage />}
+                  allowedRoles={["Customer"]}
+                />
+              }
+            />
           </Routes>
         </Suspense>
       </AuthProvider>

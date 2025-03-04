@@ -2,8 +2,11 @@ import React from "react";
 import { Menu } from "antd";
 import {
   SettingOutlined,
-  ShoppingCartOutlined,
   DollarOutlined,
+  ExperimentOutlined,
+  GoldOutlined,
+  ExceptionOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -12,18 +15,32 @@ const StaffSidebar: React.FC = () => {
   const location = useLocation();
 
   const menuItems = [
-    { key: "/staff/dashboard", icon: <SettingOutlined />, label: "Dashboard" },
+    { key: "/staff/dashboard", icon: <SettingOutlined />, label: "Bảng chính" },
     {
-      key: "/staff/manager-order",
-      icon: <ShoppingCartOutlined />,
-      label: "Order",
+      key: "/staff/manage-vaccine",
+      icon: <ExperimentOutlined />,
+      label: "Vắc xin lẻ",
+    },
+    {
+      key: "/staff//manage-vaccine-package",
+      icon: <GoldOutlined />,
+      label: "Gói vắc xin",
+    },
+    {
+      key: "/staff/manage-vaccination-registration",
+      icon: <ExceptionOutlined />,
+      label: "Đăng ký tiêm",
+    },
+    {
+      key: "/staff/manage-disease",
+      icon: <AppstoreOutlined />,
+      label: "Các loại bệnh",
     },
     {
       key: "/staff/manager-payment",
       icon: <DollarOutlined />,
-      label: "Payment",
+      label: "Thanh toán",
     },
-    { key: "/user/setting", icon: <SettingOutlined />, label: "Setting" },
   ];
 
   return (

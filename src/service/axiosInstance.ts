@@ -9,7 +9,6 @@ export const axiosInstance = axios.create({
   baseURL: APILink,
   headers: {
     "content-type": "application/json",
-    "Accept-Charset": "utf-8",
   },
   timeout: 300000,
   timeoutErrorMessage: `Connection is timeout exceeded`,
@@ -33,6 +32,12 @@ const processQueue = (error: any, token: string | null = null) => {
     }
   });
   failedQueue = [];
+};
+
+export const logout = (navigate: (path: string) => void) => {
+  sessionStorage.removeItem("accessToken");
+  sessionStorage.removeItem("user");
+  navigate(ROUTER_URL.SIGN_IN); // Điều hướng đến /login mà không reload
 };
 
 axiosInstance.interceptors.request.use(

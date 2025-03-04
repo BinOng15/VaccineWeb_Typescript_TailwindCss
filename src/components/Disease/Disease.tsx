@@ -350,13 +350,15 @@ const DiseaseManagePage: React.FC = () => {
             </p>
             <p>
               <strong>Ngày tạo:</strong>{" "}
-              {moment(selectedDisease.createdDate).format("DD-MM-YYYY") ||
-                "N/A"}
+              {moment(selectedDisease.createdDate).format(
+                "HH:mm - DD/MM/YYYY"
+              ) || "N/A"}
             </p>
             <p>
               <strong>Ngày sửa đổi:</strong>{" "}
-              {moment(selectedDisease.modifiedDate).format("DD-MM-YYYY") ||
-                "N/A"}
+              {moment(selectedDisease.modifiedDate).format(
+                "HH:mm - DD/MM/YYYY"
+              ) || "N/A"}
             </p>
           </div>
         )}

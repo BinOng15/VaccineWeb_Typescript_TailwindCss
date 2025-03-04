@@ -399,12 +399,25 @@ const VaccineManagePage: React.FC = () => {
             )}
             <p>
               <strong>Ngày sản xuất:</strong>{" "}
-              {moment(selectedVaccine.dateOfManufacture).format("DD-MM-YYYY") ||
+              {moment(selectedVaccine.dateOfManufacture).format("DD/MM/YYYY") ||
                 "N/A"}
             </p>
             <p>
               <strong>Ngày hết hạn:</strong>{" "}
-              {moment(selectedVaccine.expiryDate).format("DD-MM-YYYY") || "N/A"}
+              {moment(selectedVaccine.expiryDate).format("DD/MM/YYYY ") ||
+                "N/A"}
+            </p>
+            <p>
+              <strong>Ngày tạo:</strong>{" "}
+              {moment(selectedVaccine.createdDate).format(
+                "HH:mm - DD/MM/YYYY"
+              ) || "N/A"}
+            </p>
+            <p>
+              <strong>Ngày sửa đổi:</strong>{" "}
+              {moment(selectedVaccine.modifiedDate).format(
+                "HH:mm - DD/MM/YYYY"
+              ) || "N/A"}
             </p>
           </div>
         )}

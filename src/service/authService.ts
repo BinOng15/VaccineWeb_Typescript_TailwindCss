@@ -1,6 +1,7 @@
 import { APILink } from "../components/Const/ApiLink";
 import { User } from "../models/User";
 import { axiosInstance } from "./axiosInstance";
+import { ROUTER_URL } from "../components/Const/Router.Const";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const handleAuthError = (error: any) => {
@@ -55,6 +56,12 @@ const handleAuthError = (error: any) => {
       console.error("Error in getCurrentLogin:", error);
       return null;
     }
+  };
+
+  export const logout = (navigate: (path: string, options?: { replace?: boolean }) => void) => {
+    sessionStorage.removeItem("accessToken");
+    sessionStorage.removeItem("user");
+    navigate(ROUTER_URL.SIGN_IN, { replace: true }); // Sử dụng replace để không lưu lịch sử
   };
 
   // export const authServiceLogout = async (): Promise<void> => {

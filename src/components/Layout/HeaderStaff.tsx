@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Layout, Avatar, Dropdown } from "antd";
 import {
   UserOutlined,
@@ -6,7 +6,7 @@ import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
 } from "@ant-design/icons";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const { Header } = Layout;
 
@@ -29,14 +29,11 @@ const HeaderStaff: React.FC<AppHeaderProps> = ({ collapsed, setCollapsed }) => {
     checkLoginStatus();
   }, []); // Chỉ chạy một lần khi component mount
 
-  const handleLogout = useCallback(() => {
-    // Xóa token từ cả localStorage và sessionStorage
-    localStorage.removeItem("token");
+  const handleLogout = () => {
     sessionStorage.removeItem("accessToken");
     sessionStorage.removeItem("user");
-    setIsLoggedIn(false);
-    navigate("/login", { replace: true }); // Sử dụng replace để tránh thêm vào history
-  }, [navigate]); // Chỉ phụ thuộc vào navigate
+    navigate("/login");
+  };
 
   const avatarMenuItems = [
     {
@@ -74,9 +71,10 @@ const HeaderStaff: React.FC<AppHeaderProps> = ({ collapsed, setCollapsed }) => {
         </div>
 
         <div className="flex-1 flex justify-center">
-          <Link to="/">
+          {/* <Link to="/">
             <img src={""} alt="logo" className="h-20 w-auto" />
-          </Link>
+          </Link> */}
+          <div className="font-bold text-white">PEDIVAX</div>
         </div>
 
         <div className="flex-1 flex justify-end items-center">
@@ -96,7 +94,7 @@ const HeaderStaff: React.FC<AppHeaderProps> = ({ collapsed, setCollapsed }) => {
               >
                 <Avatar icon={<UserOutlined />} />
                 <span style={{ color: "white", marginLeft: "10px" }}>
-                  Welcome, Admin
+                  Xin chào, Staff
                 </span>
               </div>
             </Dropdown>

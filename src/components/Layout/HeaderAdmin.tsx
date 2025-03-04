@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Layout, Avatar, Dropdown } from "antd";
 import {
   UserOutlined,
@@ -29,14 +29,12 @@ const HeaderAdmin: React.FC<AppHeaderProps> = ({ collapsed, setCollapsed }) => {
     checkLoginStatus();
   }, []); // Chỉ chạy một lần khi component mount
 
-  const handleLogout = useCallback(() => {
-    // Xóa token từ cả localStorage và sessionStorage
+  const handleLogout = () => {
     localStorage.removeItem("token");
     sessionStorage.removeItem("accessToken");
     sessionStorage.removeItem("user");
-    setIsLoggedIn(false);
-    navigate("/login", { replace: true }); // Sử dụng replace để tránh thêm vào history
-  }, [navigate]); // Chỉ phụ thuộc vào navigate
+    navigate("/login");
+  };
 
   const avatarMenuItems = [
     {

@@ -1,11 +1,14 @@
 import React from "react";
 import VaccinePackage from "../../components/VaccinePackage/VaccinePackage";
+import MainLayout from "../../components/Layout/MainLayout";
 
 const VaccinePackagePage: React.FC = () => {
   return (
-    <div className="bg-white">
-      <VaccinePackage />
-    </div>
+    <MainLayout>
+      <div className="bg-white">
+        <VaccinePackage />
+      </div>
+    </MainLayout>
   );
 };
 

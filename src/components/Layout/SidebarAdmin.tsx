@@ -4,8 +4,8 @@ import {
   SettingOutlined,
   UserOutlined,
   AppstoreOutlined,
-  ExperimentOutlined,
-  GoldOutlined,
+  DollarOutlined,
+  MonitorOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -17,19 +17,19 @@ const AdminSidebar: React.FC = () => {
     { key: "/admin/dashboard", icon: <SettingOutlined />, label: "Bảng chính" },
     { key: "/admin/manage-user", icon: <UserOutlined />, label: "Tài khoản" },
     {
-      key: "/admin/manage-vaccine",
-      icon: <ExperimentOutlined />,
-      label: "Vắc xin lẻ",
+      key: "/admin/revenue",
+      icon: <DollarOutlined />,
+      label: "Doanh thu",
     },
     {
       key: "/admin-manager-package",
-      icon: <GoldOutlined />,
-      label: "Gói vắc xin",
+      icon: <MonitorOutlined />,
+      label: "Dữ liệu vắc xin",
     },
     {
       key: "/admin/manage-disease",
       icon: <AppstoreOutlined />,
-      label: "Các loại bệnh",
+      label: "Dữ liệu tiêm chủng",
     },
   ];
 

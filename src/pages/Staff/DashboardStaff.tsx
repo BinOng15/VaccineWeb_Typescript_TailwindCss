@@ -1,5 +1,11 @@
+import StaffDashboard from "../../components/Dashboard/StaffDashboard";
+
 const DashboardStaff = () => {
-  return <div>DashboardStaff</div>;
+  return (
+    <>
+      <StaffDashboard />
+    </>
+  );
 };
 
 export default DashboardStaff;

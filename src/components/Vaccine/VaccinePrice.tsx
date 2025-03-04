@@ -1,4 +1,5 @@
 import React from "react";
+import MainLayout from "../Layout/MainLayout";
 
 interface Vaccine {
   id: number;
@@ -193,39 +194,43 @@ const vaccines: Vaccine[] = [
 
 const VaccinePrice: React.FC = () => {
   return (
-    <div className="container mx-auto p-4">
-      <h2 className="text-xl font-bold text-center p-2 rounded-t-lg ">
-        Bảng Giá Vắc-Xin
-      </h2>
-      <div className="overflow-x-auto">
-        <table className="w-4/4 ml-10 mr-5 border bg-white border-gray-300">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="border px-4 py-2">STT</th>
-              <th className="border px-4 py-2">Tên Vắc-Xin</th>
-              <th className="border px-4 py-2">Phòng Bệnh</th>
-              <th className="border px-4 py-2">Phác Đồ</th>
-              <th className="border px-4 py-2">Đơn Giá (VNĐ)</th>
-              <th className="border px-4 py-2">Tình Trạng</th>
-            </tr>
-          </thead>
-          <tbody>
-            {vaccines.map((vaccine) => (
-              <tr key={vaccine.id} className="hover:bg-gray-100">
-                <td className="border px-4 py-2 text-center">{vaccine.id}</td>
-                <td className="border px-4 py-2">{vaccine.name}</td>
-                <td className="border px-4 py-2">{vaccine.disease}</td>
-                <td className="border px-4 py-2">{vaccine.schedule}</td>
-                <td className="border px-4 py-2 text-right">{vaccine.price}</td>
-                <td className="border px-4 py-2 text-center">
-                  {vaccine.availability}
-                </td>
+    <MainLayout>
+      <div className="container mx-auto p-4">
+        <h2 className="text-xl font-bold text-center p-2 rounded-t-lg ">
+          Bảng Giá Vắc-Xin
+        </h2>
+        <div className="overflow-x-auto">
+          <table className="w-4/4 ml-10 mr-5 border bg-white border-gray-300">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="border px-4 py-2">STT</th>
+                <th className="border px-4 py-2">Tên Vắc-Xin</th>
+                <th className="border px-4 py-2">Phòng Bệnh</th>
+                <th className="border px-4 py-2">Phác Đồ</th>
+                <th className="border px-4 py-2">Đơn Giá (VNĐ)</th>
+                <th className="border px-4 py-2">Tình Trạng</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {vaccines.map((vaccine) => (
+                <tr key={vaccine.id} className="hover:bg-gray-100">
+                  <td className="border px-4 py-2 text-center">{vaccine.id}</td>
+                  <td className="border px-4 py-2">{vaccine.name}</td>
+                  <td className="border px-4 py-2">{vaccine.disease}</td>
+                  <td className="border px-4 py-2">{vaccine.schedule}</td>
+                  <td className="border px-4 py-2 text-right">
+                    {vaccine.price}
+                  </td>
+                  <td className="border px-4 py-2 text-center">
+                    {vaccine.availability}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 
