@@ -3,6 +3,7 @@ import React, { Suspense, useContext } from "react";
 import { AuthContext1, AuthProvider } from "../context/AuthContext";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
+
 //-------------------------------------------------Admin------------------------------------------------
 const DashboardAdmin = React.lazy(
   () => import("../pages/Admin/DashboardAdmin")
@@ -19,12 +20,15 @@ const DashboardStaff = React.lazy(
 const DashboardDoctor = React.lazy(
   () => import("../pages/Doctor/DashboardDoctor")
 );
-//-------------------------------------------------Cútomer----------------------------------------------
+//-------VaccinationSchedule------------------------------------------Cútomer----------------------------------------------
 
 //-------------------------------------------------Public-----------------------------------------------
 const Homepage = React.lazy(() => import("../pages/Customer/Homepage"));
 const LoginPage = React.lazy(() => import("../pages/LoginPage"));
 const RegisterPage = React.lazy(() => import("../pages/RegisterPage"));
+const VaccinationSchedule = React.lazy(() => import("../components/Vaccine/vaccinationschedule"));
+const MyProfilePage = React.lazy(() => import("../pages/Customer/MyProfilePage"));
+const VaccineProfilePage = React.lazy(() => import("../pages/Customer/VaccineProfilePage"));
 
 interface ProtectedRouteProps {
   element: JSX.Element;
@@ -65,6 +69,9 @@ const AppRouter = () => {
             <Route path="/" element={<Homepage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+             <Route path="/vaccination-schedule" element={<VaccinationSchedule />} />
+              <Route path="/my-profile" element={<MyProfilePage />} />
+              <Route path="/child-profile" element={<VaccineProfilePage />} />
             {/*----------------------------ADMIN---------------------------------*/}
             <Route
               path="/admin/dashboard"

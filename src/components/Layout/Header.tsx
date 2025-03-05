@@ -1,12 +1,14 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { FaShoppingCart, FaCalendarAlt, FaComments } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 const AppHeader: React.FC = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [avatarMenuOpen, setAvatarMenuOpen] = useState<boolean>(false);
-  const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
+  const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = useState<boolean>(false); // Đổi tên để rõ ràng
+  const [openMenuDropdown, setOpenMenuDropdown] = useState<number | null>(null); // Đổi tên để rõ ràng
+  const avatarDropdownRef = useRef<HTMLDivElement>(null); // Ref riêng cho avatar dropdown
+  const menuDropdownRef = useRef<HTMLDivElement>(null);  // Ref riêng cho menu dropdown
 
   const menuItems = [
     { name: "Trang chủ", path: "/" },
@@ -17,10 +19,7 @@ const AppHeader: React.FC = () => {
       name: "Cẩm nang",
       subMenu: [
         { name: "Lịch tiêm chủng cho trẻ em", path: "/vaccination-schedule" },
-        {
-          name: "Quá trình tiêm chủng cho trẻ em",
-          path: "/cam-nang/huong-dan",
-        },
+        { name: "Quá trình tiêm chủng cho trẻ em", path: "/cam-nang/huong-dan" },
         { name: "Các loại vắc xin cho trẻ em", path: "/vaccine-types" },
         { name: "Các gói vắc xin cho trẻ em", path: "/vaccine-package" },
       ],
@@ -29,35 +28,47 @@ const AppHeader: React.FC = () => {
     { name: "Liên hệ", path: "/lien-he" },
   ];
 
-  // Hàm kiểm tra trạng thái đăng nhập, sử dụng useCallback để tránh re-render không cần thiết
   const checkLoginStatus = useCallback(() => {
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("accessToken");
-    setIsLoggedIn(!!token); // Nếu có token thì isLoggedIn = true
-  }, []); // Không cần dependency vì chỉ cần chạy một lần
+    const token = localStorage.getItem("token") || sessionStorage.getItem("accessToken");
+    setIsLoggedIn(!!token);
+  }, []);
 
-  // Kiểm tra trạng thái đăng nhập khi component mount, tránh re-render liên tục
   useEffect(() => {
     checkLoginStatus();
-    // Không cần theo dõi thay đổi token trong dependency array để tránh re-render không cần thiết
   }, [checkLoginStatus]);
 
-  // Hàm logout được tối ưu để chỉ navigation một lần
   const handleLogout = useCallback(() => {
     localStorage.removeItem("token");
     sessionStorage.removeItem("accessToken");
     sessionStorage.removeItem("user");
     setIsLoggedIn(false);
-    setAvatarMenuOpen(false);
     navigate("/login", { replace: true });
   }, [navigate]);
 
   const handleNavigate = useCallback(
     (path: string) => {
       navigate(path, { replace: true });
+      setOpenMenuDropdown(null); // Đóng menu dropdown khi điều hướng
+      setIsAvatarDropdownOpen(false); // Đóng avatar dropdown khi điều hướng
     },
     [navigate]
   );
+
+  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Kiểm tra avatar dropdown
+      if (avatarDropdownRef.current && !avatarDropdownRef.current.contains(event.target as Node)) {
+        setIsAvatarDropdownOpen(false);
+      }
+      // Kiểm tra menu dropdown
+      if (menuDropdownRef.current && !menuDropdownRef.current.contains(event.target as Node)) {
+        setOpenMenuDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className="w-full mb-0 relative z-50">
@@ -66,10 +77,9 @@ const AppHeader: React.FC = () => {
           <img
             src="logo/vaccine.png"
             alt="Vaccine Logo"
-            className="h-12"
-            onClick={() => navigate("")}
+            className="h-12 cursor-pointer"
+            onClick={() => navigate("/")}
           />
-          <img src="image/asset1.png" alt="Asset one" className="h-12" />
           <span className="text-xl font-bold">
             <span className="text-[#009EE0]">Vì sức khỏe</span>{" "}
             <span className="text-[#102A83]">Cộng đồng</span>
@@ -85,75 +95,44 @@ const AppHeader: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-6 text-[#102A83]">
-          <button
-            className="flex items-center font-semibold space-x-2"
-            onClick={() => handleNavigate("/vaccine-purchase")}
-          >
+          <button className="flex items-center font-semibold space-x-2" onClick={() => handleNavigate("/vaccine-purchase")}>
             <FaShoppingCart className="text-[#102A83]" />
-            <span
-              className="text-sm"
-              onClick={() => navigate("/vaccine-types")}
-            >
-              Đặt mua vắc xin
-            </span>
+            <span>Đặt mua vắc xin</span>
           </button>
-          <button
-            className="flex items-center font-semibold space-x-2"
-            onClick={() => handleNavigate("/vaccine-registration")}
-          >
+          <button className="flex items-center font-semibold space-x-2" onClick={() => handleNavigate("/vaccine-registration")}>
             <FaCalendarAlt className="text-[#102A83]" />
             <span>Đăng ký tiêm</span>
           </button>
-          <button
-            className="flex items-center font-semibold space-x-2"
-            onClick={() => handleNavigate("/consultation")}
-          >
+          <button className="flex items-center font-semibold space-x-2" onClick={() => handleNavigate("/consultation")}>
             <FaComments className="text-[#102A83]" />
             <span>Tư vấn</span>
           </button>
 
           {isLoggedIn ? (
-            <div className="relative">
+            <div className="relative" ref={avatarDropdownRef}>
               <img
                 src="https://e7.pngegg.com/pngimages/799/987/png-clipart-computer-icons-avatar-icon-design-avatar-heroes-computer-wallpaper-thumbnail.png"
                 alt="Avatar"
                 className="w-10 h-10 rounded-full cursor-pointer"
-                onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
+                onClick={() => setIsAvatarDropdownOpen(!isAvatarDropdownOpen)}
               />
-              {avatarMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg z-60">
-                  <ul>
-                    <li
-                      className="px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-100"
-                      onClick={() => {
-                        handleNavigate("/user/dashboard");
-                        setAvatarMenuOpen(false);
-                      }}
-                    >
-                      My Dashboard
-                    </li>
-                    <li
-                      className="px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-100"
-                      onClick={handleLogout}
-                    >
-                      Logout
-                    </li>
-                  </ul>
+              {isAvatarDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg border border-gray-200 py-2">
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100" onClick={() => handleNavigate("/my-profile")}>
+                    My Profile
+                  </button>
+                  <button className="w-full text-left px-4 py-2 hover:bg-gray-100" onClick={handleLogout}>
+                    Logout
+                  </button>
                 </div>
               )}
             </div>
           ) : (
             <>
-              <button
-                className="px-5 py-2 border border-[#102A83] text-[#102A83] rounded-full"
-                onClick={() => handleNavigate("/login")}
-              >
+              <button className="px-5 py-2 border border-[#102A83] text-[#102A83] rounded-full" onClick={() => handleNavigate("/login")}>
                 Đăng nhập
               </button>
-              <button
-                className="px-5 py-2 bg-[#102A83] text-white rounded-full"
-                onClick={() => handleNavigate("/register")}
-              >
+              <button className="px-5 py-2 bg-[#102A83] text-white rounded-full" onClick={() => handleNavigate("/register")}>
                 Đăng ký
               </button>
             </>
@@ -161,48 +140,36 @@ const AppHeader: React.FC = () => {
         </div>
       </div>
 
-      <nav className="bg-[#102A83] text-white flex justify-center space-x-20 py-3 font-medium relative z-50">
-        {menuItems.map((item, index) => (
-          <div key={index} className="relative">
-            {item.subMenu ? (
-              <div
-                className="relative group"
-                onMouseEnter={() => setOpenMenuIndex(index)}
-              >
-                <button className="hover:underline">{item.name}</button>
-                {openMenuIndex === index && (
-                  <div
-                    className="absolute left-0 mt-2 w-52 bg-white text-black shadow-lg z-60 rounded-lg"
-                    onMouseEnter={() => setOpenMenuIndex(index)}
-                    onMouseLeave={() => setOpenMenuIndex(null)}
-                  >
-                    <ul>
-                      {item.subMenu.map((subItem, subIndex) => (
-                        <li
-                          key={subIndex}
-                          className="px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded-lg"
-                          onClick={() => {
-                            handleNavigate(subItem.path);
-                            setOpenMenuIndex(null);
-                          }}
-                        >
-                          {subItem.name}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ) : (
+      <nav className="bg-[#102A83] text-white flex justify-center space-x-20 py-3 font-medium">
+        {menuItems.map((item, index) =>
+          item.subMenu ? (
+            <div key={index} className="relative" ref={menuDropdownRef}>
               <button
                 className="hover:underline"
-                onClick={() => handleNavigate(item.path)}
+                onClick={() => setOpenMenuDropdown(openMenuDropdown === index ? null : index)}
               >
                 {item.name}
               </button>
-            )}
-          </div>
-        ))}
+              {openMenuDropdown === index && (
+                <div className="absolute bg-white text-black shadow-lg rounded-md mt-2 w-64">
+                  {item.subMenu.map((sub, subIndex) => (
+                    <button
+                      key={subIndex}
+                      className="block px-4 py-2 w-full text-left hover:bg-gray-100"
+                      onClick={() => handleNavigate(sub.path)}
+                    >
+                      {sub.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <button key={index} className="hover:underline" onClick={() => handleNavigate(item.path)}>
+              {item.name}
+            </button>
+          )
+        )}
       </nav>
     </header>
   );
