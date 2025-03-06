@@ -26,10 +26,11 @@ const DiseaseManagement = React.lazy(
 const DashboardDoctor = React.lazy(
   () => import("../pages/Doctor/DashboardDoctor")
 );
-//-------------------------------------------------Cútomer----------------------------------------------
+//-------------------------------------------------Customer----------------------------------------------
 const VaccineRegistationPage = React.lazy(
   () => import("../pages/Customer/VaccineRegistationPage")
 );
+
 //-------------------------------------------------Public-----------------------------------------------
 const Homepage = React.lazy(() => import("../pages/Customer/Homepage"));
 const LoginPage = React.lazy(() => import("../pages/LoginPage"));
@@ -48,6 +49,12 @@ const VaccinePrice = React.lazy(
 );
 const Introductionpage = React.lazy(
   () => import("../pages/Customer/Introductionpage")
+);
+const MyProfilePage = React.lazy(
+  () => import("../pages/Customer/MyProfilePage")
+);
+const VaccineProfilePage = React.lazy(
+  () => import("../pages/Customer/VaccineProfilePage")
 );
 
 interface ProtectedRouteProps {
@@ -98,6 +105,8 @@ const AppRouter = () => {
             <Route path="/vaccine-price" element={<VaccinePrice />} />
             <Route path="/Introduction" element={<Introductionpage />} />
 
+            <Route path="/my-profile" element={<MyProfilePage />} />
+            <Route path="/child-profile" element={<VaccineProfilePage />} />
             {/*----------------------------ADMIN---------------------------------*/}
             <Route
               path="/admin/dashboard"
