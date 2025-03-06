@@ -19,6 +19,7 @@ export type User = {
   createdBy: string;
   modifiedDate: string;
   modifiedBy: string;
+  image: string;
 };
 
 // Interface cho DTO tạo người dùng thông thường (Customer)

@@ -1,11 +1,9 @@
 import { Layout } from "antd";
 import React, { useState } from "react";
-import CustomFooter from "./Footer";
 import { Content } from "antd/es/layout/layout";
 import Sider from "antd/es/layout/Sider";
 import AppHeader from "./Header";
 import CustomerSidebar from "./SiderbarCustomer";
-
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -24,7 +22,12 @@ const CustomerLayout: React.FC<MainLayoutProps> = ({ children }) => {
           onCollapse={(collapsed) => setCollapsed(collapsed)}
           width={200}
           className="site-layout-background"
-          style={{ height: "100vh", zIndex: 1000 }}
+          style={{
+            height: "100vh",
+            zIndex: 1000,
+            backgroundColor: "#0000", // Thay đổi màu nền sidebar (ví dụ: màu xám đậm)
+          }}
+          theme="light" // Đặt theme để tránh xung đột màu
         >
           <CustomerSidebar />
         </Sider>
@@ -40,7 +43,6 @@ const CustomerLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </Content>
         </Layout>
       </Layout>
-      <CustomFooter />
     </Layout>
   );
 };

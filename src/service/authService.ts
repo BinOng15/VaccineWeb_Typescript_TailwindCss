@@ -46,18 +46,19 @@ export const getCurrentUser = async (token: string): Promise<User | null> => {
     }
     const data = await response.json();
     const user: User = {
-      userId: data.userId,
-      email: data.email,
-      fullName: data.fullName,
-      phoneNumber: "", // Giá trị mặc định
-      address: "", // Giá trị mặc định
-      role: data.role, // Giá trị mặc định nếu data.role không tồn tại
-      dateOfBirth: "", // Giá trị mặc định
-      isActive: "Active", // Giá trị mặc định
-      createdDate: "", // Giá trị mặc định
-      createdBy: "system", // Giá trị mặc định
-      modifiedDate: "", // Giá trị mặc định
-      modifiedBy: "system", // Giá trị mặc định
+      userId: data.userId || "", // Đảm bảo ánh xạ đúng từ API
+      email: data.email || "",
+      fullName: data.fullName || "",
+      phoneNumber: data.phoneNumber || "", // API có thể không trả về, dùng giá trị mặc định
+      address: data.address || "",
+      role: data.role || "",
+      dateOfBirth: data.dateOfBirth || "",
+      isActive: data.isActive || "Active", // API có thể trả về "Active"/"Inactive"
+      createdDate: data.createdDate || "",
+      createdBy: data.createdBy || "system",
+      modifiedDate: data.modifiedDate || "",
+      modifiedBy: data.modifiedBy || "system",
+      image: data.image || "", // Thêm trường avatar nếu API trả về
     };
     return user;
   } catch (error) {
@@ -71,6 +72,7 @@ export const userLogout = async (): Promise<void> => {
     const response = await axiosInstance.post("api/auth/logout");
     if (response.status === 200) {
       sessionStorage.removeItem("accessToken");
+      localStorage.removeItem("token");
       sessionStorage.removeItem("user");
     } else {
       throw new Error("Logout failed !");

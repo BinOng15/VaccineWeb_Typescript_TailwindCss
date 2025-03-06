@@ -12,25 +12,25 @@ const CustomerSidebar: React.FC = () => {
   const location = useLocation();
 
   const menuItems = [
-    { key: "/user/dashboard", icon: <SettingOutlined />, label: "Dashboard" },
+    { key: "/my-profile", icon: <SettingOutlined />, label: "Hồ sơ cá nhân" },
     {
-      key: "/user/order-history",
+      key: "/child-profile-page",
       icon: <FileTextOutlined />,
-      label: "History Order",
+      label: "Hồ sơ của trẻ",
     },
     {
       key: "/user/payment-history",
       icon: <DollarOutlined />,
-      label: "History Payment",
+      label: "Lịch tiêm của trẻ",
     },
-    { key: "/user/setting", icon: <SettingOutlined />, label: "Setting" },
+    { key: "/user/setting", icon: <SettingOutlined />, label: "Cài đặt" },
   ];
 
   return (
     <Menu
       mode="inline"
       selectedKeys={[location.pathname]}
-      style={{ height: "100%", borderRight: 0, marginTop: "64px" }}
+      style={{ height: "100%", borderRight: 0 }}
       items={menuItems.map((item) => ({
         ...item,
         onClick: () => navigate(item.key),

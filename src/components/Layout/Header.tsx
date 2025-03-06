@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { FaShoppingCart, FaCalendarAlt, FaComments } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { userLogout } from "../../service/authService";
@@ -9,6 +9,8 @@ const AppHeader: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState<boolean>(false);
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
+  const avatarDropdownRef = useRef<HTMLDivElement>(null); // Ref riêng cho avatar dropdown
+  const menuDropdownRef = useRef<HTMLDivElement>(null); // Ref riêng cho menu dropdown
 
   const menuItems = [
     { name: "Trang chủ", path: "/" },
@@ -125,7 +127,7 @@ const AppHeader: React.FC = () => {
           </button>
 
           {isLoggedIn ? (
-            <div className="relative">
+            <div className="relative" ref={avatarDropdownRef}>
               <img
                 src="https://e7.pngegg.com/pngimages/799/987/png-clipart-computer-icons-avatar-icon-design-avatar-heroes-computer-wallpaper-thumbnail.png"
                 alt="Avatar"
@@ -133,24 +135,19 @@ const AppHeader: React.FC = () => {
                 onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
               />
               {avatarMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg z-60">
-                  <ul>
-                    <li
-                      className="px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-100"
-                      onClick={() => {
-                        handleNavigate("/user/dashboard");
-                        setAvatarMenuOpen(false);
-                      }}
-                    >
-                      My Dashboard
-                    </li>
-                    <li
-                      className="px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-100"
-                      onClick={handleLogout}
-                    >
-                      Logout
-                    </li>
-                  </ul>
+                <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg border border-gray-200 py-2">
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    onClick={() => handleNavigate("/my-profile")}
+                  >
+                    My Profile
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </button>
                 </div>
               )}
             </div>
@@ -173,48 +170,42 @@ const AppHeader: React.FC = () => {
         </div>
       </div>
 
-      <nav className="bg-[#102A83] text-white flex justify-center space-x-20 py-3 font-medium relative z-50">
-        {menuItems.map((item, index) => (
-          <div key={index} className="relative">
-            {item.subMenu ? (
-              <div
-                className="relative group"
-                onMouseEnter={() => setOpenMenuIndex(index)}
-              >
-                <button className="hover:underline">{item.name}</button>
-                {openMenuIndex === index && (
-                  <div
-                    className="absolute left-0 mt-2 w-52 bg-white text-black shadow-lg z-60 rounded-lg"
-                    onMouseEnter={() => setOpenMenuIndex(index)}
-                    onMouseLeave={() => setOpenMenuIndex(null)}
-                  >
-                    <ul>
-                      {item.subMenu.map((subItem, subIndex) => (
-                        <li
-                          key={subIndex}
-                          className="px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded-lg"
-                          onClick={() => {
-                            handleNavigate(subItem.path);
-                            setOpenMenuIndex(null);
-                          }}
-                        >
-                          {subItem.name}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ) : (
+      <nav className="bg-[#102A83] text-white flex justify-center space-x-20 py-3 font-medium">
+        {menuItems.map((item, index) =>
+          item.subMenu ? (
+            <div key={index} className="relative" ref={menuDropdownRef}>
               <button
                 className="hover:underline"
-                onClick={() => handleNavigate(item.path)}
+                onClick={() =>
+                  setOpenMenuIndex(openMenuIndex === index ? null : index)
+                }
               >
                 {item.name}
               </button>
-            )}
-          </div>
-        ))}
+              {openMenuIndex === index && (
+                <div className="absolute bg-white text-black shadow-lg rounded-md mt-2 w-64">
+                  {item.subMenu.map((sub, subIndex) => (
+                    <button
+                      key={subIndex}
+                      className="block px-4 py-2 w-full text-left hover:bg-gray-100"
+                      onClick={() => handleNavigate(sub.path)}
+                    >
+                      {sub.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              key={index}
+              className="hover:underline"
+              onClick={() => handleNavigate(item.path)}
+            >
+              {item.name}
+            </button>
+          )
+        )}
       </nav>
     </header>
   );

@@ -1,29 +1,6 @@
 import { useEffect, useState } from "react";
-import { AxiosResponse } from "axios";
-import { axiosInstance } from "../../service/axiosInstance";
-// Thay bằng đường dẫn thực tế tới axiosInstance
-
-// Định nghĩa kiểu User dựa trên API response
-interface User {
-  userId: string;
-  email: string;
-  role: string;
-  fullName?: string; // Optional vì API không trả về mặc định
-  phoneNumber?: string;
-  address?: string;
-  dateOfBirth?: string;
-}
-
-// API function để lấy thông tin người dùng hiện tại
-const getCurrentUser = async (): Promise<{ userId: string; email: string; role: string }> => {
-  try {
-    const response: AxiosResponse = await axiosInstance.get("api/User/current-user");
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching current user:", error);
-    throw error;
-  }
-};
+import { User } from "../../models/User";
+import { getCurrentUser } from "../../service/authService";
 
 function MyProfile() {
   const [user, setUser] = useState<User | null>(null);
@@ -31,7 +8,9 @@ function MyProfile() {
 
   // Lấy token từ localStorage hoặc sessionStorage
   const getToken = () => {
-    return localStorage.getItem("token") || sessionStorage.getItem("accessToken");
+    return (
+      localStorage.getItem("token") || sessionStorage.getItem("accessToken")
+    );
   };
 
   // Fetch dữ liệu người dùng khi component mount
@@ -44,19 +23,9 @@ function MyProfile() {
         return;
       }
 
-      // Đặt token vào axiosInstance nếu cần
-      axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
       try {
-        const userData = await getCurrentUser();
-        // Bổ sung các field mặc định nếu API không trả về đầy đủ
-        const enrichedUser: User = {
-          userId: userData.userId,
-          email: userData.email,
-          role: userData.role,
-         
-        };
-        setUser(enrichedUser);
+        const userData = await getCurrentUser(token); // Truyền token vào getCurrentUser
+        setUser(userData);
       } catch (error) {
         console.error("Failed to fetch user data:", error);
       } finally {
@@ -76,7 +45,7 @@ function MyProfile() {
     phoneNumber: "Chưa có dữ liệu",
     dateOfBirth: "Chưa có dữ liệu",
     address: "Chưa có dữ liệu",
-    avatar:
+    image:
       "https://e7.pngegg.com/pngimages/799/987/png-clipart-computer-icons-avatar-icon-design-avatar-heroes-computer-wallpaper-thumbnail.png",
   };
 
@@ -102,7 +71,7 @@ function MyProfile() {
         {/* Avatar và nút chỉnh sửa */}
         <div className="flex flex-col items-center mb-6">
           <img
-           
+            src={displayUser.image}
             alt="Avatar"
             className="w-24 h-24 rounded-full border-2 border-[#102A83] object-cover"
           />
@@ -127,7 +96,18 @@ function MyProfile() {
           </div>
           <div className="flex items-center justify-between border-b border-gray-200 pb-2">
             <span className="text-gray-600 font-medium">Ngày sinh:</span>
-            <span className="text-[#102A83]">{displayUser.dateOfBirth}</span>
+            <span className="text-[#102A83]">
+              {displayUser.dateOfBirth &&
+              displayUser.dateOfBirth !== "Chưa có dữ liệu"
+                ? new Date(displayUser.dateOfBirth)
+                    .toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })
+                    .replace(/\//g, "/") // Đảm bảo định dạng dd/mm/yyyy
+                : displayUser.dateOfBirth}
+            </span>
           </div>
           <div className="flex items-center justify-between border-b border-gray-200 pb-2">
             <span className="text-gray-600 font-medium">Địa chỉ:</span>
@@ -137,7 +117,7 @@ function MyProfile() {
 
         {/* Nút chỉnh sửa thông tin */}
         <div className="mt-6 flex justify-center">
-          <button className="px-6 py-2 bg-[#009EE0] text-white rounded-full hover:bg-[#102A83] transition duration-300">
+          <button className="px-6 py-2 bg-[#102A83] text-white rounded-full hover:bg-[#102A83] transition duration-300">
             Chỉnh sửa thông tin
           </button>
         </div>

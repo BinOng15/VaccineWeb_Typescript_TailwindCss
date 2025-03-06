@@ -1,15 +1,15 @@
+import CustomerLayout from "../../components/Layout/CustomerLayout";
 
-import CustomerLayout from '../../components/Layout/CustomerLayout'
-
-import MyProfile from '../../components/Users/MyProfile'
+import MyProfile from "../../components/Users/MyProfile";
 
 function MyProfilePage() {
   return (
     <div>
-        <CustomerLayout><MyProfile/></CustomerLayout>
-      
+      <CustomerLayout>
+        <MyProfile />
+      </CustomerLayout>
     </div>
-  )
+  );
 }
 
-export default MyProfilePage
+export default MyProfilePage;
