@@ -1,6 +1,7 @@
 export type AuthContextType = {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (token: string, userData: User) => void;
+  logout: () => Promise<void>;
   setUser: (user: User) => void;
   getRole: () => string | null; // Thay string thành number để khớp với role của backend
 };
@@ -11,12 +12,12 @@ export type User = {
   fullName: string;
   phoneNumber: string;
   address: string;
-  role: string; 
-  dateOfBirth: string; 
-  isActive: string; 
-  createdDate: string; 
+  role: string;
+  dateOfBirth: string;
+  isActive: string;
+  createdDate: string;
   createdBy: string;
-  modifiedDate: string; 
+  modifiedDate: string;
   modifiedBy: string;
 };
 
@@ -37,8 +38,8 @@ export interface CreateSystemUserDTO {
   phoneNumber: string;
   password: string;
   address?: string;
-  dateOfBirth: string; 
-  role: number; 
+  dateOfBirth: string;
+  role: number;
 }
 
 // Interface cho DTO cập nhật người dùng
@@ -48,7 +49,7 @@ export interface UpdateUserDTO {
   phoneNumber: string;
   address?: string;
   dateOfBirth: string;
-  role: number; 
+  role: number;
 }
 
 // Interface cho dữ liệu người dùng trả về từ API
@@ -58,12 +59,12 @@ export interface UserResponseDTO {
   email: string;
   phoneNumber: string;
   address?: string;
-  dateOfBirth: string; 
-  role: number; 
-  createdDate: string; 
-  modifiedDate: string; 
+  dateOfBirth: string;
+  role: number;
+  createdDate: string;
+  modifiedDate: string;
   modifiedBy: string;
-  isActive: string; 
+  isActive: string;
 }
 
 // Interface cho phản hồi phân trang

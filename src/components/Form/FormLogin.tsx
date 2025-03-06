@@ -13,7 +13,7 @@ const FormLogin = () => {
   const [password, setPassword] = useState<string>("");
   const [rememberMe, setRememberMe] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
-  const { user, setUser } = useAuth();
+  const { user, setUser, login } = useAuth();
 
   const handleLogin = async (values: { email: string; password: string }) => {
     try {
@@ -23,8 +23,7 @@ const FormLogin = () => {
         const userData = await getCurrentUser(token);
         if (userData) {
           setUser(userData);
-          sessionStorage.setItem("user", JSON.stringify(userData));
-          sessionStorage.setItem("accessToken", token); // Lưu token vào localStorage nếu cần
+          login(token, userData);
           notification.success({
             message: "Login Successful",
           });

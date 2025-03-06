@@ -1,43 +1,59 @@
 /* eslint-disable no-useless-catch */
-import { createContext, ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useState,
+} from "react";
 import { AuthContextType, User } from "../models/User";
-import { authServiceLogin, getCurrentUser } from "../service/authService";
+import { useNavigate } from "react-router-dom";
+import { userLogout } from "../service/authService";
+import { notification } from "antd";
 
 const AuthContext1 = createContext<AuthContextType | undefined>(undefined);
 
 const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(() => {
     const storedUser = sessionStorage.getItem("user"); // Sử dụng sessionStorage
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  const login = async (email: string, password: string) => {
-    try {
-      const token = await authServiceLogin(email, password);
-      sessionStorage.setItem("accessToken", token);
-
-      const userData = await getCurrentUser(token);
-      console.log("User data before setting:", userData);
-      setUser(userData);
+  const login = useCallback(
+    (token: string, userData: User) => {
+      localStorage.setItem("token", token);
       sessionStorage.setItem("user", JSON.stringify(userData));
-    } catch (error) {
-      throw error;
-    }
-  };
+      setUser(userData);
+      navigate("/", { replace: true });
+    },
+    [navigate]
+  );
 
-  // const logout = async () => {
-  //   await authServiceLogout();
-  //   message.success("You have been logged out!");
-  //   setUser(null);
-  //   sessionStorage.removeItem("user"); // Xóa user khỏi sessionStorage
-  // };
+  const logout = useCallback(async () => {
+    try {
+      await userLogout();
+      setUser(null);
+      navigate("/login", { replace: true });
+      notification.success({
+        message: "Logout Successful",
+        description: "You have been logged out successfully.",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      notification.error({
+        message: "Logout Failed",
+        description: "An error occurred during logout. Please try again.",
+      });
+    }
+  }, [navigate]);
 
   const getRole = () => {
     return user?.role || null;
   };
 
   return (
-    <AuthContext1.Provider value={{ user, login, setUser, getRole }}>
+    <AuthContext1.Provider value={{ user, login, logout, setUser, getRole }}>
       {children}
     </AuthContext1.Provider>
   );

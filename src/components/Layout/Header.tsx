@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { FaShoppingCart, FaCalendarAlt, FaComments } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { userLogout } from "../../service/authService";
+import { notification } from "antd";
 
 const AppHeader: React.FC = () => {
   const navigate = useNavigate();
@@ -43,13 +45,23 @@ const AppHeader: React.FC = () => {
   }, [checkLoginStatus]);
 
   // Hàm logout được tối ưu để chỉ navigation một lần
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("accessToken");
-    sessionStorage.removeItem("user");
-    setIsLoggedIn(false);
-    setAvatarMenuOpen(false);
-    navigate("/login", { replace: true });
+  const handleLogout = useCallback(async () => {
+    try {
+      await userLogout(); // Gọi API logout
+      setIsLoggedIn(false);
+      setAvatarMenuOpen(false);
+      navigate("/login", { replace: true });
+      notification.success({
+        message: "Logout Successful",
+        description: "You have been logged out successfully.",
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      notification.error({
+        message: "Logout Failed",
+        description: "An error occurred during logout. Please try again.",
+      });
+    }
   }, [navigate]);
 
   const handleNavigate = useCallback(
