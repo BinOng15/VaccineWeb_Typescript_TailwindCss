@@ -34,6 +34,12 @@ const ChildProfilePage = React.lazy(
   () => import("../pages/Customer/ChildProfilePage")
 );
 
+const ChildProfileManage = React.lazy(
+  () => import("../pages/Staff/ChildProfile/ChildProfileManage")
+);
+const AppointmentManagerment = React.lazy(
+  () => import("../pages/Staff/Appointment/AppointmentManagerment")
+);
 //-------------------------------------------------Public-----------------------------------------------
 const Homepage = React.lazy(() => import("../pages/Customer/Homepage"));
 const LoginPage = React.lazy(() => import("../pages/LoginPage"));
@@ -158,10 +164,28 @@ const AppRouter = () => {
               }
             />
             <Route
+              path="/staff/manager-childprofile"
+              element={
+                <ProtectedRouter
+                  element={<ChildProfileManage />}
+                  allowedRoles={["Staff"]}
+                />
+              }
+            />
+            <Route
               path="/staff/manage-disease"
               element={
                 <ProtectedRouter
                   element={<DiseaseManagement />}
+                  allowedRoles={["Staff"]}
+                />
+              }
+            />
+            <Route
+              path="/staff/manage-appointment"
+              element={
+                <ProtectedRouter
+                  element={<AppointmentManagerment />}
                   allowedRoles={["Staff"]}
                 />
               }

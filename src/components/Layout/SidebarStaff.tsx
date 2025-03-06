@@ -7,6 +7,7 @@ import {
   GoldOutlined,
   ExceptionOutlined,
   AppstoreOutlined,
+  IdcardOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -22,14 +23,19 @@ const StaffSidebar: React.FC = () => {
       label: "Vắc xin lẻ",
     },
     {
-      key: "/staff//manage-vaccine-package",
+      key: "/staff/manage-vaccine-package",
       icon: <GoldOutlined />,
       label: "Gói vắc xin",
     },
     {
-      key: "/staff/manage-vaccination-registration",
+      key: "/staff/manage-appointment",
       icon: <ExceptionOutlined />,
       label: "Đăng ký tiêm",
+    },
+     {
+      key: "/staff/manager-childprofile",
+      icon: <IdcardOutlined />,
+      label: "Hồ sơ của trẻ",
     },
     {
       key: "/staff/manage-disease",
