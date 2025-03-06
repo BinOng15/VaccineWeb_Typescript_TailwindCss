@@ -3,7 +3,6 @@ import React, { Suspense, useContext } from "react";
 import { AuthContext1, AuthProvider } from "../context/AuthContext";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-
 //-------------------------------------------------Admin------------------------------------------------
 const DashboardAdmin = React.lazy(
   () => import("../pages/Admin/DashboardAdmin")
@@ -33,6 +32,9 @@ const VaccineRegistationPage = React.lazy(
 );
 const ChildProfileManage = React.lazy(
   () => import("../pages/Staff/ChildProfile/ChildProfileManage")
+);
+const AppointmentManagerment = React.lazy(
+  () => import("../pages/Staff/Appointment/AppointmentManagerment")
 );
 //-------------------------------------------------Public-----------------------------------------------
 const Homepage = React.lazy(() => import("../pages/Customer/Homepage"));
@@ -172,6 +174,15 @@ const AppRouter = () => {
               element={
                 <ProtectedRouter
                   element={<DiseaseManagement />}
+                  allowedRoles={["Staff"]}
+                />
+              }
+            />
+            <Route
+              path="/staff/manage-appointment"
+              element={
+                <ProtectedRouter
+                  element={<AppointmentManagerment />}
                   allowedRoles={["Staff"]}
                 />
               }
