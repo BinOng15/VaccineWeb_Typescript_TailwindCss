@@ -1,5 +1,13 @@
+import DoctorLayout from "../../components/Layout/DoctorLayout";
+
 const DashboardDoctor = () => {
-  return <div>DashboardDoctor</div>;
+  return (
+    <DoctorLayout>
+      <div>
+        dash
+      </div>
+    </DoctorLayout>
+  );
 };
 
 export default DashboardDoctor;

@@ -26,6 +26,9 @@ const DiseaseManagement = React.lazy(
 const DashboardDoctor = React.lazy(
   () => import("../pages/Doctor/DashboardDoctor")
 );
+const VaccinationRecordManagerment = React.lazy(
+  () => import("../pages/Doctor/VaccinationRecord/VaccinationRecordManagerment")
+);
 //-------------------------------------------------Customer----------------------------------------------
 const VaccineRegistationPage = React.lazy(
   () => import("../pages/Customer/VaccineRegistationPage")
@@ -193,6 +196,15 @@ const AppRouter = () => {
               element={
                 <ProtectedRouter
                   element={<DashboardDoctor />}
+                  allowedRoles={["Doctor"]}
+                />
+              }
+            />
+            <Route
+              path="/doctor/vaccination-record"
+              element={
+                <ProtectedRouter
+                  element={<VaccinationRecordManagerment />}
                   allowedRoles={["Doctor"]}
                 />
               }
