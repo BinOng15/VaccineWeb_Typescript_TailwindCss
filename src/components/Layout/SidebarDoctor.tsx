@@ -2,8 +2,7 @@ import React from "react";
 import { Menu } from "antd";
 import {
   SettingOutlined,
-  ShoppingCartOutlined,
-  DollarOutlined,
+  SolutionOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -12,18 +11,12 @@ const DoctorSidebar: React.FC = () => {
   const location = useLocation();
 
   const menuItems = [
-    { key: "/staff/dashboard", icon: <SettingOutlined />, label: "Dashboard" },
+    { key: "/doctor/dashboard", icon: <SettingOutlined />, label: "Bảng chính" },
     {
-      key: "/staff/manager-order",
-      icon: <ShoppingCartOutlined />,
-      label: "Order",
+      key: "/doctor/vaccination-record",
+      icon: <SolutionOutlined/>,
+      label: "Quản lý tiêm chủng",
     },
-    {
-      key: "/staff/manager-payment",
-      icon: <DollarOutlined />,
-      label: "Payment",
-    },
-    { key: "/user/setting", icon: <SettingOutlined />, label: "Setting" },
   ];
 
   return (
