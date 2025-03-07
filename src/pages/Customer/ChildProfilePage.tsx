@@ -1,9 +1,10 @@
 import CustomerLayout from "../../components/Layout/CustomerLayout";
+import ChildProfile from "../../components/Users/ChildProfile";
 
 const ChildProfilePage = () => {
   return (
     <CustomerLayout>
-      <div>profile</div>
+      <ChildProfile />
     </CustomerLayout>
   );
 };

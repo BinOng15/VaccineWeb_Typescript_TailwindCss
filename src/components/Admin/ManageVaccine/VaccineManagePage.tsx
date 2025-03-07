@@ -177,14 +177,14 @@ const VaccineManagePage: React.FC = () => {
       title: "Hình ảnh",
       dataIndex: "image",
       key: "Image",
-      width: 100,
+      width: 150, // Tăng chiều rộng cột để phù hợp với kích thước ảnh lớn hơn
       render: (image: string, record: Vaccine) => (
         <div style={{ textAlign: "center" }}>
           {image ? (
             <img
               src={image}
               alt={record.name || "Hình ảnh Vắc xin"}
-              style={{ width: 50, height: 50, objectFit: "contain" }} // Kích thước và style cho hình ảnh
+              style={{ width: 200, height: 200, objectFit: "contain" }} // Tăng kích thước ảnh lên 200px x 200px
             />
           ) : (
             "N/A"
@@ -195,16 +195,10 @@ const VaccineManagePage: React.FC = () => {
     {
       title: "Thông tin",
       dataIndex: "description",
-      width: 450,
+      width: 500,
       key: "Description",
     },
-    {
-      title: "Trạng thái",
-      dataIndex: "isActive",
-      key: "IsActive",
-      width: 120,
-      render: (isActive: number) => (isActive === 1 ? "Có" : "Không"),
-    },
+
     {
       title: "Giá",
       dataIndex: "price",
@@ -217,8 +211,15 @@ const VaccineManagePage: React.FC = () => {
     {
       title: "Nhà sản xuất",
       dataIndex: "manufacturer",
-      width: 200,
+      width: 250,
       key: "Manufacturer",
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "isActive",
+      key: "IsActive",
+      width: 120,
+      render: (isActive: number) => (isActive === 1 ? "Có" : "Không"),
     },
     {
       title: "Hành động",

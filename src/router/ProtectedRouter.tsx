@@ -2,6 +2,7 @@
 import React, { Suspense, useContext } from "react";
 import { AuthContext1, AuthProvider } from "../context/AuthContext";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import VaccinePackageManagement from "../pages/Staff/VaccinePackage/VaccinePackageManagement";
 
 //-------------------------------------------------Admin------------------------------------------------
 const DashboardAdmin = React.lazy(
@@ -159,6 +160,15 @@ const AppRouter = () => {
               element={
                 <ProtectedRouter
                   element={<VaccineManagement />}
+                  allowedRoles={["Staff"]}
+                />
+              }
+            />
+            <Route
+              path="staff/manage-vaccine-package"
+              element={
+                <ProtectedRouter
+                  element={<VaccinePackageManagement />}
                   allowedRoles={["Staff"]}
                 />
               }

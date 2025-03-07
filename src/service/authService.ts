@@ -46,7 +46,7 @@ export const getCurrentUser = async (token: string): Promise<User | null> => {
     }
     const data = await response.json();
     const user: User = {
-      userId: data.userId || "", // Đảm bảo ánh xạ đúng từ API
+      userId: data.userId ? parseInt(data.userId.toString(), 10) : 0, // Chuyển thành number, mặc định 0 nếu không có
       email: data.email || "",
       fullName: data.fullName || "",
       phoneNumber: data.phoneNumber || "", // API có thể không trả về, dùng giá trị mặc định

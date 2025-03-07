@@ -22,12 +22,8 @@ const CustomerLayout: React.FC<MainLayoutProps> = ({ children }) => {
           onCollapse={(collapsed) => setCollapsed(collapsed)}
           width={200}
           className="site-layout-background"
-          style={{
-            height: "100vh",
-            zIndex: 1000,
-            backgroundColor: "#0000", // Thay đổi màu nền sidebar (ví dụ: màu xám đậm)
-          }}
-          theme="light" // Đặt theme để tránh xung đột màu
+          style={{ height: "100vh", zIndex: 1000 }}
+          theme="light"
         >
           <CustomerSidebar />
         </Sider>

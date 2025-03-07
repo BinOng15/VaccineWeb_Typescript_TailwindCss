@@ -32,7 +32,7 @@ const StaffSidebar: React.FC = () => {
       icon: <ExceptionOutlined />,
       label: "Đăng ký tiêm",
     },
-     {
+    {
       key: "/staff/manager-childprofile",
       icon: <IdcardOutlined />,
       label: "Hồ sơ của trẻ",

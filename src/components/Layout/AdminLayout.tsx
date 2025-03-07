@@ -23,6 +23,7 @@ const AdminLayout: React.FC<MainLayoutProps> = ({ children }) => {
           width={200}
           className="site-layout-background"
           style={{ height: "100vh", zIndex: 1000 }}
+          theme="light"
         >
           <AdminSidebar />
         </Sider>
