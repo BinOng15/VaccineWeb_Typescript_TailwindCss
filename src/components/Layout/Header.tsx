@@ -47,7 +47,7 @@ const AppHeader: React.FC = () => {
   }, [checkLoginStatus]);
 
   // Hàm logout được tối ưu để chỉ navigation một lần
-  const handleLogout = useCallback(async () => {
+  const handleLogout = async () => {
     try {
       await userLogout(); // Gọi API logout
       setIsLoggedIn(false);
@@ -64,15 +64,11 @@ const AppHeader: React.FC = () => {
         description: "An error occurred during logout. Please try again.",
       });
     }
-  }, [navigate]);
+  };
 
-  const handleNavigate = useCallback(
-    (path: string) => {
-      navigate(path, { replace: true });
-    },
-    [navigate]
-  );
-
+  const handleNavigate = (path: string) => {
+    navigate(path, { replace: true });
+  };
   return (
     <header className="w-full mb-0 relative z-50">
       <div className="flex items-center justify-between px-8 py-3 bg-white shadow-md border-b border-gray-200">

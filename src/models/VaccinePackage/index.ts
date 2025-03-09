@@ -1,5 +1,3 @@
-import { IsActive } from "../Type/enum";
-
 export interface CreateVaccinePackageDTO {
   name: string;
   description: string;
@@ -16,7 +14,7 @@ export interface VaccinePackageResponseDTO {
   name: string;
   description: string;
   totalPrice: number;
-  isActive: IsActive;
+  isActive: number;
   createdDate: string;
   createdBy: string;
   modifiedDate: string;

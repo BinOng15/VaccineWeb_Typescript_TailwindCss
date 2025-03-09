@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from "react";
+import React, { useState } from "react";
 import { Modal, Form, Input, Button, notification } from "antd";
 import { CreateVaccinePackageDTO } from "../../../models/VaccinePackage";
 import vaccinePackageService from "../../../service/vaccinePackageService";
@@ -7,42 +7,26 @@ import vaccinePackageService from "../../../service/vaccinePackageService";
 interface AddVaccinePackageModalProps {
   visible: boolean;
   onClose: () => void;
-  refreshPackages: () => void;
+  onSuccess: () => void;
 }
 
 const AddVaccinePackageModal: React.FC<AddVaccinePackageModalProps> = ({
   visible,
   onClose,
-  refreshPackages,
+  onSuccess,
 }) => {
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleSubmit = async (values: any) => {
+    setLoading(true);
     try {
-      const totalPrice = parseFloat(values.totalPrice);
-      if (isNaN(totalPrice) || totalPrice < 0) {
-        notification.error({
-          message: "Error",
-          description: "Giá tổng phải là một số hợp lệ và không âm!",
-        });
-        return;
-      }
-
-      if (!values.name.trim() || !values.description.trim()) {
-        notification.error({
-          message: "Error",
-          description: "Tên và mô tả không được để trống!",
-        });
-        return;
-      }
-
       const packageData: CreateVaccinePackageDTO = {
-        name: values.name.trim(),
-        description: values.description.trim(),
-        totalPrice,
+        name: values.name,
+        description: values.description,
+        totalPrice: parseFloat(values.totalPrice),
       };
-
-      console.log("Vaccine Package Data to Send:", packageData); // Debug dữ liệu gửi lên
+      console.log("Package Data to Send:", packageData); // Debug dữ liệu gửi lên
       await vaccinePackageService.createPackage(packageData);
       notification.success({
         message: "Success",
@@ -50,7 +34,7 @@ const AddVaccinePackageModal: React.FC<AddVaccinePackageModalProps> = ({
       });
 
       form.resetFields();
-      refreshPackages();
+      onSuccess();
       onClose();
     } catch (error: any) {
       console.error("Error creating vaccine package:", error.response?.data);
@@ -70,32 +54,35 @@ const AddVaccinePackageModal: React.FC<AddVaccinePackageModalProps> = ({
   return (
     <Modal
       title="Tạo mới gói vaccine"
-      open={visible}
+      visible={visible}
       onCancel={handleCancel}
+      onOk={() => form.submit()}
+      okText="Tạo mới"
+      confirmLoading={loading}
       footer={null}
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item
-          label="Tên gói vaccine"
           name="name"
+          label="Tên gói vaccine"
           rules={[{ required: true, message: "Hãy nhập tên của gói vaccine!" }]}
         >
           <Input />
         </Form.Item>
 
         <Form.Item
-          label="Mô tả"
           name="description"
+          label="Mô tả"
           rules={[
             { required: true, message: "Hãy nhập mô tả của gói vaccine!" },
           ]}
         >
-          <Input.TextArea />
+          <Input />
         </Form.Item>
 
         <Form.Item
-          label="Giá tổng"
           name="totalPrice"
+          label="Giá tổng"
           rules={[{ required: true, message: "Hãy nhập giá tổng!" }]}
         >
           <Input type="number" />

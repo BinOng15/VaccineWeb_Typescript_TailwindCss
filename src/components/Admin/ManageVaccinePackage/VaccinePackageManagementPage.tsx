@@ -23,6 +23,7 @@ import EditVaccinePackageModal from "./EditVaccinePackageModal";
 import moment from "moment";
 import { VaccinePackageResponseDTO } from "../../../models/VaccinePackage";
 import vaccinePackageService from "../../../service/vaccinePackageService";
+import { ColumnType } from "antd/es/table";
 
 const { Search } = Input;
 const { TabPane } = Tabs;
@@ -180,7 +181,18 @@ const VaccinePackageManagePage: React.FC = () => {
     setActiveTab(key);
   };
 
-  const columns = [
+  const columns: ColumnType<VaccinePackageResponseDTO>[] = [
+    {
+      title: "STT",
+      key: "index",
+      width: 50,
+      align: "center",
+      render: (_: any, __: VaccinePackageResponseDTO, index: number) => {
+        const currentIndex =
+          (pagination.current - 1) * pagination.pageSize + index + 1;
+        return currentIndex;
+      },
+    },
     {
       title: "Tên gói vaccine",
       dataIndex: "name",
@@ -333,7 +345,7 @@ const VaccinePackageManagePage: React.FC = () => {
       <AddVaccinePackageModal
         visible={isAddPackageModalVisible}
         onClose={handleCloseModal}
-        refreshPackages={fetchVaccinePackages}
+        onSuccess={fetchVaccinePackages}
       />
 
       {editedPackage && (

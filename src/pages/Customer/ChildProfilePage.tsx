@@ -1,5 +1,5 @@
+import ChildProfile from "../../components/ChildProfile/ChildProfile";
 import CustomerLayout from "../../components/Layout/CustomerLayout";
-import ChildProfile from "../../components/Users/ChildProfile";
 
 const ChildProfilePage = () => {
   return (

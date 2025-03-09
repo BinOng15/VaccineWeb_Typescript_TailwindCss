@@ -22,6 +22,7 @@ import vaccineService from "../../../service/vaccineService";
 import EditVaccineModal from "../../Vaccine/EditVaccineModal";
 import AddVaccineModal from "../../Vaccine/AddVaccineButton";
 import moment from "moment"; // Thêm moment để format ngày
+import { ColumnType } from "antd/es/table";
 
 const { Search } = Input;
 const { TabPane } = Tabs;
@@ -166,7 +167,18 @@ const VaccineManagePage: React.FC = () => {
     setActiveTab(key);
   };
 
-  const columns = [
+  const columns: ColumnType<VaccineResponseDTO>[] = [
+    {
+      title: "STT",
+      key: "index",
+      width: 50,
+      align: "center",
+      render: (_: any, __: VaccineResponseDTO, index: number) => {
+        const currentIndex =
+          (pagination.current - 1) * pagination.pageSize + index + 1;
+        return currentIndex;
+      },
+    },
     {
       title: "Tên vắc xin",
       dataIndex: "name",

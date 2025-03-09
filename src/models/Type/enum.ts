@@ -1,8 +1,7 @@
 // Các enum được định nghĩa dựa trên EnumList từ backend C#
 
 // Trạng thái hoạt động
-export enum 
-IsActive {
+export enum IsActive {
   Active = 1,
   Inactive = 0,
 }
@@ -10,8 +9,10 @@ IsActive {
 // Trạng thái cuộc hẹn
 export enum AppointmentStatus {
   Pending = 1,
-  Completed = 2,
-  Cancelled = 3,
+  WaitingForInjection = 2,
+  WaitingForResponse = 3,
+  Completed = 4,
+  Cancelled = 5,
 }
 
 // Giới tính

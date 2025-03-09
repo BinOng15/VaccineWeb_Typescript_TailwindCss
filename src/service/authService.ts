@@ -1,5 +1,5 @@
 import { APILink } from "../components/Const/ApiLink";
-import { User } from "../models/User";
+import { UserResponseDTO } from "../models/User";
 import { axiosInstance } from "./axiosInstance";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -33,7 +33,9 @@ export const authServiceLogin = async (
   }
 };
 
-export const getCurrentUser = async (token: string): Promise<User | null> => {
+export const getCurrentUser = async (
+  token: string
+): Promise<UserResponseDTO> => {
   try {
     const response = await fetch(`${APILink}/api/User/current-user`, {
       headers: {
@@ -45,7 +47,7 @@ export const getCurrentUser = async (token: string): Promise<User | null> => {
       throw new Error("Failed to fetch current user");
     }
     const data = await response.json();
-    const user: User = {
+    const user: UserResponseDTO = {
       userId: data.userId ? parseInt(data.userId.toString(), 10) : 0, // Chuyển thành number, mặc định 0 nếu không có
       email: data.email || "",
       fullName: data.fullName || "",
@@ -55,7 +57,7 @@ export const getCurrentUser = async (token: string): Promise<User | null> => {
       dateOfBirth: data.dateOfBirth || "",
       isActive: data.isActive || "Active", // API có thể trả về "Active"/"Inactive"
       createdDate: data.createdDate || "",
-      createdBy: data.createdBy || "system",
+      createdBy: data.createdBy || "",
       modifiedDate: data.modifiedDate || "",
       modifiedBy: data.modifiedBy || "system",
       image: data.image || "", // Thêm trường avatar nếu API trả về
@@ -63,7 +65,7 @@ export const getCurrentUser = async (token: string): Promise<User | null> => {
     return user;
   } catch (error) {
     console.error("Error in getCurrentLogin:", error);
-    return null;
+    throw error;
   }
 };
 

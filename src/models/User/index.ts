@@ -1,26 +1,26 @@
 export type AuthContextType = {
-  user: User | null;
-  login: (token: string, userData: User) => void;
+  user: UserResponseDTO | null;
+  login: (token: string, userData: UserResponseDTO) => void;
   logout: () => Promise<void>;
-  setUser: (user: User) => void;
+  setUser: (user: UserResponseDTO) => void;
   getRole: () => string | null; // Thay string thành number để khớp với role của backend
 };
 
-export type User = {
-  userId: number;
-  email: string;
-  fullName: string;
-  phoneNumber: string;
-  address: string;
-  role: string;
-  dateOfBirth: string;
-  isActive: string;
-  createdDate: string;
-  createdBy: string;
-  modifiedDate: string;
-  modifiedBy: string;
-  image: string;
-};
+// export type User = {
+//   userId: number;
+//   email: string;
+//   fullName: string;
+//   phoneNumber: string;
+//   address: string;
+//   role: string;
+//   dateOfBirth: string;
+//   isActive: string;
+//   createdDate: string;
+//   createdBy: string;
+//   modifiedDate: string;
+//   modifiedBy: string;
+//   image: string;
+// };
 
 // Interface cho DTO tạo người dùng thông thường (Customer)
 export interface CreateUserDTO {
@@ -28,8 +28,9 @@ export interface CreateUserDTO {
   email: string;
   phoneNumber: string;
   password: string;
-  address?: string;
+  address: string; // Bắt buộc theo backend
   dateOfBirth: string;
+  image: File | null; // Thay string bằng File để xử lý upload
 }
 
 // Interface cho DTO tạo người dùng hệ thống (Staff hoặc Doctor)
@@ -37,32 +38,37 @@ export interface CreateSystemUserDTO {
   fullName: string;
   email: string;
   phoneNumber: string;
+  image: File | null;
   password: string;
-  address?: string;
+  address: string;
   dateOfBirth: string;
-  role: number;
+  role: string;
 }
 
 // Interface cho DTO cập nhật người dùng
 export interface UpdateUserDTO {
   fullName: string;
   email: string;
+  password: string;
   phoneNumber: string;
+  image: string;
   address?: string;
   dateOfBirth: string;
-  role: number;
+  role: string | null;
 }
 
 // Interface cho dữ liệu người dùng trả về từ API
 export interface UserResponseDTO {
-  id: number;
+  userId: number;
   fullName: string;
   email: string;
   phoneNumber: string;
   address?: string;
+  image: string;
   dateOfBirth: string;
-  role: number;
+  role: string;
   createdDate: string;
+  createdBy: string;
   modifiedDate: string;
   modifiedBy: string;
   isActive: string;

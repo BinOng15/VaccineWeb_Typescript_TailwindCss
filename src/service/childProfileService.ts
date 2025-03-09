@@ -26,7 +26,7 @@ const childProfileService = {
   ): Promise<ChildProfileResponseDTO> => {
     try {
       const response: AxiosResponse = await axiosInstance.get(
-        `/get-by-id/{childId}`
+        `/get-by-id/${childId}`
       );
       return response.data;
     } catch (error) {
@@ -132,7 +132,10 @@ const childProfileService = {
   // Xóa hồ sơ trẻ em
   deleteChildProfile: async (childProfileId: number): Promise<void> => {
     try {
-      await axiosInstance.delete(`api/delete-child-profile/${childProfileId}`);
+      const response: AxiosResponse = await axiosInstance.delete(
+        `/delete-child-profile/${childProfileId}`
+      );
+      return response.data;
     } catch (error) {
       console.error(`Lỗi khi xóa hồ sơ trẻ em ${childProfileId}:`, error);
       throw error;

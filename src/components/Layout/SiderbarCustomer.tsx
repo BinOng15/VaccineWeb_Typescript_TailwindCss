@@ -19,11 +19,16 @@ const CustomerSidebar: React.FC = () => {
       label: "Hồ sơ của trẻ",
     },
     {
-      key: "/user/payment-history",
+      key: "/child-appointment",
+      icon: <SettingOutlined />,
+      label: "Đăng ký tiêm",
+    },
+
+    {
+      key: "/child-vaccination-schedule",
       icon: <DollarOutlined />,
       label: "Lịch tiêm của trẻ",
     },
-    { key: "/user/setting", icon: <SettingOutlined />, label: "Cài đặt" },
   ];
 
   return (

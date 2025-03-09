@@ -8,10 +8,12 @@ import {
   Button,
   DatePicker,
   notification,
+  Upload,
 } from "antd";
 import { CreateSystemUserDTO } from "../../models/User";
 import userService from "../../service/userService";
 import moment from "moment"; // Để xử lý định dạng ngày
+import { UploadOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
 
@@ -30,19 +32,15 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
 
   const handleSubmit = async (values: any) => {
     try {
-      // Chuyển đổi dateOfBirth từ DatePicker thành định dạng ISO 8601
-      const dateOfBirth = values.dateOfBirth
-        ? moment(values.dateOfBirth).toISOString()
-        : moment().toISOString(); // Giá trị mặc định nếu không chọn
-
       const userData: CreateSystemUserDTO = {
         email: values.email,
         password: values.password,
-        fullName: values.name,
+        fullName: values.fullName,
+        image: values.image.file || "",
         phoneNumber: values.phoneNumber,
         address: values.address,
-        dateOfBirth: dateOfBirth, // Định dạng ISO 8601
-        role: values.role === "Nhân viên" ? 3 : 2, // Ánh xạ "Nhân viên" -> 3, "Bác sĩ" -> 2
+        dateOfBirth: moment(values.dateOfBirth).format("DD-MM-YYYY HH:mm:ss"),
+        role: values.role === "Staff" ? "Staff" : "Doctor",
       };
 
       console.log("Dữ liệu người dùng để gửi:", userData); // Debug dữ liệu gửi lên
@@ -103,7 +101,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
         </Form.Item>
         <Form.Item
           label="Tên đầy đủ"
-          name="name"
+          name="fullName"
           rules={[
             {
               required: true,
@@ -160,9 +158,23 @@ const AddUserModal: React.FC<AddUserModalProps> = ({
           ]}
         >
           <Select placeholder="Chọn vai trò">
-            <Option value="Nhân viên">Nhân viên</Option>
-            <Option value="Bác sĩ">Bác sĩ</Option>
+            <Option value={3}>Nhân viên</Option>
+            <Option value={2}>Bác sĩ</Option>
           </Select>
+        </Form.Item>
+        <Form.Item
+          label="Hình ảnh"
+          name="image"
+          rules={[
+            {
+              required: true,
+              message: "Vui lòng thêm hình ảnh cho người dùng!",
+            },
+          ]}
+        >
+          <Upload beforeUpload={() => false} maxCount={1} accept="image/*">
+            <Button icon={<UploadOutlined />}>Tải lên</Button>
+          </Upload>
         </Form.Item>
 
         <Form.Item>

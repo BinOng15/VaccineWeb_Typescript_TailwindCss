@@ -4,24 +4,47 @@ import {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react";
-import { AuthContextType, User } from "../models/User";
+import { AuthContextType, UserResponseDTO } from "../models/User";
 import { useNavigate } from "react-router-dom";
-import { userLogout } from "../service/authService";
+import { getCurrentUser, userLogout } from "../service/authService";
 import { notification } from "antd";
 
 const AuthContext1 = createContext<AuthContextType | undefined>(undefined);
 
 const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(() => {
+  const [user, setUser] = useState<UserResponseDTO | null>(() => {
     const storedUser = sessionStorage.getItem("user"); // Sử dụng sessionStorage
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
+  const getToken = () => {
+    return (
+      localStorage.getItem("token") || sessionStorage.getItem("accessToken")
+    );
+  };
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const token = getToken();
+      if (token) {
+        try {
+          const currentUser = await getCurrentUser(token);
+          setUser(currentUser);
+        } catch (error) {
+          console.error("Failed to fetch current user:", error);
+        }
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
   const login = useCallback(
-    (token: string, userData: User) => {
+    (token: string, userData: UserResponseDTO) => {
       localStorage.setItem("token", token);
       sessionStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);

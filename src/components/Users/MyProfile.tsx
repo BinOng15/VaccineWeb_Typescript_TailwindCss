@@ -1,30 +1,30 @@
 import { useEffect, useState } from "react";
-import { User } from "../../models/User";
-import { getCurrentUser } from "../../service/authService";
+import { UserResponseDTO } from "../../models/User";
+import userService from "../../service/userService";
+import EditProfileModal from "./EditProfileModal";
+import { useAuth } from "../../context/AuthContext";
+
+interface User extends UserResponseDTO {
+  userId: number;
+}
 
 function MyProfile() {
-  const [user, setUser] = useState<User | null>(null);
+  const [isUser, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-
-  // Lấy token từ localStorage hoặc sessionStorage
-  const getToken = () => {
-    return (
-      localStorage.getItem("token") || sessionStorage.getItem("accessToken")
-    );
-  };
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editedUser, setEditedUser] = useState<User | null>(null);
+  const { user } = useAuth();
 
   // Fetch dữ liệu người dùng khi component mount
   useEffect(() => {
     const fetchUserData = async () => {
-      const token = getToken();
-      if (!token) {
-        console.error("No token found");
+      if (!user) {
+        console.error("No user found");
         setLoading(false);
         return;
       }
-
       try {
-        const userData = await getCurrentUser(token); // Truyền token vào getCurrentUser
+        const userData = await userService.getUserById(user.userId);
         setUser(userData);
       } catch (error) {
         console.error("Failed to fetch user data:", error);
@@ -50,7 +50,16 @@ function MyProfile() {
   };
 
   // Sử dụng dữ liệu từ API nếu có, ngược lại dùng dữ liệu mặc định
-  const displayUser = user || defaultUser;
+  const displayUser = isUser || defaultUser;
+
+  const handleUpdate = () => {
+    setIsEditModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setEditedUser(null);
+    setIsEditModalVisible(false);
+  };
 
   if (loading) {
     return (
@@ -117,10 +126,21 @@ function MyProfile() {
 
         {/* Nút chỉnh sửa thông tin */}
         <div className="mt-6 flex justify-center">
-          <button className="px-6 py-2 bg-[#102A83] text-white rounded-full hover:bg-[#102A83] transition duration-300">
+          <button
+            className="px-6 py-2 bg-[#102A83] text-white rounded-full hover:bg-[#102A83] transition duration-300"
+            onClick={() => handleUpdate()}
+          >
             Chỉnh sửa thông tin
           </button>
         </div>
+
+        {editedUser && (
+          <EditProfileModal
+            user={editedUser}
+            visible={isEditModalVisible}
+            onClose={handleCloseModal}
+          />
+        )}
       </div>
     </div>
   );

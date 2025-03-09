@@ -30,6 +30,7 @@ const HeaderStaff: React.FC<AppHeaderProps> = ({ collapsed, setCollapsed }) => {
   }, []); // Chỉ chạy một lần khi component mount
 
   const handleLogout = () => {
+    localStorage.removeItem("token");
     sessionStorage.removeItem("accessToken");
     sessionStorage.removeItem("user");
     navigate("/login");

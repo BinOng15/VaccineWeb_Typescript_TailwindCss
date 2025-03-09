@@ -15,7 +15,10 @@ interface AppHeaderProps {
   setCollapsed: (collapsed: boolean) => void;
 }
 
-const HeaderDoctor: React.FC<AppHeaderProps> = ({ collapsed, setCollapsed }) => {
+const HeaderDoctor: React.FC<AppHeaderProps> = ({
+  collapsed,
+  setCollapsed,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
@@ -30,6 +33,7 @@ const HeaderDoctor: React.FC<AppHeaderProps> = ({ collapsed, setCollapsed }) => 
   }, []); // Chỉ chạy một lần khi component mount
 
   const handleLogout = () => {
+    localStorage.removeItem("token");
     sessionStorage.removeItem("accessToken");
     sessionStorage.removeItem("user");
     navigate("/login");

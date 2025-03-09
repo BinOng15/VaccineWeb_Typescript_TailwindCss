@@ -17,7 +17,7 @@ export interface UpdateAppointmentDTO {
   vaccinePackageId: number;
   appointmentDate: string;
   appointmentStatus: AppointmentStatus;
-  isActive: IsActive;
+  isActive: number;
   modifiedDate: string;
   modifiedBy: string;
 }
@@ -25,11 +25,12 @@ export interface UpdateAppointmentDTO {
 export interface AppointmentResponseDTO {
   appointmentId: number;
   paymentId: number | null;
-  vaccineId: number;
-  vaccinePackageId: number;
+  childId: number;
+  vaccineId: number | null;
+  vaccinePackageId: number | null;
   appointmentDate: string;
-  appointmentStatus: AppointmentStatus;
-  isActive: IsActive;
+  appointmentStatus: number;
+  isActive: number;
   createdDate: string;
   createdBy: string;
   modifiedDate: string;

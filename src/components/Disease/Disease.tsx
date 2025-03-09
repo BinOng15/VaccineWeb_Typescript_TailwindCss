@@ -22,6 +22,8 @@ import diseaseService from "../../service/diseaseService";
 import moment from "moment";
 import AddDiseaseModal from "./AddDiseaseButton";
 import EditDiseaseModal from "./EditDiseaseModal";
+import { ColumnType } from "antd/es/table";
+import { VaccinePackageResponseDTO } from "../../models/VaccinePackage";
 
 const { Search } = Input;
 const { TabPane } = Tabs;
@@ -162,7 +164,18 @@ const DiseaseManagePage: React.FC = () => {
     setActiveTab(key);
   };
 
-  const columns = [
+  const columns: ColumnType<VaccinePackageResponseDTO>[] = [
+    {
+      title: "STT",
+      key: "index",
+      width: 50,
+      align: "center",
+      render: (_: any, __: VaccinePackageResponseDTO, index: number) => {
+        const currentIndex =
+          (pagination.current - 1) * pagination.pageSize + index + 1;
+        return currentIndex;
+      },
+    },
     {
       title: "Tên",
       dataIndex: "name",

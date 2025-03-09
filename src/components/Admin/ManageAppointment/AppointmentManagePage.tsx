@@ -1,34 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
-import { Table, Input, Space, Row, Col, Modal } from "antd";
-import { ReloadOutlined, EyeOutlined } from "@ant-design/icons";
-import { axiosInstance } from "../../../service/axiosInstance";
-import moment from "moment"; // Để định dạng ngày tháng
+import { Table, Input, Space, Row, Col, Modal, message } from "antd";
+import {
+  ReloadOutlined,
+  EyeOutlined,
+  CheckOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
+import moment from "moment";
+import { AppointmentResponseDTO } from "../../../models/Appointment";
+import { ChildProfileResponseDTO } from "../../../models/ChildProfile";
+import { VaccineResponseDTO } from "../../../models/Vaccine";
+import { VaccinePackageResponseDTO } from "../../../models/VaccinePackage";
+import vaccineService from "../../../service/vaccineService";
+import vaccinePackageService from "../../../service/vaccinePackageService";
+import childProfileService from "../../../service/childProfileService";
+import appointmentService from "../../../service/appointmentService";
+import { ColumnType } from "antd/es/table";
 
 const { Search } = Input;
 
-// Giao diện AppointmentResponseDTO dựa trên API bạn cung cấp
-interface AppointmentResponseDTO {
-  appointmentId: number;
-  paymentId: number | null;
-  childId: number;
-  vaccineId: number;
-  vaccinePackageId: number;
-  appointmentDate: string;
-  appointmentStatus: number;
-  isActive: number;
-  createdDate: string;
-  createdBy: string;
-  modifiedDate: string;
-  modifiedBy: string;
-  payment: any | null;
-  childProfile: any | null;
-  vaccine: any | null;
-  vaccinePackage: any | null;
-}
-
 const AppointmentManagePage: React.FC = () => {
-  const [appointments, setAppointments] = useState<AppointmentResponseDTO[]>([]);
+  const [appointments, setAppointments] = useState<AppointmentResponseDTO[]>(
+    []
+  );
+  const [originalAppointments, setOriginalAppointments] = useState<
+    AppointmentResponseDTO[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -37,55 +35,109 @@ const AppointmentManagePage: React.FC = () => {
   });
   const [searchKeyword, setSearchKeyword] = useState("");
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentResponseDTO | null>(null);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<AppointmentResponseDTO | null>(null);
+  const [childProfiles, setChildProfiles] = useState<ChildProfileResponseDTO[]>(
+    []
+  );
+  const [vaccines, setVaccines] = useState<VaccineResponseDTO[]>([]);
+  const [vaccinePackages, setVaccinePackages] = useState<
+    VaccinePackageResponseDTO[]
+  >([]);
 
-  // Hàm fetchAppointments để lấy tất cả lịch hẹn từ API
-  const fetchAppointments = async (
-    page = pagination.current,
-    pageSize = pagination.pageSize,
-    keyword = searchKeyword
-  ) => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get("/api/Appointment/get-all", {
-        params: {
-          page: page,
-          pageSize: pageSize,
-          keyword: keyword || undefined,
-        },
-      });
-      const data = response.data; // Giả định API trả về mảng trực tiếp
-      setAppointments(data || []);
+      const allVaccines = await vaccineService.getAllVaccines();
+      const allVaccinePackages = await vaccinePackageService.getAllPackages();
+      setVaccines(allVaccines);
+      setVaccinePackages(allVaccinePackages);
+
+      const allChildProfiles = await childProfileService.getAllChildProfiles();
+      setChildProfiles(allChildProfiles);
+
+      const allAppointments = await appointmentService.getAllAppointments();
+      const filteredAppointments = allAppointments;
+      setAppointments(filteredAppointments);
+      setOriginalAppointments(filteredAppointments);
       setPagination({
-        current: page,
-        pageSize: pageSize,
-        total: data.length || 0, // Nếu API không trả về total, dùng độ dài mảng
+        current: 1,
+        pageSize: pagination.pageSize,
+        total: filteredAppointments.length,
       });
     } catch (error) {
-      console.error("Lỗi khi lấy danh sách lịch hẹn:", error);
+      console.error("Failed to fetch data:", error);
+      message.error(
+        "Không thể tải danh sách lịch hẹn: " + (error as Error).message
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // Gọi API khi component mount
   useEffect(() => {
-    fetchAppointments();
+    fetchData();
   }, []);
 
   const handleTableChange = (pagination: any) => {
     const { current, pageSize } = pagination;
-    fetchAppointments(current, pageSize);
+    setPagination((prev) => ({ ...prev, current, pageSize }));
   };
 
   const onSearch = (value: string) => {
-    setSearchKeyword(value);
-    fetchAppointments(1, pagination.pageSize, value);
+    const trimmedValue = value.trim().toLowerCase();
+    setSearchKeyword(trimmedValue);
+
+    if (!trimmedValue) {
+      setAppointments(originalAppointments);
+      setPagination({
+        ...pagination,
+        current: 1,
+        total: originalAppointments.length,
+      });
+      return;
+    }
+
+    // Lọc client-side dựa trên tên trẻ, vaccine, và gói vaccine
+    const filteredAppointments = originalAppointments.filter((appointment) => {
+      const child = childProfiles.find(
+        (p) => p.childId === appointment.childId
+      );
+      const childName = child?.fullName.toLowerCase() || "";
+      const vaccine = appointment.vaccineId
+        ? vaccines
+            .find((v) => v.vaccineId === appointment.vaccineId)
+            ?.name.toLowerCase() || ""
+        : "";
+      const vaccinePackage = appointment.vaccinePackageId
+        ? vaccinePackages
+            .find((p) => p.packageId === appointment.vaccinePackageId)
+            ?.name.toLowerCase() || ""
+        : "";
+
+      return (
+        childName.includes(trimmedValue) ||
+        vaccine.includes(trimmedValue) ||
+        vaccinePackage.includes(trimmedValue)
+      );
+    });
+
+    setAppointments(filteredAppointments);
+    setPagination({
+      ...pagination,
+      current: 1,
+      total: filteredAppointments.length,
+    });
   };
 
   const handleReset = () => {
     setSearchKeyword("");
-    fetchAppointments(1, pagination.pageSize, "");
+    setAppointments(originalAppointments);
+    setPagination({
+      ...pagination,
+      current: 1,
+      total: originalAppointments.length,
+    });
   };
 
   // Hàm handleViewDetail để xem chi tiết lịch hẹn
@@ -104,28 +156,168 @@ const AppointmentManagePage: React.FC = () => {
     setSelectedAppointment(null);
   };
 
+  // Hàm xác nhận lịch hẹn
+  const handleConfirmAppointment = async (
+    appointmentId: number,
+    currentStatus: number
+  ) => {
+    if (currentStatus === 2 || currentStatus === 4 || currentStatus === 5) {
+      // Không cho xác nhận nếu đã "Chờ tiêm", "Hoàn thành", hoặc "Đã hủy"
+      message.warning("Lịch hẹn không thể xác nhận ở trạng thái hiện tại!");
+      return;
+    }
+
+    Modal.confirm({
+      title: "Xác nhận lịch hẹn",
+      content:
+        "Bạn có chắc muốn xác nhận lịch hẹn này không? (Trạng thái sẽ chuyển sang 'Chờ tiêm')",
+      okText: "Xác nhận",
+      okType: "primary",
+      cancelText: "Hủy bỏ",
+      onOk: async () => {
+        try {
+          await appointmentService.updateAppointmentStatus(appointmentId, 2); // Chuyển sang trạng thái 2 (Chờ tiêm)
+          message.success("Xác nhận lịch hẹn thành công");
+
+          // Cập nhật state
+          const updatedAppointments = appointments.map((appointment) =>
+            appointment.appointmentId === appointmentId
+              ? { ...appointment, appointmentStatus: 2 }
+              : appointment
+          );
+          const updatedOriginalAppointments = originalAppointments.map(
+            (appointment) =>
+              appointment.appointmentId === appointmentId
+                ? { ...appointment, appointmentStatus: 2 }
+                : appointment
+          );
+          setAppointments(updatedAppointments);
+          setOriginalAppointments(updatedOriginalAppointments);
+        } catch (error) {
+          console.error("Failed to confirm appointment:", error);
+          message.error(
+            "Xác nhận lịch hẹn thất bại: " + (error as Error).message
+          );
+        }
+      },
+    });
+  };
+
+  const confirmCancel = (appointmentId: number, currentStatus: number) => {
+    if (currentStatus === 5) {
+      message.warning("Lịch tiêm đã được hủy trước đó!");
+      return;
+    }
+    if (currentStatus === 2 || currentStatus === 3 || currentStatus === 4) {
+      message.warning("Lịch hẹn không thể hủy ở trạng thái hiện tại!");
+      return;
+    }
+
+    Modal.confirm({
+      title: "Xác nhận hủy lịch tiêm",
+      content: "Bạn có chắc chắn muốn hủy lịch tiêm không?",
+      okText: "Xác nhận",
+      okType: "danger",
+      cancelText: "Hủy bỏ",
+      onOk: async () => {
+        try {
+          await appointmentService.updateAppointmentStatus(appointmentId, 5);
+          message.success("Hủy lịch hẹn thành công");
+          setAppointments(
+            appointments.map((appointment) =>
+              appointment.appointmentId === appointmentId
+                ? { ...appointment, appointmentStatus: 5 }
+                : appointment
+            )
+          );
+          setOriginalAppointments(
+            originalAppointments.map((appointment) =>
+              appointment.appointmentId === appointmentId
+                ? { ...appointment, appointmentStatus: 5 }
+                : appointment
+            )
+          );
+          setPagination({
+            ...pagination,
+            total: appointments.length,
+          });
+        } catch (error) {
+          console.error("Failed to cancel appointment:", error);
+          message.error("Hủy lịch hẹn thất bại: " + (error as Error).message);
+        }
+      },
+    });
+  };
+
   // Chuyển đổi giá trị số sang chuỗi cho appointmentStatus
   const getStatusText = (status: number) => {
     switch (status) {
       case 1:
-        return "Đã xác nhận";
-      case 0:
-        return "Chưa xác nhận";
+        return "Đã lên lịch";
+      case 2:
+        return "Chờ tiêm";
+      case 3:
+        return "Chờ phản ứng";
+      case 4:
+        return "Hoàn thành";
+      case 5:
+        return "Đã hủy";
       default:
-        return "Không xác định";
+        return status;
     }
   };
 
-  const columns = [
-    { title: "ID Lịch hẹn", dataIndex: "appointmentId", key: "AppointmentId", width: 120 },
-    { title: "ID Trẻ em", dataIndex: "childId", key: "ChildId", width: 100 },
-    { title: "ID Vắc xin", dataIndex: "vaccineId", key: "VaccineId", width: 100 },
-    { title: "ID Gói vắc xin", dataIndex: "vaccinePackageId", key: "VaccinePackageId", width: 120 },
+  const columns: ColumnType<AppointmentResponseDTO>[] = [
+    {
+      title: "STT",
+      key: "index",
+      width: 50,
+      align: "center",
+      render: (_: any, __: AppointmentResponseDTO, index: number) => {
+        const currentIndex =
+          (pagination.current - 1) * pagination.pageSize + index + 1;
+        return currentIndex;
+      },
+    },
+    {
+      title: "Tên Trẻ em",
+      dataIndex: "childId",
+      key: "ChildName",
+      width: 200,
+      render: (childId: number) => {
+        const child = childProfiles.find(
+          (profile) => profile.childId === childId
+        );
+        return child ? child.fullName : "Không tìm thấy tên";
+      },
+    },
+    {
+      title: "Tên Vắc xin",
+      dataIndex: "vaccineId",
+      key: "VaccineName",
+      width: 150,
+      render: (vaccineId: number) => {
+        const vaccine = vaccines.find((v) => v.vaccineId === vaccineId);
+        return vaccine ? vaccine.name : "";
+      },
+    },
+    {
+      title: "Tên Gói vắc xin",
+      dataIndex: "vaccinePackageId",
+      key: "VaccinePackageName",
+      width: 150,
+      render: (vaccinePackageId: number) => {
+        const packageItem = vaccinePackages.find(
+          (p) => p.packageId === vaccinePackageId
+        );
+        return packageItem ? packageItem.name : "";
+      },
+    },
     {
       title: "Ngày hẹn",
       dataIndex: "appointmentDate",
       key: "AppointmentDate",
-      width: 150,
+      width: 100,
       render: (date: string) =>
         date ? moment(date).format("DD/MM/YYYY") : "N/A",
     },
@@ -137,39 +329,49 @@ const AppointmentManagePage: React.FC = () => {
       render: (status: number) => getStatusText(status),
     },
     {
-      title: "Hoạt động",
-      dataIndex: "isActive",
-      key: "IsActive",
-      width: 100,
-      render: (isActive: number) => (isActive === 1 ? "Có" : "Không"),
-    },
-    {
       title: "Ngày tạo",
       dataIndex: "createdDate",
       key: "CreatedDate",
-      width: 150,
-      render: (date: string) =>
-        date ? moment(date).format("DD/MM/YYYY HH:mm:ss") : "N/A",
-    },
-    { title: "Người tạo", dataIndex: "createdBy", key: "CreatedBy", width: 120 },
-    {
-      title: "Ngày sửa",
-      dataIndex: "modifiedDate",
-      key: "ModifiedDate",
-      width: 150,
-      render: (date: string) =>
-        date ? moment(date).format("DD/MM/YYYY HH:mm:ss") : "N/A",
-    },
-    { title: "Người sửa", dataIndex: "modifiedBy", key: "ModifiedBy", width: 120 },
-    {
-      title: "Xem chi tiết",
-      key: "action",
       width: 100,
+      render: (date: string) =>
+        date ? moment(date).format("DD/MM/YYYY") : "N/A",
+    },
+    {
+      title: "Người tạo",
+      dataIndex: "createdBy",
+      key: "CreatedBy",
+      width: 150,
+    },
+    {
+      title: "Hành động",
+      key: "action",
+      width: 150,
       render: (_: any, record: AppointmentResponseDTO) => (
         <Space>
           <EyeOutlined
             onClick={() => handleViewDetail(record)}
             style={{ color: "blue", cursor: "pointer" }}
+          />
+          <CheckOutlined
+            onClick={() =>
+              handleConfirmAppointment(
+                record.appointmentId,
+                record.appointmentStatus
+              )
+            }
+            style={{ color: "green", cursor: "pointer", marginLeft: "8px" }}
+            title="Xác nhận lịch hẹn"
+          />
+          <DeleteOutlined
+            style={{
+              color: "red",
+              cursor: "pointer",
+              fontSize: 18,
+              marginLeft: 8,
+            }}
+            onClick={() =>
+              confirmCancel(record.appointmentId, record.appointmentStatus)
+            }
           />
         </Space>
       ),
@@ -177,7 +379,7 @@ const AppointmentManagePage: React.FC = () => {
   ];
 
   return (
-    <div className="p-4 max-w-6xl mx-auto">
+    <div className="p-4 max-w-7xl mx-auto">
       <h2 className="text-2xl font-bold text-center p-2 rounded-t-lg">
         DANH SÁCH LỊCH HẸN TIÊM CHỦNG
       </h2>
@@ -188,12 +390,13 @@ const AppointmentManagePage: React.FC = () => {
         <Col>
           <Space>
             <Search
-              placeholder="Tìm kiếm"
+              placeholder="Tìm kiếm theo tên trẻ, vaccine, hoặc gói vaccine"
               onSearch={onSearch}
               enterButton
               allowClear
               value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
+              onChange={(e) => setSearchKeyword(e.target.value)} // Chỉ cập nhật giá trị
+              style={{ width: 300 }}
             />
             <ReloadOutlined
               onClick={handleReset}
@@ -204,7 +407,10 @@ const AppointmentManagePage: React.FC = () => {
       </Row>
       <Table
         columns={columns}
-        dataSource={appointments}
+        dataSource={appointments.slice(
+          (pagination.current - 1) * pagination.pageSize,
+          pagination.current * pagination.pageSize
+        )}
         rowKey="appointmentId"
         pagination={{
           current: pagination.current,
@@ -226,18 +432,43 @@ const AppointmentManagePage: React.FC = () => {
       >
         {selectedAppointment && (
           <div style={{ padding: 16 }}>
-            <p><strong>ID Lịch hẹn:</strong> {selectedAppointment.appointmentId}</p>
-            <p><strong>ID Thanh toán:</strong> {selectedAppointment.paymentId || "N/A"}</p>
-            <p><strong>ID Trẻ em:</strong> {selectedAppointment.childId}</p>
-            <p><strong>ID Vắc xin:</strong> {selectedAppointment.vaccineId}</p>
-            <p><strong>ID Gói vắc xin:</strong> {selectedAppointment.vaccinePackageId}</p>
+            <p>
+              <strong>ID Lịch hẹn:</strong> {selectedAppointment.appointmentId}
+            </p>
+            <p>
+              <strong>ID Thanh toán:</strong>{" "}
+              {selectedAppointment.paymentId || "N/A"}
+            </p>
+            <p>
+              <strong>Tên Trẻ em:</strong>{" "}
+              {childProfiles.find(
+                (p) => p.childId === selectedAppointment.childId
+              )?.fullName || "Không tìm thấy tên"}
+            </p>
+            <p>
+              <strong>Tên Vắc xin:</strong>{" "}
+              {vaccines.find(
+                (v) => v.vaccineId === selectedAppointment.vaccineId
+              )?.name || ""}
+            </p>
+            <p>
+              <strong>Tên Gói vắc xin:</strong>{" "}
+              {vaccinePackages.find(
+                (p) => p.packageId === selectedAppointment.vaccinePackageId
+              )?.name || ""}
+            </p>
             <p>
               <strong>Ngày hẹn:</strong>{" "}
               {selectedAppointment.appointmentDate
-                ? moment(selectedAppointment.appointmentDate).format("DD/MM/YYYY")
+                ? moment(selectedAppointment.appointmentDate).format(
+                    "DD/MM/YYYY"
+                  )
                 : "N/A"}
             </p>
-            <p><strong>Trạng thái hẹn:</strong> {getStatusText(selectedAppointment.appointmentStatus)}</p>
+            <p>
+              <strong>Trạng thái hẹn:</strong>{" "}
+              {getStatusText(selectedAppointment.appointmentStatus)}
+            </p>
             <p>
               <strong>Hoạt động:</strong>{" "}
               {selectedAppointment.isActive === 1 ? "Có" : "Không"}
@@ -245,17 +476,27 @@ const AppointmentManagePage: React.FC = () => {
             <p>
               <strong>Ngày tạo:</strong>{" "}
               {selectedAppointment.createdDate
-                ? moment(selectedAppointment.createdDate).format("DD/MM/YYYY HH:mm:ss")
+                ? moment(selectedAppointment.createdDate).format(
+                    "DD/MM/YYYY HH:mm:ss"
+                  )
                 : "N/A"}
             </p>
-            <p><strong>Người tạo:</strong> {selectedAppointment.createdBy || "N/A"}</p>
+            <p>
+              <strong>Người tạo:</strong>{" "}
+              {selectedAppointment.createdBy || "N/A"}
+            </p>
             <p>
               <strong>Ngày sửa đổi:</strong>{" "}
               {selectedAppointment.modifiedDate
-                ? moment(selectedAppointment.modifiedDate).format("DD/MM/YYYY HH:mm:ss")
+                ? moment(selectedAppointment.modifiedDate).format(
+                    "DD/MM/YYYY HH:mm:ss"
+                  )
                 : "N/A"}
             </p>
-            <p><strong>Người sửa đổi:</strong> {selectedAppointment.modifiedBy || "N/A"}</p>
+            <p>
+              <strong>Người sửa đổi:</strong>{" "}
+              {selectedAppointment.modifiedBy || "N/A"}
+            </p>
           </div>
         )}
       </Modal>

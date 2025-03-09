@@ -52,14 +52,13 @@ const UserComponent: React.FC = () => {
       const response = await userService.getAllUsers();
       console.log("API Response:", response);
       const filteredUsers = response
-        .filter(
-          (user) =>
-            activeTab === "deletedUsers"
-              ? user.isActive === "Inactive" // Sử dụng number 0 cho Inactive
-              : user.isActive === "Active" // Sử dụng number 1 cho Active
+        .filter((user) =>
+          activeTab === "deletedUsers"
+            ? user.isActive === "Inactive"
+            : user.isActive === "Active"
         )
         .map((user) => {
-          return { ...user, userId: user.id };
+          return { ...user, userId: user.userId };
         });
       console.log("Filtered Users:", filteredUsers);
       setUsers(filteredUsers);
@@ -113,23 +112,23 @@ const UserComponent: React.FC = () => {
   };
 
   const handleUpdate = (user: User) => {
-    if (!user.id || typeof user.id !== "number") {
+    if (!user.userId || typeof user.userId !== "number") {
       console.error("Invalid user in handleUpdate:", user);
       message.error("Invalid user data for editing");
       return;
     }
-    console.log("Editing User with ID:", user.id);
+    console.log("Editing User with ID:", user.userId);
     setEditedUser(user);
     setIsEditModalVisible(true);
   };
 
   const handleViewDetail = (user: User) => {
-    if (!user.id || typeof user.id !== "number") {
+    if (!user.userId || typeof user.userId !== "number") {
       console.error("Dữ liệu người dùng không khả dụng:", user);
       message.error("Dữ liệu người dùng không khả dụng");
       return;
     }
-    console.log("Viewing User with ID:", user.id);
+    console.log("Viewing User with ID:", user.userId);
     setSelectedUser(user);
     setIsDetailModalVisible(true);
   };
@@ -208,7 +207,7 @@ const UserComponent: React.FC = () => {
             style={{ color: "blue", cursor: "pointer", marginRight: 8 }}
           />
           <DeleteOutlined
-            onClick={() => handleDelete(record.id)}
+            onClick={() => handleDelete(record.userId)}
             style={{ color: "red", cursor: "pointer" }}
           />
         </span>
@@ -349,9 +348,9 @@ const UserComponent: React.FC = () => {
             </p>
             <p>
               <strong>Role:</strong>{" "}
-              {selectedUser.role === 2
+              {selectedUser.role === "Staff"
                 ? "Staff"
-                : selectedUser.role === 3
+                : selectedUser.role === "Doctor"
                 ? "Doctor"
                 : "N/A"}
             </p>

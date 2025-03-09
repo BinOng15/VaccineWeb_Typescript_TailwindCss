@@ -44,6 +44,15 @@ const ChildProfileManage = React.lazy(
 const AppointmentManagerment = React.lazy(
   () => import("../pages/Staff/Appointment/AppointmentManagerment")
 );
+const MyProfilePage = React.lazy(
+  () => import("../pages/Customer/MyProfilePage")
+);
+const VaccineProfilePage = React.lazy(
+  () => import("../pages/Customer/VaccineProfilePage")
+);
+const CustomerAppointment = React.lazy(
+  () => import("../pages/Customer/AppointmentPage")
+);
 //-------------------------------------------------Public-----------------------------------------------
 const Homepage = React.lazy(() => import("../pages/Customer/Homepage"));
 const LoginPage = React.lazy(() => import("../pages/LoginPage"));
@@ -62,12 +71,6 @@ const VaccinePrice = React.lazy(
 );
 const Introductionpage = React.lazy(
   () => import("../pages/Customer/Introductionpage")
-);
-const MyProfilePage = React.lazy(
-  () => import("../pages/Customer/MyProfilePage")
-);
-const VaccineProfilePage = React.lazy(
-  () => import("../pages/Customer/VaccineProfilePage")
 );
 
 interface ProtectedRouteProps {
@@ -246,6 +249,15 @@ const AppRouter = () => {
               element={
                 <ProtectedRouter
                   element={<ChildProfilePage />}
+                  allowedRoles={["Customer"]}
+                />
+              }
+            />
+            <Route
+              path="/child-appointment"
+              element={
+                <ProtectedRouter
+                  element={<CustomerAppointment />}
                   allowedRoles={["Customer"]}
                 />
               }

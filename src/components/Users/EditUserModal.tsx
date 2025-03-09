@@ -70,6 +70,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       const updatedData: UpdateUserDTO = {
         fullName: values.fullName,
         email: values.email,
+        password: values.password,
+        image: values.image.file,
         phoneNumber: values.phoneNumber,
         address: values.address,
         dateOfBirth: dateOfBirth,
@@ -77,7 +79,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       };
 
       console.log("Dữ liệu người dùng đã cập nhật để gửi:", updatedData); // Debug dữ liệu gửi lên
-      const success = await userService.updateUser(user.id, updatedData); // Giả sử updateUser trả về boolean
+      const success = await userService.updateUser(user.userId, updatedData); // Giả sử updateUser trả về boolean
       if (success) {
         message.success("Người dùng đã được cập nhật thành công");
         refreshUsers();

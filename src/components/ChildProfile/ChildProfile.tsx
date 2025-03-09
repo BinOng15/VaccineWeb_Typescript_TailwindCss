@@ -1,19 +1,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect } from "react";
-import { Table, Input, Button, Space, Row, Col, Modal, message } from "antd";
+import { useState, useEffect } from "react";
+import {
+  Table,
+  Input,
+  Button,
+  Space,
+  Row,
+  Col,
+  Modal,
+  message,
+  Spin,
+} from "antd";
 import {
   EditOutlined,
   ReloadOutlined,
   DeleteOutlined,
   EyeOutlined,
+  PlusOutlined,
+  LoadingOutlined,
 } from "@ant-design/icons";
 import { ChildProfileResponseDTO } from "../../models/ChildProfile";
 import { Gender, Relationship } from "../../models/Type/enum";
 import childProfileService from "../../service/childProfileService";
-import { getCurrentUser } from "../../service/authService";
 import moment from "moment";
+import AddChildProfileModal from "./AddChildProfileModal";
+import EditChildProfileModal from "./EditChildProfileModal";
+import { useAuth } from "../../context/AuthContext";
+import { ColumnType } from "antd/es/table";
 
 const { Search } = Input;
+const { confirm } = Modal;
 
 function ChildProfile() {
   const [childProfiles, setChildProfiles] = useState<ChildProfileResponseDTO[]>(
@@ -26,93 +42,64 @@ function ChildProfile() {
     total: 0,
   });
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [selectedChildProfile, setSelectedChildProfile] =
     useState<ChildProfileResponseDTO | null>(null);
-
-  // Lấy token để xác thực
-  const getToken = () => {
-    return (
-      localStorage.getItem("token") || sessionStorage.getItem("accessToken")
-    );
-  };
+  const [editedChildProfile, setEditedChildProfile] =
+    useState<ChildProfileResponseDTO | null>(null);
+  const { user } = useAuth(); // Lấy thông tin người dùng từ AuthContext
 
   // Fetch dữ liệu hồ sơ trẻ em khi component mount
   useEffect(() => {
-    const fetchChildProfileData = async () => {
-      try {
-        const token = getToken();
-        if (!token) {
-          setError("Không tìm thấy token. Vui lòng đăng nhập lại!");
-          setLoading(false);
-          return;
-        }
-
-        // Lấy thông tin người dùng hiện tại để lấy userId
-        const userData = await getCurrentUser(token);
-        if (!userData) {
-          setError(
-            "Không thể lấy thông tin người dùng. Vui lòng đăng nhập lại!"
-          );
-          setLoading(false);
-          return;
-        }
-        const userId = userData.userId;
-        console.log("Current userId:", userId);
-
-        // Lấy tất cả hồ sơ trẻ em
-        let fetchedChildProfiles: ChildProfileResponseDTO[] = [];
-        try {
-          fetchedChildProfiles =
-            await childProfileService.getAllChildProfiles();
-          console.log("All child profiles fetched:", fetchedChildProfiles);
-        } catch (error) {
-          console.error("Failed to fetch all child profiles:", error);
-          setError(
-            "Không thể lấy danh sách trẻ em. Vui lòng kiểm tra kết nối hoặc liên hệ admin!"
-          );
-          setLoading(false);
-          return;
-        }
-
-        // Lọc danh sách dựa trên userId
-        const userChildProfiles = fetchedChildProfiles.filter(
-          (profile) => profile.userId === userId
-        );
-        console.log(
-          "Filtered child profiles for userId",
-          userId,
-          ":",
-          userChildProfiles
-        );
-
-        // Kiểm tra nếu không tìm thấy child profiles cho userId
-        if (userChildProfiles.length === 0) {
-          setError(
-            "Không tìm thấy trẻ em nào liên quan đến tài khoản của bạn!"
-          );
-          setLoading(false);
-          return;
-        }
-
-        // Lưu danh sách child profiles đã lọc
-        setChildProfiles(userChildProfiles);
-        setPagination({
-          current: 1,
-          pageSize: pagination.pageSize,
-          total: userChildProfiles.length,
-        });
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setError("Đã có lỗi xảy ra khi tải dữ liệu. Vui lòng thử lại!");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchChildProfileData();
   }, []);
+
+  const fetchChildProfileData = async () => {
+    try {
+      if (!user) {
+        console.error("No user found");
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      const userId = user.userId;
+      console.log("Current userId:", userId);
+
+      let fetchedChildProfiles: ChildProfileResponseDTO[] = [];
+      try {
+        fetchedChildProfiles = await childProfileService.getAllChildProfiles();
+        console.log("All child profiles fetched:", fetchedChildProfiles);
+      } catch (error) {
+        console.error("Failed to fetch all child profiles:", error);
+        setLoading(false);
+        return;
+      }
+
+      const userChildProfiles = fetchedChildProfiles.filter(
+        (profile) => profile.userId === userId
+      );
+      console.log(
+        "Filtered child profiles for userId",
+        userId,
+        ":",
+        userChildProfiles
+      );
+
+      // Không hiển thị lỗi nếu không có ChildProfile, chỉ đặt mảng rỗng
+      setChildProfiles(userChildProfiles);
+      setPagination({
+        current: 1,
+        pageSize: pagination.pageSize,
+        total: userChildProfiles.length,
+      });
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Hàm chuyển đổi enum Gender sang chuỗi hiển thị
   const getGenderLabel = (gender: Gender): string => {
@@ -162,7 +149,7 @@ function ChildProfile() {
   // Xử lý reset tìm kiếm
   const handleReset = () => {
     setSearchKeyword("");
-    fetchChildProfileData(); // Gọi lại fetch để lấy dữ liệu gốc
+    fetchChildProfileData();
   };
 
   // Xử lý thay đổi phân trang
@@ -177,26 +164,85 @@ function ChildProfile() {
     setIsDetailModalVisible(true);
   };
 
+  // Xử lý chỉnh sửa
+  const handleEdit = (profile: ChildProfileResponseDTO) => {
+    setEditedChildProfile(profile);
+    setIsEditModalVisible(true);
+  };
+
+  // Xử lý xóa
+  const handleDelete = (childId: number) => {
+    confirm({
+      title: "Bạn có muốn xóa hồ sơ trẻ này không?",
+      content: "Hành động này không thể hoàn tác.",
+      okText: "Có",
+      okType: "danger",
+      cancelText: "Không",
+      onOk: async () => {
+        try {
+          await childProfileService.deleteChildProfile(childId);
+          message.success("Hồ sơ trẻ đã được xóa thành công");
+          fetchChildProfileData();
+        } catch (error) {
+          console.error("Lỗi khi xóa hồ sơ trẻ:", error);
+          message.error("Không thể xóa hồ sơ trẻ: " + (error as Error).message);
+        }
+      },
+      onCancel() {
+        console.log("Hủy xóa");
+      },
+    });
+  };
+
+  // Xử lý thêm mới
+  const handleAdd = () => {
+    console.log("handleAdd called"); // Debug log
+    setIsAddModalVisible(true);
+  };
+
+  // Đóng modal và reload dữ liệu
+  const handleModalClose = () => {
+    setIsDetailModalVisible(false);
+    setIsAddModalVisible(false);
+    setIsEditModalVisible(false);
+    setSelectedChildProfile(null);
+    setEditedChildProfile(null);
+  };
+
   // Cột cho Table
-  const columns = [
+  const columns: ColumnType<ChildProfileResponseDTO>[] = [
+    {
+      title: "STT",
+      key: "index",
+      width: 50,
+      align: "center",
+      render: (_: any, __: ChildProfileResponseDTO, index: number) => {
+        const currentIndex =
+          (pagination.current - 1) * pagination.pageSize + index + 1;
+        return currentIndex;
+      },
+    },
     {
       title: "Họ và tên",
       dataIndex: "fullName",
       key: "fullName",
-      width: 150,
     },
     {
       title: "Hình ảnh",
       dataIndex: "imageUrl",
       key: "imageUrl",
-      width: 150,
       render: (imageUrl: string, record: ChildProfileResponseDTO) => (
         <div style={{ textAlign: "center" }}>
           {imageUrl ? (
             <img
               src={imageUrl}
               alt={record.fullName || "Hình ảnh"}
-              style={{ width: 100, height: 100, objectFit: "contain" }}
+              style={{
+                width: 100,
+                height: 100,
+                objectFit: "cover",
+                borderRadius: 8,
+              }}
             />
           ) : (
             "N/A"
@@ -208,7 +254,6 @@ function ChildProfile() {
       title: "Ngày sinh",
       dataIndex: "dateOfBirth",
       key: "dateOfBirth",
-      width: 150,
       render: (date: string) =>
         date && date !== "Chưa có dữ liệu"
           ? moment(date).format("DD/MM/YYYY")
@@ -222,54 +267,51 @@ function ChildProfile() {
       render: (gender: Gender) => getGenderLabel(gender),
     },
     {
-      title: "Mối quan hệ",
+      title: "Mối quan hệ với trẻ",
       dataIndex: "relationship",
       key: "relationship",
-      width: 150,
       render: (relationship: Relationship | null) =>
         getRelationshipLabel(relationship),
     },
     {
       title: "Hành động",
       key: "action",
-      width: 150,
       render: (_: any, record: ChildProfileResponseDTO) => (
         <Space>
           <EyeOutlined
             onClick={() => handleViewDetail(record)}
             style={{ color: "blue", cursor: "pointer", fontSize: 18 }}
           />
-          {/* Thêm các hành động khác nếu cần (Edit, Delete) */}
+          <EditOutlined
+            onClick={() => handleEdit(record)}
+            style={{
+              color: "black",
+              cursor: "pointer",
+              fontSize: 18,
+              marginLeft: 8,
+            }}
+          />
+          <DeleteOutlined
+            onClick={() => handleDelete(record.childId)}
+            style={{
+              color: "red",
+              cursor: "pointer",
+              fontSize: 18,
+              marginLeft: 8,
+            }}
+          />
         </Space>
       ),
     },
   ];
 
-  // Modal chi tiết
-  const handleCloseModal = () => {
-    setIsDetailModalVisible(false);
-    setSelectedChildProfile(null);
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-xl">Đang tải...</p>
+        <Spin indicator={<LoadingOutlined spin />} size="small" />
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-xl text-red-500">{error}</p>
-        <p className="text-gray-600 mt-2">
-          Vui lòng kiểm tra lại hoặc liên hệ admin.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <div className="w-full max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
@@ -278,7 +320,7 @@ function ChildProfile() {
           Danh sách hồ sơ trẻ
         </h1>
 
-        {/* Thanh tìm kiếm và nút reset */}
+        {/* Thanh tìm kiếm, nút reset và nút thêm mới */}
         <Row justify="space-between" style={{ marginBottom: 16 }}>
           <Col>
             <Space>
@@ -297,6 +339,16 @@ function ChildProfile() {
               />
             </Space>
           </Col>
+          <Col>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleAdd}
+              style={{ marginLeft: 8 }}
+            >
+              Thêm mới
+            </Button>
+          </Col>
         </Row>
 
         {/* Table hiển thị danh sách ChildProfile */}
@@ -314,13 +366,14 @@ function ChildProfile() {
           loading={loading}
           onChange={handleTableChange}
           bordered
+          locale={{ emptyText: "Không có dữ liệu hồ sơ trẻ" }}
         />
 
         {/* Modal chi tiết thông tin ChildProfile */}
         <Modal
           title="Chi tiết hồ sơ trẻ"
           visible={isDetailModalVisible}
-          onCancel={handleCloseModal}
+          onCancel={handleModalClose}
           footer={null}
         >
           {selectedChildProfile && (
@@ -329,21 +382,6 @@ function ChildProfile() {
                 <strong>Họ và tên:</strong>{" "}
                 {selectedChildProfile.fullName || "N/A"}
               </p>
-              {selectedChildProfile.imageUrl && (
-                <p>
-                  <strong>Hình ảnh:</strong>
-                  <img
-                    src={selectedChildProfile.imageUrl}
-                    alt={selectedChildProfile.fullName || "Hình ảnh Vắc xin"}
-                    style={{
-                      width: 100,
-                      height: 100,
-                      objectFit: "contain",
-                      marginTop: 8,
-                    }}
-                  />
-                </p>
-              )}
               <p>
                 <strong>Ngày sinh:</strong>{" "}
                 {selectedChildProfile.dateOfBirth &&
@@ -358,12 +396,12 @@ function ChildProfile() {
                 {getGenderLabel(selectedChildProfile.gender)}
               </p>
               <p>
-                <strong>Mối quan hệ:</strong>{" "}
+                <strong>Mối quan hệ với trẻ:</strong>{" "}
                 {getRelationshipLabel(selectedChildProfile.relationship)}
               </p>
-              {selectedChildProfile.imageUrl && (
-                <p>
-                  <strong>Hình ảnh:</strong>
+              <p>
+                <strong>Hình ảnh:</strong>{" "}
+                {selectedChildProfile.imageUrl ? (
                   <img
                     src={selectedChildProfile.imageUrl}
                     alt={selectedChildProfile.fullName || "Hình ảnh"}
@@ -374,11 +412,52 @@ function ChildProfile() {
                       marginTop: 8,
                     }}
                   />
-                </p>
-              )}
+                ) : (
+                  "N/A"
+                )}
+              </p>
+              <p>
+                <strong>Ngày tạo:</strong>{" "}
+                {moment(selectedChildProfile.createdDate).format(
+                  "DD/MM/YYYY"
+                ) || "N/A"}
+              </p>
+              <p>
+                <strong>Người tạo:</strong>{" "}
+                {selectedChildProfile.createdBy || "N/A"}
+              </p>
+              <p>
+                <strong>Ngày sửa đổi:</strong>{" "}
+                {moment(selectedChildProfile.modifiedDate).format(
+                  "DD/MM/YYYY"
+                ) || "N/A"}
+              </p>
+              <p>
+                <strong>Người sửa đổi:</strong>{" "}
+                {selectedChildProfile.modifiedBy || "N/A"}
+              </p>
+              <p>
+                <strong>Trạng thái:</strong>{" "}
+                {selectedChildProfile.isActive === 1
+                  ? "Hoạt động"
+                  : "Không hoạt động"}
+              </p>
             </div>
           )}
         </Modal>
+
+        <AddChildProfileModal
+          visible={isAddModalVisible}
+          onClose={handleModalClose}
+          onSuccess={fetchChildProfileData}
+        />
+
+        <EditChildProfileModal
+          visible={isEditModalVisible}
+          onClose={handleModalClose}
+          onSuccess={fetchChildProfileData}
+          childProfile={editedChildProfile}
+        />
       </div>
     </div>
   );
