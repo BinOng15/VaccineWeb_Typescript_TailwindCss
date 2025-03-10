@@ -55,7 +55,7 @@ export interface UpdateUserDTO {
 
 // Interface cho dữ liệu người dùng trả về từ API
 export interface UserResponseDTO {
-  id: number;
+  userId: number;
   fullName: string;
   email: string;
   phoneNumber: string;

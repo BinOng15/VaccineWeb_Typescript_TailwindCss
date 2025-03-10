@@ -25,9 +25,7 @@ const childProfileService = {
     childId: number
   ): Promise<ChildProfileResponseDTO> => {
     try {
-      const response: AxiosResponse = await axiosInstance.get(
-        `/get-by-id/{childId}`
-      );
+      const response: AxiosResponse = await axiosInstance.get( `/get-by-id/${childId}` );
       return response.data;
     } catch (error) {
       console.error(`Lỗi khi lấy hồ sơ trẻ em theo ID ${childId}:`, error);

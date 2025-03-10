@@ -22,7 +22,7 @@ const userService = {
       const response: AxiosResponse = await axiosInstance.get("api/User/get-all-users");
       return response.data;
     } catch (error) {
-      console.error("Error fetching all users:", error);
+      console.error("Error fetching all users:", error);  
       throw error;
     }
   },
@@ -39,16 +39,15 @@ const userService = {
   },
 
   // Lấy người dùng theo ID
-  getUserById: async (id: number): Promise<UserResponseDTO> => {
+getUserById: async (id: number): Promise<UserResponseDTO> => {
     try {
-      const response: AxiosResponse = await axiosInstance.get(`api/User/get-user-by-id/${id}`);
+      const response: AxiosResponse = await axiosInstance.get(`/api/User/get-user-by-id/${id}`);
       return response.data;
     } catch (error) {
-      console.error(`Error fetching user by ID ${id}:`, error);
+      console.error(`Error fetching user by id ${id}:`, error);
       throw error;
     }
   },
-
   // Lấy danh sách người dùng phân trang
   getUsersPaged: async (pageNumber: number, pageSize: number): Promise<PagedResponse> => {
     try {

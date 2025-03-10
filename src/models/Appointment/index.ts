@@ -25,6 +25,7 @@ export interface UpdateAppointmentDTO {
 export interface AppointmentResponseDTO {
   appointmentId: number;
   paymentId: number | null;
+  childId: number;
   vaccineId: number;
   vaccinePackageId: number;
   appointmentDate: string;
