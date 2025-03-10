@@ -1,14 +1,18 @@
+import { IsActive } from "../Type/enum";
+
 // models/DiseaseDTO.ts
 export interface CreateDiseaseDTO {
-    name: string;
-    description: string;
-    isActive: string; // Sử dụng number (0/1) để khớp với Enum.EnumList.IsActive
-  }
+  Name: string;  // Viết hoa chữ "N"
+  Description: string;  // Viết hoa chữ "D"
+  isActive: IsActive;
+}
+
+
   
   export interface UpdateDiseaseDTO {
     name: string;
     description: string;
-    isActive: string; // Sử dụng number (0/1) để khớp với Enum.EnumList.IsActive
+    isActive: string; 
   }
   
   export interface DiseaseResponseDTO {

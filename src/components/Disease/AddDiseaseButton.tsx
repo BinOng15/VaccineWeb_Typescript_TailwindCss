@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
-import { Modal, Form, Input, Button, notification } from "antd";
+import { Modal, Form, Input, Button, notification, Select } from "antd";
 import { CreateDiseaseDTO } from "../../models/Disease";
 import diseaseService from "../../service/diseaseService";
+import { IsActive } from "../../models/Type/enum";
+
+const {Option} = Select;
 
 interface AddDiseaseModalProps {
   visible: boolean;
@@ -18,31 +21,36 @@ const AddDiseaseModal: React.FC<AddDiseaseModalProps> = ({
   const [form] = Form.useForm();
 
   const handleSubmit = async (values: any) => {
-    try {
-      const diseaseData: CreateDiseaseDTO = {
-        name: values.name,
-        description: values.description,
-        isActive: "Hoạt động", // Mặc định Active (1)
-      };
+  try {
+    const diseaseData: CreateDiseaseDTO = {
+      Name: values.name.trim(), // Đổi từ "name" thành "Name"
+      Description: values.description.trim(), // Đổi từ "description" thành "Description"
+      isActive: IsActive.Active, // Đảm bảo giá trị hợp lệ
+    };
 
-      console.log("Dữ liệu bệnh để gửi:", diseaseData);
-      await diseaseService.createDisease(diseaseData);
-      notification.success({
-        message: "Thành công",
-        description: "Bệnh đã được tạo thành công!",
-      });
+    console.log("Dữ liệu gửi lên backend:", diseaseData);
 
-      form.resetFields();
-      refreshDiseases();
-      onClose();
-    } catch (error: any) {
-      console.error("Lỗi khi tạo bệnh:", error.response?.data);
-      notification.error({
-        message: "Lỗi",
-        description: error?.response?.data?.message || "Không thể tạo bệnh!",
-      });
-    }
-  };
+    await diseaseService.createDisease(diseaseData);
+
+    notification.success({
+      message: "Thành công",
+      description: "Bệnh đã được tạo thành công!",
+    });
+
+    form.resetFields();
+    refreshDiseases();
+    onClose();
+  } catch (error: any) {
+    console.error("Lỗi khi tạo bệnh:", error.response?.data);
+
+    notification.error({
+      message: "Lỗi",
+      description: error?.response?.data?.message || "Không thể tạo bệnh!",
+    });
+  }
+};
+
+
 
   const handleCancel = () => {
     form.resetFields();
@@ -72,6 +80,16 @@ const AddDiseaseModal: React.FC<AddDiseaseModalProps> = ({
         >
           <Input.TextArea placeholder="Nhập mô tả bệnh" />
         </Form.Item>
+<Form.Item
+  name="isActive"
+  label="Trạng thái"
+  rules={[{ required: true, message: "Vui lòng chọn trạng thái!" }]}
+>
+  <Select>
+    <Option value={IsActive.Active}>Hoạt động</Option>
+    <Option value={IsActive.Inactive}>Không hoạt động</Option>
+  </Select>
+</Form.Item>
 
         <Form.Item>
           <Button type="primary" htmlType="submit">
