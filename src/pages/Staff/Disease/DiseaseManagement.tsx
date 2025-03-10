@@ -1,10 +1,10 @@
-import DiseaseManagePage from "../../../components/Disease/Disease";
+// import DiseaseManagePage from "../../../components/Disease/Disease";
 import StaffLayout from "../../../components/Layout/StaffLayout";
 
 const DiseaseManagement = () => {
   return (
     <StaffLayout>
-      <DiseaseManagePage />
+      <div>Looix</div>
     </StaffLayout>
   );
 };

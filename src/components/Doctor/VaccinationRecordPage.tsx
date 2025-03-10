@@ -14,7 +14,7 @@ import { UserResponseDTO } from "../../models/User";
 const { Search } = Input;
 
 const VaccinationRecordPage: React.FC = () => {
-  const [records, setRecords] = useState<VaccinationRecordWithNames[]>([]);
+  const [records, setRecords] = useState<VaccinationRecordResponseDTO[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -277,7 +277,7 @@ const VaccinationRecordPage: React.FC = () => {
       title: "Xem chi tiết",
       key: "action",
       width: 100,
-      render: (_: any, record: VaccinationRecordWithNames) => (
+      render: (_: any, record: VaccinationRecordResponseDTO) => (
         <Space>
           <EyeOutlined
             onClick={() => handleViewDetail(record)}
