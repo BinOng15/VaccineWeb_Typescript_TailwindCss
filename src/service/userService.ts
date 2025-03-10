@@ -66,11 +66,10 @@ const userService = {
       );
       return response.data;
     } catch (error) {
-      console.error(`Error fetching user by ID ${id}:`, error);
+      console.error(`Error fetching user by id ${id}:`, error);
       throw error;
     }
   },
-
   // Lấy danh sách người dùng phân trang
   getUsersPaged: async (
     pageNumber: number,

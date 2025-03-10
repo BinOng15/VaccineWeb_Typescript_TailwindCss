@@ -1,49 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
-import { Table, Input, Space, Row, Col, Modal } from "antd";
+import { Table, Input, Space, Row, Col, Modal, Button } from "antd";
 import { ReloadOutlined, EyeOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { axiosInstance } from "../../service/axiosInstance";
 import childProfileService from "../../service/childProfileService";
 import userService from "../../service/userService";
+import { AppointmentResponseDTO } from "../../models/Appointment";
+import { ChildProfileResponseDTO } from "../../models/ChildProfile";
+import { VaccinationRecordResponseDTO } from "../../models/VaccinationRecord";
+import { UserResponseDTO } from "../../models/User";
 
 const { Search } = Input;
-
-// Giao diện VaccinationRecordResponseDTO
-interface VaccinationRecordResponseDTO {
-  recordId: number;
-  appointmentId: number;
-  childId: number;
-  administeredDate: string;
-  reaction: string;
-  notes: string;
-  isActive: number;
-  createdDate: string;
-  createdBy: string;
-  modifiedDate: string;
-  modifiedBy: string;
-}
-
-// Giao diện ChildProfileResponseDTO
-interface ChildProfileResponseDTO {
-  childId: number;
-  userId: number;
-  fullName: string;
-  // Các trường khác nếu cần
-}
-
-// Giao diện UserResponseDTO
-interface UserResponseDTO {
-  userId: number;
-  fullName: string;
-  // Các trường khác nếu cần
-}
-
-// Giao diện mở rộng để thêm thông tin tên trẻ và tên người thân
-interface VaccinationRecordWithNames extends VaccinationRecordResponseDTO {
-  childName: string;
-  parentName: string;
-}
 
 const VaccinationRecordPage: React.FC = () => {
   const [records, setRecords] = useState<VaccinationRecordWithNames[]>([]);
@@ -55,10 +23,19 @@ const VaccinationRecordPage: React.FC = () => {
   });
   const [searchKeyword, setSearchKeyword] = useState("");
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
+  const [isReactionModalVisible, setIsReactionModalVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] =
-    useState<VaccinationRecordWithNames | null>(null);
+    useState<VaccinationRecordResponseDTO | null>(null);
+  const [selectedChildName, setSelectedChildName] = useState<string | null>(
+    null
+  );
+  const [childMap, setChildMap] = useState<{
+    [key: number]: { childFullName: string; userFullName: string };
+  }>({});
+  const [appointmentMap, setAppointmentMap] = useState<{
+    [key: number]: number;
+  }>({});
 
-  // Hàm fetchVaccinationRecords để lấy tất cả bản ghi tiêm chủng từ API
   const fetchVaccinationRecords = async (
     page = pagination.current,
     pageSize = pagination.pageSize,
@@ -69,106 +46,137 @@ const VaccinationRecordPage: React.FC = () => {
       const response = await axiosInstance.get(
         "/api/VaccinationRecord/get-all",
         {
-          params: {
-            page: page,
-            pageSize: pageSize,
-            keyword: keyword || undefined,
-          },
+          params: { page, pageSize, keyword: keyword || undefined },
         }
       );
-      const data: VaccinationRecordResponseDTO[] = response.data || [];
-      console.log("Dữ liệu từ API VaccinationRecord:", data);
+      const recordsData: VaccinationRecordResponseDTO[] = response.data;
+      console.log("Vaccination Records:", recordsData);
 
-      // Lấy danh sách childId duy nhất từ dữ liệu
-      const childIds = [...new Set(data.map((record) => record.childId))];
+      if (!recordsData || recordsData.length === 0) {
+        setRecords([]);
+        setPagination({ current: page, pageSize, total: 0 });
+        return;
+      }
+
+      const appointmentIds = [
+        ...new Set(recordsData.map((record) => record.appointmentId)),
+      ];
+      console.log("Appointment IDs:", appointmentIds);
+
+      const appointmentPromises = appointmentIds.map(async (appointmentId) => {
+        try {
+          const response = await axiosInstance.get(
+            `/api/Appointment/get-by-id/${appointmentId}`
+          );
+          const appointment: AppointmentResponseDTO = response.data;
+          return { appointmentId, childId: Number(appointment.childId) };
+        } catch (error) {
+          console.error(`Lỗi khi lấy appointment ${appointmentId}:`, error);
+          return { appointmentId, childId: null };
+        }
+      });
+
+      const appointmentsData = await Promise.all(appointmentPromises);
+      console.log("Appointments Data:", appointmentsData);
+
+      const newAppointmentMap = appointmentsData.reduce(
+        (acc, { appointmentId, childId }) => {
+          if (childId !== null) acc[appointmentId] = childId;
+          return acc;
+        },
+        {} as { [key: number]: number }
+      );
+      setAppointmentMap(newAppointmentMap);
+      console.log("Appointment Map:", newAppointmentMap);
+
+      const childIds = [...new Set(Object.values(newAppointmentMap))];
       console.log("Child IDs:", childIds);
 
-      // Gọi API lấy tất cả ChildProfile theo danh sách childId
-      const childProfiles: (ChildProfileResponseDTO | null)[] =
-        await Promise.all(
-          childIds.map(async (childId) => {
-            try {
-              return await childProfileService.getChildProfileById(childId);
-            } catch (error) {
-              console.error(
-                `Lỗi khi lấy ChildProfile cho childId ${childId}:`,
-                error
-              );
-              return null;
-            }
-          })
-        );
-      const validChildProfiles = childProfiles.filter(
-        (profile) => profile !== null
-      ) as ChildProfileResponseDTO[];
-      console.log("Child Profiles:", validChildProfiles);
+      const childPromises = childIds.map(async (childId) => {
+        try {
+          const child: ChildProfileResponseDTO =
+            await childProfileService.getChildProfileById(childId);
+          console.log(`Child với childId ${childId}:`, child);
+          console.log(`UserId từ child ${childId}:`, child.userId);
+          return {
+            childId,
+            childFullName: child.fullName || "N/A",
+            userId: child.userId,
+          };
+        } catch (error) {
+          console.error(`Lỗi khi lấy child ${childId}:`, error);
+          return { childId, childFullName: "N/A", userId: null };
+        }
+      });
 
-      // Lấy danh sách userId duy nhất từ ChildProfile
+      const childrenData = await Promise.all(childPromises);
+      console.log("Children Data:", childrenData);
+
       const userIds = [
-        ...new Set(validChildProfiles.map((profile) => profile.userId)),
+        ...new Set(childrenData.map((child) => child.userId).filter(Boolean)),
       ];
       console.log("User IDs:", userIds);
 
-      // Gọi API lấy tất cả User theo danh sách userId
-      const users: (UserResponseDTO | null)[] = await Promise.all(
-        userIds.map(async (userId) => {
-          try {
-            return await userService.getUserById(userId);
-          } catch (error) {
-            console.error(`Lỗi khi lấy User cho userId ${userId}:`, error);
-            return null;
-          }
-        })
-      );
-      const validUsers = users.filter(
-        (user) => user !== null
-      ) as UserResponseDTO[];
-      console.log("Users:", validUsers);
+      const allUsers: UserResponseDTO[] = await userService.getAllUsers();
+      console.log("Dữ liệu từ getAllUsers:", allUsers);
+      if (!allUsers || !Array.isArray(allUsers)) {
+        console.error(
+          "Dữ liệu từ getAllUsers không phải là mảng hoặc không tồn tại:",
+          allUsers
+        );
+      }
 
-      // Tạo bản đồ để tra cứu nhanh
-      const childProfileMap = new Map(
-        validChildProfiles.map((profile) => [profile.childId, profile])
-      );
-      const userMap = new Map(validUsers.map((user) => [user.userId, user]));
+      const userMap = allUsers.reduce((acc, user: any) => {
+        acc[user.userId] = user.fullName || "N/A";
+        return acc;
+      }, {} as { [key: number]: string });
+      console.log("User Map:", userMap);
 
-      // Thêm tên trẻ và tên người thân vào bản ghi
-      const recordsWithNames: VaccinationRecordWithNames[] = data.map(
-        (record) => {
-          const childProfile = childProfileMap.get(record.childId) || {
-            fullName: "N/A",
+      const newChildMap = childrenData.reduce(
+        (acc, { childId, childFullName, userId }) => {
+          acc[childId] = {
+            childFullName,
+            userFullName: userId ? userMap[userId] || "N/A" : "N/A",
           };
-          const user = childProfile.userId
-            ? userMap.get(childProfile.userId) || { fullName: "N/A" }
-            : { fullName: "N/A" };
-          return {
-            ...record,
-            childName: childProfile.fullName || "N/A",
-            parentName: user.fullName || "N/A",
-          };
-        }
+          return acc;
+        },
+        {} as { [key: number]: { childFullName: string; userFullName: string } }
       );
+      console.log("New Child Map trước khi set:", newChildMap);
+      setChildMap(newChildMap);
 
-      setRecords(recordsWithNames);
-      setPagination({
-        current: page,
-        pageSize: pageSize,
-        total: recordsWithNames.length || 0,
-      });
+      setRecords(recordsData);
+      setPagination({ current: page, pageSize, total: recordsData.length });
     } catch (error) {
       console.error("Lỗi khi lấy danh sách bản ghi tiêm chủng:", error);
+      setRecords([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Gọi API khi component mount
+  const fetchUserAndChildNames = async (
+    record: VaccinationRecordResponseDTO
+  ) => {
+    try {
+      const childId = appointmentMap[record.appointmentId];
+      if (childId && childMap[childId]) {
+        setSelectedChildName(childMap[childId].childFullName);
+      } else {
+        setSelectedChildName("N/A");
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy childName:", error);
+      setSelectedChildName("N/A");
+    }
+  };
+
   useEffect(() => {
     fetchVaccinationRecords();
   }, []);
 
   const handleTableChange = (pagination: any) => {
-    const { current, pageSize } = pagination;
-    fetchVaccinationRecords(current, pageSize);
+    fetchVaccinationRecords(pagination.current, pagination.pageSize);
   };
 
   const onSearch = (value: string) => {
@@ -181,56 +189,60 @@ const VaccinationRecordPage: React.FC = () => {
     fetchVaccinationRecords(1, pagination.pageSize, "");
   };
 
-  // Hàm handleViewDetail để xem chi tiết bản ghi tiêm chủng
-  const handleViewDetail = (record: VaccinationRecordWithNames) => {
-    if (!record || typeof record.recordId !== "number") {
-      console.error("Dữ liệu bản ghi không hợp lệ:", record);
-      return;
-    }
-    console.log("Xem chi tiết bản ghi tiêm chủng:", record);
+  const handleViewDetail = (record: VaccinationRecordResponseDTO) => {
     setSelectedRecord(record);
     setIsDetailModalVisible(true);
+    fetchUserAndChildNames(record);
+  };
+
+  const handleViewReaction = (record: VaccinationRecordResponseDTO) => {
+    setSelectedRecord(record);
+    setIsReactionModalVisible(true);
+  };
+
+  const handleConfirmVaccination = (record: VaccinationRecordResponseDTO) => {
+    console.log(`Xác nhận tiêm cho recordId ${record.recordId}`);
+    // Thêm logic gọi API để xác nhận tiêm nếu cần
   };
 
   const handleCloseModal = () => {
     setIsDetailModalVisible(false);
+    setIsReactionModalVisible(false);
     setSelectedRecord(null);
+    setSelectedChildName(null);
   };
 
-  // Chuyển đổi giá trị số sang chuỗi cho isActive
   const getIsActiveText = (isActive: number) => {
-    switch (isActive) {
-      case 1:
-        return "Có";
-      case 0:
-        return "Không";
-      default:
-        return "Không xác định";
-    }
+    return isActive === 1 ? "Có" : isActive === 0 ? "Không" : "Không xác định";
   };
 
   const columns = [
     {
-      title: "Tên trẻ",
-      dataIndex: "childName",
-      key: "childName",
+      title: "Tên Phụ huynh",
+      key: "fullName",
       width: 150,
+      render: (record: VaccinationRecordResponseDTO) => {
+        const childId = appointmentMap[record.appointmentId];
+        return childId ? childMap[childId]?.userFullName || "N/A" : "N/A";
+      },
     },
     {
-      title: "Tên người thân",
-      dataIndex: "parentName",
-      key: "parentName",
+      title: "Tên Trẻ em",
+      key: "fullName",
       width: 150,
+      render: (record: VaccinationRecordResponseDTO) => {
+        const childId = appointmentMap[record.appointmentId];
+        return childId ? childMap[childId]?.childFullName || "N/A" : "N/A";
+      },
     },
     {
       title: "Ngày tiêm",
       dataIndex: "administeredDate",
       key: "administeredDate",
       width: 150,
-      render: (date: string) =>
+      render: (date: Date | string) =>
         date ? moment(date).format("DD/MM/YYYY") : "N/A",
     },
-    { title: "Phản ứng", dataIndex: "reaction", key: "reaction", width: 150 },
     { title: "Ghi chú", dataIndex: "notes", key: "notes", width: 200 },
     {
       title: "Hoạt động",
@@ -244,21 +256,15 @@ const VaccinationRecordPage: React.FC = () => {
       dataIndex: "createdDate",
       key: "createdDate",
       width: 150,
-      render: (date: string) =>
+      render: (date: Date | string) =>
         date ? moment(date).format("DD/MM/YYYY HH:mm:ss") : "N/A",
-    },
-    {
-      title: "Người tạo",
-      dataIndex: "createdBy",
-      key: "createdBy",
-      width: 120,
     },
     {
       title: "Ngày sửa",
       dataIndex: "modifiedDate",
       key: "modifiedDate",
       width: 150,
-      render: (date: string) =>
+      render: (date: Date | string) =>
         date ? moment(date).format("DD/MM/YYYY HH:mm:ss") : "N/A",
     },
     {
@@ -278,6 +284,34 @@ const VaccinationRecordPage: React.FC = () => {
             style={{ color: "blue", cursor: "pointer" }}
           />
         </Space>
+      ),
+    },
+    {
+      title: "Ghi chú phản ứng",
+      key: "reaction",
+      width: 150,
+      render: (_: any, record: VaccinationRecordResponseDTO) => (
+        <Button
+          type="primary"
+          size="small"
+          onClick={() => handleViewReaction(record)}
+        >
+          Ghi chú phản ứng
+        </Button>
+      ),
+    },
+    {
+      title: "Xác nhận tiêm",
+      key: "confirm",
+      width: 150,
+      render: (_: any, record: VaccinationRecordResponseDTO) => (
+        <Button
+          type="default"
+          size="small"
+          onClick={() => handleConfirmVaccination(record)}
+        >
+          Xác nhận tiêm
+        </Button>
       ),
     },
   ];
@@ -320,7 +354,7 @@ const VaccinationRecordPage: React.FC = () => {
         onChange={handleTableChange}
       />
 
-      {/* Modal hiển thị chi tiết thông tin */}
+      {/* Modal chi tiết */}
       <Modal
         title="Chi tiết Bản ghi tiêm chủng"
         visible={isDetailModalVisible}
@@ -330,11 +364,7 @@ const VaccinationRecordPage: React.FC = () => {
         {selectedRecord && (
           <div style={{ padding: 16 }}>
             <p>
-              <strong>Tên trẻ:</strong> {selectedRecord.childName || "N/A"}
-            </p>
-            <p>
-              <strong>Tên người thân:</strong>{" "}
-              {selectedRecord.parentName || "N/A"}
+              <strong>Tên Trẻ em:</strong> {selectedChildName || "N/A"}
             </p>
             <p>
               <strong>Ngày tiêm:</strong>{" "}
@@ -361,9 +391,6 @@ const VaccinationRecordPage: React.FC = () => {
                 : "N/A"}
             </p>
             <p>
-              <strong>Người tạo:</strong> {selectedRecord.createdBy || "N/A"}
-            </p>
-            <p>
               <strong>Ngày sửa đổi:</strong>{" "}
               {selectedRecord.modifiedDate
                 ? moment(selectedRecord.modifiedDate).format(
@@ -374,6 +401,23 @@ const VaccinationRecordPage: React.FC = () => {
             <p>
               <strong>Người sửa đổi:</strong>{" "}
               {selectedRecord.modifiedBy || "N/A"}
+            </p>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal phản ứng */}
+      <Modal
+        title="Ghi chú phản ứng"
+        visible={isReactionModalVisible}
+        onCancel={handleCloseModal}
+        footer={null}
+      >
+        {selectedRecord && (
+          <div style={{ padding: 16 }}>
+            <p>
+              <strong>Phản ứng sau tiêm:</strong>{" "}
+              {selectedRecord.reaction || "Không có phản ứng"}
             </p>
           </div>
         )}
