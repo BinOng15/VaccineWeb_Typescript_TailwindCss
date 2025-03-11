@@ -381,7 +381,7 @@ const AppointmentManagePage: React.FC = () => {
   return (
     <div className="p-4 max-w-7xl mx-auto">
       <h2 className="text-2xl font-bold text-center p-2 rounded-t-lg">
-        DANH SÁCH LỊCH HẸN TIÊM CHỦNG
+        DANH SÁCH LỊCH ĐĂNG KÝ TIÊM CHỦNG
       </h2>
       <Row
         justify="space-between"

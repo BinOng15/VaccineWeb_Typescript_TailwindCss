@@ -252,9 +252,12 @@ const VaccinePackageManagePage: React.FC = () => {
   ];
 
   return (
-    <div>
+    <div className="p-4 max-w-7xl mx-auto">
+      <h2 className="text-2xl font-bold text-center p-2 rounded-t-lg">
+        QUẢN LÝ GÓI VẮC XIN
+      </h2>
       <Tabs
-        className="custom-tabs mt-20 ml-10 mr-10"
+        className="custom-tabs"
         defaultActiveKey="activePackages"
         onChange={handleTabChange}
       >

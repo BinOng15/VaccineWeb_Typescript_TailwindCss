@@ -53,7 +53,9 @@ const AddChildProfileModal: React.FC<AddChildProfileModalProps> = ({
       const newChildProfile: CreateChildProfileDTO = {
         userId: userData.userId,
         fullName: values.fullName,
-        dateOfBirth: moment(values.dateOfBirth).format("DD-MM-YYYY HH:mm:ss"),
+        dateOfBirth: values.dateOfBirth
+          ? moment(values.dateOfBirth).format("YYYY-MM-DDTHH:mm:ss")
+          : null,
         gender: values.gender,
         relationship: values.relationship,
         profilePicture: values.profilePicture.file || "",

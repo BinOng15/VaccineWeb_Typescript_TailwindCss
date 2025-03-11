@@ -16,12 +16,12 @@ import {
   ReloadOutlined,
   DeleteOutlined,
   EyeOutlined,
-} from "@ant-design/icons"; // Thêm EyeOutlined
+} from "@ant-design/icons";
 import { VaccineResponseDTO } from "../../../models/Vaccine";
 import vaccineService from "../../../service/vaccineService";
 import EditVaccineModal from "../../Vaccine/EditVaccineModal";
 import AddVaccineModal from "../../Vaccine/AddVaccineButton";
-import moment from "moment"; // Thêm moment để format ngày
+import moment from "moment";
 import { ColumnType } from "antd/es/table";
 
 const { Search } = Input;
@@ -37,7 +37,7 @@ const VaccineManagePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 5,
+    pageSize: 2,
     total: 0,
   });
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -47,8 +47,8 @@ const VaccineManagePage: React.FC = () => {
   const [isEditVaccineModalVisible, setIsEditVaccineModalVisible] =
     useState(false);
   const [editedVaccine, setEditedVaccine] = useState<Vaccine | null>(null);
-  const [isDetailModalVisible, setIsDetailModalVisible] = useState(false); // State cho modal chi tiết
-  const [selectedVaccine, setSelectedVaccine] = useState<Vaccine | null>(null); // Vaccine được chọn để xem chi tiết
+  const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
+  const [selectedVaccine, setSelectedVaccine] = useState<Vaccine | null>(null);
 
   const fetchVaccines = async () => {
     setLoading(true);
@@ -64,11 +64,10 @@ const VaccineManagePage: React.FC = () => {
         .map((vaccine) => ({ ...vaccine, vaccineId: vaccine.vaccineId }));
       console.log("Vắc xin đã lọc:", filteredVaccines);
       setVaccines(filteredVaccines);
-      setPagination({
-        current: 1,
-        pageSize: pagination.pageSize,
+      setPagination((prev) => ({
+        ...prev,
         total: filteredVaccines.length,
-      });
+      }));
     } catch (error) {
       console.error("Lỗi khi lấy vắc xin:", error);
       message.error(
@@ -85,17 +84,24 @@ const VaccineManagePage: React.FC = () => {
 
   const handleTableChange = (pagination: any) => {
     const { current, pageSize } = pagination;
-    setPagination((prev) => ({ ...prev, current, pageSize }));
-    fetchVaccines();
+    setPagination((prev) => ({
+      ...prev,
+      current,
+      pageSize,
+    }));
   };
 
   const onSearch = (value: string) => {
     setSearchKeyword(value);
-    setVaccines((prevVaccines) =>
-      prevVaccines.filter((vaccine) =>
-        vaccine.name.toLowerCase().includes(value.toLowerCase())
-      )
+    const filteredVaccines = vaccines.filter((vaccine) =>
+      vaccine.name.toLowerCase().includes(value.toLowerCase())
     );
+    setVaccines(filteredVaccines);
+    setPagination((prev) => ({
+      ...prev,
+      total: filteredVaccines.length,
+      current: 1, // Reset về trang 1 khi tìm kiếm
+    }));
   };
 
   const handleReset = () => {
@@ -111,8 +117,8 @@ const VaccineManagePage: React.FC = () => {
     setIsAddVaccineModalVisible(false);
     setIsEditVaccineModalVisible(false);
     setEditedVaccine(null);
-    setIsDetailModalVisible(false); // Đóng modal chi tiết
-    setSelectedVaccine(null); // Reset vaccine được chọn
+    setIsDetailModalVisible(false);
+    setSelectedVaccine(null);
   };
 
   const handleUpdate = (vaccine: Vaccine) => {
@@ -165,6 +171,7 @@ const VaccineManagePage: React.FC = () => {
 
   const handleTabChange = (key: string) => {
     setActiveTab(key);
+    fetchVaccines(); // Lấy lại dữ liệu khi chuyển tab
   };
 
   const columns: ColumnType<VaccineResponseDTO>[] = [
@@ -189,14 +196,14 @@ const VaccineManagePage: React.FC = () => {
       title: "Hình ảnh",
       dataIndex: "image",
       key: "Image",
-      width: 150, // Tăng chiều rộng cột để phù hợp với kích thước ảnh lớn hơn
+      width: 150,
       render: (image: string, record: Vaccine) => (
         <div style={{ textAlign: "center" }}>
           {image ? (
             <img
               src={image}
               alt={record.name || "Hình ảnh Vắc xin"}
-              style={{ width: 200, height: 200, objectFit: "contain" }} // Tăng kích thước ảnh lên 200px x 200px
+              style={{ width: 200, height: 200, objectFit: "contain" }}
             />
           ) : (
             "N/A"
@@ -210,15 +217,13 @@ const VaccineManagePage: React.FC = () => {
       width: 500,
       key: "Description",
     },
-
     {
       title: "Giá",
       dataIndex: "price",
       key: "Price",
       width: 150,
-
       render: (price: number) =>
-        price ? `${price.toLocaleString()} đồng` : "N/A", // Hiển thị giá với định dạng số và thêm "đồng"
+        price ? `${price.toLocaleString()} đồng` : "N/A",
     },
     {
       title: "Nhà sản xuất",
@@ -264,9 +269,12 @@ const VaccineManagePage: React.FC = () => {
   ];
 
   return (
-    <div>
+    <div className="p-4 max-w-7xl mx-auto">
+      <h2 className="text-2xl font-bold text-center p-2 rounded-t-lg">
+        QUẢN LÝ VẮC XIN
+      </h2>
       <Tabs
-        className="custom-tabs mt-20 ml-10 mr-10"
+        className="custom-tabs"
         defaultActiveKey="activeVaccines"
         onChange={handleTabChange}
       >
@@ -300,7 +308,10 @@ const VaccineManagePage: React.FC = () => {
           </Row>
           <Table
             columns={columns}
-            dataSource={vaccines}
+            dataSource={vaccines.slice(
+              (pagination.current - 1) * pagination.pageSize,
+              pagination.current * pagination.pageSize
+            )}
             rowKey="vaccineId"
             pagination={{
               current: pagination.current,
@@ -339,7 +350,10 @@ const VaccineManagePage: React.FC = () => {
           </Row>
           <Table
             columns={columns}
-            dataSource={vaccines}
+            dataSource={vaccines.slice(
+              (pagination.current - 1) * pagination.pageSize,
+              pagination.current * pagination.pageSize
+            )}
             rowKey="vaccineId"
             pagination={{
               current: pagination.current,
@@ -417,8 +431,7 @@ const VaccineManagePage: React.FC = () => {
             </p>
             <p>
               <strong>Ngày hết hạn:</strong>{" "}
-              {moment(selectedVaccine.expiryDate).format("DD/MM/YYYY ") ||
-                "N/A"}
+              {moment(selectedVaccine.expiryDate).format("DD/MM/YYYY") || "N/A"}
             </p>
             <p>
               <strong>Ngày tạo:</strong>{" "}

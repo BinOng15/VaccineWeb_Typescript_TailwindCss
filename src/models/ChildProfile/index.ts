@@ -4,7 +4,7 @@ import { Gender, IsActive, Relationship } from "../Type/enum";
 export interface CreateChildProfileDTO {
   userId: number; // ID người dùng (bắt buộc)
   fullName: string; // Họ và tên đầy đủ (bắt buộc)
-  dateOfBirth: string; // Ngày sinh, định dạng ISO 8601 (ví dụ: "2025-03-03")
+  dateOfBirth: string | null; // Ngày sinh, định dạng ISO 8601 (ví dụ: "2025-03-03")
   gender: Gender; // Giới tính (bắt buộc)
   relationship: Relationship; // Quan hệ với người dùng (bắt buộc)
   profilePicture?: File; // Ảnh đại diện (tùy chọn, kiểu File cho việc tải lên)

@@ -49,3 +49,9 @@ export enum Role {
   Staff = 3,
   Customer = 4,
 }
+
+export enum IsCompleted {
+  Yes = 1,
+  No = 0,
+  Pending = 2,
+}

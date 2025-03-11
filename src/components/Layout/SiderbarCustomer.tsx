@@ -25,9 +25,14 @@ const CustomerSidebar: React.FC = () => {
     },
 
     {
-      key: "/child-vaccination-schedule",
+      key: "/child-vaccine-profile",
       icon: <DollarOutlined />,
-      label: "Lịch tiêm của trẻ",
+      label: "Hồ sơ tiêm chủng",
+    },
+    {
+      key: "/child-vaccine-schedule",
+      icon: <DollarOutlined />,
+      label: "Lịch tiêm chủng",
     },
   ];
 

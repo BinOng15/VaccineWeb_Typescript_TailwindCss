@@ -291,8 +291,10 @@ const DoctorVaccinationManagement: React.FC = () => {
   ];
 
   return (
-    <div className="mt-10 ml-10 mr-10">
-      <h2 className="text-2xl font-bold mb-6">QUẢN LÝ TIÊM CHỦNG CHO BÁC SĨ</h2>
+    <div className="p-4 max-w-7xl mx-auto">
+      <h2 className="text-2xl font-bold text-center p-2 rounded-t-lg">
+        QUẢN LÝ QUÁ TRÌNH TIÊM CHỦNG
+      </h2>
       <Row justify="space-between" style={{ marginBottom: 16 }}>
         <Col>
           <Space className="custom-search">

@@ -53,6 +53,12 @@ const VaccineProfilePage = React.lazy(
 const CustomerAppointment = React.lazy(
   () => import("../pages/Customer/AppointmentPage")
 );
+const ChildVaccineProfilePage = React.lazy(
+  () => import("../pages/Customer/ChildVaccineProfile/ChildVaccineProfilePage")
+);
+const ChildVaccineSchedulePage = React.lazy(
+  () => import("../pages/Customer/Schedule/ChildVaccineSchedulePage")
+);
 //-------------------------------------------------Public-----------------------------------------------
 const Homepage = React.lazy(() => import("../pages/Customer/Homepage"));
 const LoginPage = React.lazy(() => import("../pages/LoginPage"));
@@ -258,6 +264,24 @@ const AppRouter = () => {
               element={
                 <ProtectedRouter
                   element={<CustomerAppointment />}
+                  allowedRoles={["Customer"]}
+                />
+              }
+            />
+            <Route
+              path="/child-vaccine-profile"
+              element={
+                <ProtectedRouter
+                  element={<ChildVaccineProfilePage />}
+                  allowedRoles={["Customer"]}
+                />
+              }
+            />
+            <Route
+              path="/child-vaccine-schedule"
+              element={
+                <ProtectedRouter
+                  element={<ChildVaccineSchedulePage />}
                   allowedRoles={["Customer"]}
                 />
               }

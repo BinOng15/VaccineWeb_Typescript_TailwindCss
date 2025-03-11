@@ -11,6 +11,7 @@ interface MainLayoutProps {
 
 const DoctorLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const siderWidth = collapsed ? 80 : 200; // Điều chỉnh khi thu gọn
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -19,14 +20,21 @@ const DoctorLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <Sider
           collapsible
           collapsed={collapsed}
-          onCollapse={(collapsed) => setCollapsed(collapsed)}
+          onCollapse={setCollapsed}
           width={200}
           className="site-layout-background"
-          style={{ height: "100vh", zIndex: 1000 }}
+          theme="light"
+          style={{
+            position: "fixed",
+            left: 0,
+            top: 0,
+            height: "calc(100vh - 64px)",
+            zIndex: 1000,
+          }}
         >
           <DoctorSidebar />
         </Sider>
-        <Layout>
+        <Layout style={{ marginLeft: siderWidth, transition: "margin 0.2s" }}>
           <Content
             style={{
               margin: 0,
