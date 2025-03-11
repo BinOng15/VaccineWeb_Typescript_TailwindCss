@@ -11,7 +11,7 @@ const diseaseService = {
   // Lấy tất cả diseases
   getAllDiseases: async (): Promise<DiseaseResponseDTO[]> => {
     try {
-      const response: AxiosResponse = await axiosInstance.get(
+      const response: AxiosResponse<DiseaseResponseDTO[]> = await axiosInstance.get(
         "api/Disease/get-all"
       );
       return response.data;
