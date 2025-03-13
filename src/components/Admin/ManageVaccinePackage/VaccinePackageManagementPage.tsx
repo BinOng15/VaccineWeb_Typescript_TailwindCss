@@ -17,8 +17,8 @@ import {
   ReloadOutlined,
   DeleteOutlined,
   EyeOutlined,
+  DollarOutlined,
 } from "@ant-design/icons";
-
 import AddVaccinePackageModal from "./AddVaccinePackageModal";
 import EditVaccinePackageModal from "./EditVaccinePackageModal";
 import moment from "moment";
@@ -30,7 +30,7 @@ const { Search } = Input;
 const { TabPane } = Tabs;
 
 interface VaccinePackage extends VaccinePackageResponseDTO {
-  packageId: number;
+  vaccinePackageId: number;
 }
 
 const VaccinePackageManagePage: React.FC = () => {
@@ -66,7 +66,7 @@ const VaccinePackageManagePage: React.FC = () => {
             ? pkg.isActive === 0
             : pkg.isActive === 1
         )
-        .map((pkg) => ({ ...pkg, packageId: pkg.packageId }));
+        .map((pkg) => ({ ...pkg, vaccinePackageId: pkg.vaccinePackageId }));
       console.log("Gói vaccine đã lọc:", filteredPackages);
       setVaccinePackages(filteredPackages);
       setPagination({
@@ -121,7 +121,10 @@ const VaccinePackageManagePage: React.FC = () => {
   };
 
   const handleUpdate = (packageData: VaccinePackage) => {
-    if (!packageData.packageId || typeof packageData.packageId !== "number") {
+    if (
+      !packageData.vaccinePackageId ||
+      typeof packageData.vaccinePackageId !== "number"
+    ) {
       console.error(
         "Dữ liệu gói vaccine không hợp lệ trong handleUpdate:",
         packageData
@@ -129,12 +132,12 @@ const VaccinePackageManagePage: React.FC = () => {
       message.error("Dữ liệu gói vaccine không hợp lệ để chỉnh sửa");
       return;
     }
-    console.log("Chỉnh sửa gói vaccine với ID:", packageData.packageId);
+    console.log("Chỉnh sửa gói vaccine với ID:", packageData.vaccinePackageId);
     setEditedPackage(packageData);
     setIsEditPackageModalVisible(true);
   };
 
-  const handleDelete = async (packageId: number) => {
+  const handleDelete = async (vaccinePackageId: number) => {
     Modal.confirm({
       title: "Bạn có muốn xóa gói vaccine này không?",
       content: "Hành động này không thể hoàn tác.",
@@ -143,7 +146,9 @@ const VaccinePackageManagePage: React.FC = () => {
       cancelText: "Không",
       onOk: async () => {
         try {
-          const success = await vaccinePackageService.deletePackage(packageId);
+          const success = await vaccinePackageService.deletePackage(
+            vaccinePackageId
+          );
           if (success) {
             message.success("Gói vaccine đã được xóa thành công");
             fetchVaccinePackages();
@@ -164,7 +169,10 @@ const VaccinePackageManagePage: React.FC = () => {
   };
 
   const handleViewDetail = (packageData: VaccinePackage) => {
-    if (!packageData.packageId || typeof packageData.packageId !== "number") {
+    if (
+      !packageData.vaccinePackageId ||
+      typeof packageData.vaccinePackageId !== "number"
+    ) {
       console.error(
         "Dữ liệu gói vaccine không hợp lệ để xem chi tiết:",
         packageData
@@ -172,9 +180,36 @@ const VaccinePackageManagePage: React.FC = () => {
       message.error("Dữ liệu gói vaccine không hợp lệ để xem");
       return;
     }
-    console.log("Xem chi tiết gói vaccine với ID:", packageData.packageId);
+    console.log(
+      "Xem chi tiết gói vaccine với ID:",
+      packageData.vaccinePackageId
+    );
     setSelectedPackage(packageData);
     setIsDetailModalVisible(true);
+  };
+
+  const handleUpdateTotalPrice = async (vaccinePackageId: number) => {
+    Modal.confirm({
+      title: "Bạn có muốn cập nhật giá tổng cho gói vắc xin này không?",
+      okText: "Có",
+      cancelText: "Không",
+      onOk: async () => {
+        try {
+          const success = await vaccinePackageService.updateTotalPrice(
+            vaccinePackageId
+          );
+          if (success) {
+            message.success("Cập nhật giá tổng thành công.");
+            fetchVaccinePackages(); // Làm mới dữ liệu sau khi cập nhật
+          } else {
+            message.error("Cập nhật giá tổng thất bại.");
+          }
+        } catch (error) {
+          console.error("Lỗi khi cập nhật giá tổng:", error);
+          message.error("Không thể cập nhật giá tổng.");
+        }
+      },
+    });
   };
 
   const handleTabChange = (key: string) => {
@@ -197,19 +232,26 @@ const VaccinePackageManagePage: React.FC = () => {
       title: "Tên gói vaccine",
       dataIndex: "name",
       key: "name",
-      width: 150,
     },
     {
       title: "Mô tả",
       dataIndex: "description",
       key: "description",
-      width: 300,
+    },
+    {
+      title: "Độ tuổi tiêm(tháng)",
+      dataIndex: "ageInMonths",
+      key: "ageInMonths",
+    },
+    {
+      title: "Tổng số liều",
+      dataIndex: "totalDoses",
+      key: "totalDoses",
     },
     {
       title: "Giá tổng",
       dataIndex: "totalPrice",
       key: "totalPrice",
-      width: 150,
       render: (totalPrice: number) =>
         totalPrice ? `${totalPrice.toLocaleString()} đồng` : "N/A",
     },
@@ -217,17 +259,18 @@ const VaccinePackageManagePage: React.FC = () => {
       title: "Trạng thái",
       dataIndex: "isActive",
       key: "isActive",
-      width: 120,
       render: (isActive: number) =>
         isActive === 1 ? "Hoạt động" : "Không hoạt động",
     },
     {
       title: "Hành động",
       key: "action",
-      width: 150,
       render: (_: any, record: VaccinePackage) => {
         console.log("Bản ghi trong Cột Hành động:", record);
-        if (!record.packageId || typeof record.packageId !== "number") {
+        if (
+          !record.vaccinePackageId ||
+          typeof record.vaccinePackageId !== "number"
+        ) {
           console.error("ID gói vaccine không hợp lệ trong bản ghi:", record);
           return null;
         }
@@ -242,8 +285,12 @@ const VaccinePackageManagePage: React.FC = () => {
               style={{ color: "blue", cursor: "pointer", marginRight: 8 }}
             />
             <DeleteOutlined
-              onClick={() => handleDelete(record.packageId)}
-              style={{ color: "red", cursor: "pointer" }}
+              onClick={() => handleDelete(record.vaccinePackageId)}
+              style={{ color: "red", cursor: "pointer", marginRight: 8 }}
+            />
+            <DollarOutlined
+              onClick={() => handleUpdateTotalPrice(record.vaccinePackageId)}
+              style={{ color: "green", cursor: "pointer" }}
             />
           </Space>
         );
@@ -292,7 +339,7 @@ const VaccinePackageManagePage: React.FC = () => {
           <Table
             columns={columns}
             dataSource={vaccinePackages}
-            rowKey="packageId"
+            rowKey="vaccinePackageId"
             pagination={{
               current: pagination.current,
               pageSize: pagination.pageSize,
@@ -331,7 +378,7 @@ const VaccinePackageManagePage: React.FC = () => {
           <Table
             columns={columns}
             dataSource={vaccinePackages}
-            rowKey="packageId"
+            rowKey="vaccinePackageId"
             pagination={{
               current: pagination.current,
               pageSize: pagination.pageSize,
@@ -360,7 +407,6 @@ const VaccinePackageManagePage: React.FC = () => {
         />
       )}
 
-      {/* Modal để xem chi tiết thông tin gói vaccine */}
       <Modal
         title="CHI TIẾT GÓI VẮC XIN"
         visible={isDetailModalVisible}

@@ -33,6 +33,7 @@ export interface AppointmentResponseDTO {
   isActive: number;
   createdDate: string;
   createdBy: string;
+  reaction: string;
   modifiedDate: string;
   modifiedBy: string;
 }

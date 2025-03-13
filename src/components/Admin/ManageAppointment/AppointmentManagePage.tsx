@@ -119,7 +119,7 @@ const AppointmentManagePage: React.FC = () => {
         : "";
       const vaccinePackage = appointment.vaccinePackageId
         ? vaccinePackages
-            .find((p) => p.packageId === appointment.vaccinePackageId)
+            .find((p) => p.vaccinePackageId === appointment.vaccinePackageId)
             ?.name.toLowerCase() || ""
         : "";
 
@@ -311,7 +311,7 @@ const AppointmentManagePage: React.FC = () => {
       width: 150,
       render: (vaccinePackageId: number) => {
         const packageItem = vaccinePackages.find(
-          (p) => p.packageId === vaccinePackageId
+          (p) => p.vaccinePackageId === vaccinePackageId
         );
         return packageItem ? packageItem.name : "";
       },
@@ -445,16 +445,11 @@ const AppointmentManagePage: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Tên Gói vắc xin">
               {vaccinePackages.find(
-                (p) => p.packageId === selectedAppointment.vaccinePackageId
+                (p) =>
+                  p.vaccinePackageId === selectedAppointment.vaccinePackageId
               )?.name || "N/A"}
             </Descriptions.Item>
-            <Descriptions.Item label="Ngày hẹn">
-              {selectedAppointment.appointmentDate
-                ? moment(selectedAppointment.appointmentDate).format(
-                    "DD/MM/YYYY HH:mm"
-                  )
-                : "N/A"}
-            </Descriptions.Item>
+
             <Descriptions.Item label="Trạng thái hẹn">
               {getStatusText(selectedAppointment.appointmentStatus)}
             </Descriptions.Item>
