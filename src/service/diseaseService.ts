@@ -1,9 +1,7 @@
 import { AxiosResponse } from "axios";
 import { axiosInstance } from "./axiosInstance"; // Giả sử bạn có file axiosInstance.ts để cấu hình axios
 import {
-  CreateDiseaseDTO,
   DiseaseResponseDTO,
-  UpdateDiseaseDTO,
 } from "../models/Disease";
 
 // Các hàm gọi API cho Disease
@@ -52,12 +50,14 @@ const diseaseService = {
 
   // Tạo disease mới
   createDisease: async (
-    diseaseData: CreateDiseaseDTO
+    diseaseData: FormData
   ): Promise<DiseaseResponseDTO> => {
     try {
       const response: AxiosResponse = await axiosInstance.post(
         "api/Disease/create-disease",
-        diseaseData
+        diseaseData, {headers: {
+            "Content-Type": "multipart/form-data",
+          },}
       );
       return response.data;
     } catch (error) {
@@ -67,26 +67,31 @@ const diseaseService = {
   },
 
   // Cập nhật disease
-  updateDisease: async (
-    id: number,
-    diseaseData: UpdateDiseaseDTO
-  ): Promise<void> => {
-    try {
-      await axiosInstance.put(
-        `api/Disease/update-disease-by-id/${id}`,
-        diseaseData
-      );
-    } catch (error) {
-      console.error(`Error updating disease ${id}:`, error);
-      throw error;
-    }
-  },
+ updateDisease: async (
+  id: number,
+  diseaseData: FormData
+): Promise<void> => {
+  try {
+    await axiosInstance.put(
+      `api/Disease/update-disease/${id}`,
+      diseaseData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+  } catch (error) {
+    console.error(`Error updating disease ${id}:`, error);
+    throw error;
+  }
+},
 
   // Xóa disease
   deleteDisease: async (diseaseId: number): Promise<void> => {
     try {
       await axiosInstance.delete(
-        `api/Disease/delete-disease-by-id/${diseaseId}`
+        `api/Disease/delete-disease/${diseaseId}`
       );
     } catch (error) {
       console.error(`Error deleting disease ${diseaseId}:`, error);

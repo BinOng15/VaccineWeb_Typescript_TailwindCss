@@ -29,7 +29,8 @@ const EditVaccinePackageModal: React.FC<EditVaccinePackageModalProps> = ({
       form.setFieldsValue({
         name: packageData.name,
         description: packageData.description,
-        totalPrice: packageData.totalPrice,
+        ageInMonths: packageData.ageInMonths,
+        totalDoses: packageData.totalDoses,
       });
     }
   }, [packageData, visible, form]);
@@ -38,23 +39,15 @@ const EditVaccinePackageModal: React.FC<EditVaccinePackageModalProps> = ({
     setLoading(true);
     try {
       const updatedData: UpdateVaccinePackageDTO = {
-        name: values.name !== packageData.name ? values.name : undefined,
-        description:
-          values.description !== packageData.description
-            ? values.description
-            : undefined,
+        name: values.name,
+        description: values.description,
+        ageInMonths: values.ageInMonths,
+        totalDoses: parseFloat(values.totalDoses),
       };
-
-      // Chỉ gửi các trường có thay đổi
-      if (!updatedData.name && !updatedData.description) {
-        message.info("Không có thay đổi để cập nhật.");
-        handleCancel();
-        return;
-      }
 
       console.log("Updated Vaccine Package Data to Send:", updatedData); // Debug dữ liệu gửi lên
       const success = await vaccinePackageService.updatePackage(
-        packageData.packageId,
+        packageData.vaccinePackageId,
         updatedData
       );
       if (success) {
@@ -103,13 +96,29 @@ const EditVaccinePackageModal: React.FC<EditVaccinePackageModalProps> = ({
         >
           <Input.TextArea placeholder="Nhập mô tả" />
         </Form.Item>
-
         <Form.Item
-          label="Giá tổng"
-          name="totalPrice"
-          rules={[{ required: true, message: "Hãy nhập giá tổng!" }]}
+          label="Độ tuổi tiêm(tháng)"
+          name="ageInMonths"
+          rules={[
+            {
+              required: true,
+              message: "Hãy nhập độ tuổi tiêm của gói vắc xin!",
+            },
+          ]}
         >
-          <Input type="number" placeholder="Nhập giá tổng" disabled />
+          <Input.TextArea placeholder="Nhập mô tả" />
+        </Form.Item>
+        <Form.Item
+          label="Tổng số liều"
+          name="totalDoses"
+          rules={[
+            {
+              required: true,
+              message: "Hãy nhập tổng số liều của gói vaccine!",
+            },
+          ]}
+        >
+          <Input.TextArea placeholder="Nhập mô tả" />
         </Form.Item>
 
         <Form.Item>

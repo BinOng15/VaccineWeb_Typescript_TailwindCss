@@ -123,7 +123,7 @@ function CustomerAppointment() {
         : "";
       const vaccinePackage = appointment.vaccinePackageId
         ? vaccinePackages
-            .find((p) => p.packageId === appointment.vaccinePackageId)
+            .find((p) => p.vaccinePackageId === appointment.vaccinePackageId)
             ?.name.toLowerCase() || ""
         : "";
 
@@ -200,7 +200,7 @@ function CustomerAppointment() {
           return vaccine ? vaccine.name : "Không tìm thấy vaccine";
         } else if (record.vaccinePackageId) {
           const packageItem = vaccinePackages.find(
-            (p) => p.packageId === record.vaccinePackageId
+            (p) => p.vaccinePackageId === record.vaccinePackageId
           );
           return packageItem ? packageItem.name : "Không tìm thấy gói vaccine";
         }
@@ -396,7 +396,7 @@ function CustomerAppointment() {
                   : selectedAppointment.vaccinePackageId
                   ? vaccinePackages.find(
                       (p) =>
-                        p.packageId === selectedAppointment.vaccinePackageId
+                        p.vaccinePackageId === selectedAppointment.vaccinePackageId
                     )?.name || "Không tìm thấy gói vaccine"
                   : "Không có vaccine hoặc gói vaccine"}
               </p>

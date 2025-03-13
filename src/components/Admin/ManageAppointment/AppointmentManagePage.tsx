@@ -111,7 +111,7 @@ const AppointmentManagePage: React.FC = () => {
         : "";
       const vaccinePackage = appointment.vaccinePackageId
         ? vaccinePackages
-            .find((p) => p.packageId === appointment.vaccinePackageId)
+            .find((p) => p.vaccinePackageId === appointment.vaccinePackageId)
             ?.name.toLowerCase() || ""
         : "";
 
@@ -308,7 +308,7 @@ const AppointmentManagePage: React.FC = () => {
       width: 150,
       render: (vaccinePackageId: number) => {
         const packageItem = vaccinePackages.find(
-          (p) => p.packageId === vaccinePackageId
+          (p) => p.vaccinePackageId === vaccinePackageId
         );
         return packageItem ? packageItem.name : "";
       },
@@ -454,7 +454,7 @@ const AppointmentManagePage: React.FC = () => {
             <p>
               <strong>Tên Gói vắc xin:</strong>{" "}
               {vaccinePackages.find(
-                (p) => p.packageId === selectedAppointment.vaccinePackageId
+                (p) => p.vaccinePackageId === selectedAppointment.vaccinePackageId
               )?.name || ""}
             </p>
             <p>

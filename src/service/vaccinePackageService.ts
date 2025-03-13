@@ -59,6 +59,17 @@ const vaccinePackageService = {
       throw error;
     }
   },
+  updateTotalPrice: async (id: number): Promise<boolean> => {
+    try {
+      const response: AxiosResponse = await axiosInstance.post(
+        `api/VaccinePackage/update-total-price/${id}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating total price ${id}:`, error);
+      throw error;
+    }
+  },
   deletePackage: async (packageId: number): Promise<boolean> => {
     try {
       const response: AxiosResponse = await axiosInstance.delete(

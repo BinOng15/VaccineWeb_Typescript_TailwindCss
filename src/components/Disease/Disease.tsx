@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
-import { Table, Space, message, TablePaginationConfig, Button } from "antd";
+import React, { useState, useEffect } from "react";
+import { Table, Space, message, TablePaginationConfig, Button, Row, Col, Input } from "antd";
 import { ColumnType } from "antd/es/table";
 import {
   ReloadOutlined,
-  PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
@@ -14,9 +13,13 @@ import AddDiseaseButton from "./AddDiseaseButton";
 import EditDiseaseModal from "./EditDiseaseModal";
 import ViewDiseaseModal from "./ViewDiseaseModal";
 
+const { Search } = Input;
+
 function DiseaseManagePage() {
   const [diseases, setDiseases] = useState<DiseaseResponseDTO[]>([]);
+  const [filteredDiseases, setFilteredDiseases] = useState<DiseaseResponseDTO[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [pagination, setPagination] = useState<TablePaginationConfig>({
     current: 1,
     pageSize: 5,
@@ -25,8 +28,7 @@ function DiseaseManagePage() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [viewModalVisible, setViewModalVisible] = useState(false);
-  const [selectedDisease, setSelectedDisease] =
-    useState<DiseaseResponseDTO | null>(null);
+  const [selectedDisease, setSelectedDisease] = useState<DiseaseResponseDTO | null>(null);
 
   // Lấy danh sách bệnh khi component được mount
   useEffect(() => {
@@ -40,18 +42,43 @@ function DiseaseManagePage() {
       const allDiseases = await diseaseService.getAllDiseases();
       console.log("API response:", allDiseases);
       setDiseases(allDiseases);
+      setFilteredDiseases(allDiseases); // Ban đầu, danh sách lọc bằng danh sách gốc
       setPagination((prev) => ({
         ...prev,
         total: allDiseases.length,
       }));
     } catch (error) {
       console.error("Failed to fetch diseases:", error);
-      message.error(
-        "Không thể tải danh sách bệnh: " + (error as Error).message
-      );
+      message.error("Không thể tải danh sách bệnh: " + (error as Error).message);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Hàm tìm kiếm
+  const handleSearch = (value: string) => {
+    setSearchKeyword(value);
+    const filtered = diseases.filter((disease) =>
+      disease.name.toLowerCase().includes(value.toLowerCase()) ||
+      disease.description.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredDiseases(filtered);
+    setPagination((prev) => ({
+      ...prev,
+      current: 1, // Reset về trang đầu tiên sau khi tìm kiếm
+      total: filtered.length,
+    }));
+  };
+
+  // Hàm làm mới
+  const handleReset = () => {
+    setSearchKeyword("");
+    setFilteredDiseases(diseases); // Khôi phục danh sách gốc
+    setPagination((prev) => ({
+      ...prev,
+      current: 1,
+      total: diseases.length,
+    }));
   };
 
   // Xử lý thay đổi phân trang
@@ -72,6 +99,11 @@ function DiseaseManagePage() {
     } catch (error) {
       message.error("Không thể xóa bệnh: " + (error as Error).message);
     }
+  };
+
+  // Xử lý thêm mới gói vaccine
+  const handleAddPackage = () => {
+    setAddModalVisible(true);
   };
 
   // Định nghĩa cột cho bảng
@@ -108,7 +140,7 @@ function DiseaseManagePage() {
               setViewModalVisible(true);
             }}
             title="Xem chi tiết"
-          ></Button>
+          />
           <Button
             icon={<EditOutlined />}
             onClick={() => {
@@ -116,13 +148,13 @@ function DiseaseManagePage() {
               setEditModalVisible(true);
             }}
             title="Chỉnh sửa"
-          ></Button>
+          />
           <Button
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.diseaseId)}
             danger
             title="Xóa"
-          ></Button>
+          />
         </Space>
       ),
     },
@@ -131,25 +163,44 @@ function DiseaseManagePage() {
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <div className="w-full max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
-        <h1 className="text-3xl font-bold text-[#102A83] mb-6 text-center">
+        <h1 className="text-3xl font-bold text-[#0e0e0e] mb-6 text-center">
           Quản lý bệnh
         </h1>
-        <Space style={{ marginBottom: 16 }}>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setAddModalVisible(true)}
-          >
-            Thêm mới
-          </Button>
-          <ReloadOutlined
-            onClick={fetchDiseases}
-            style={{ fontSize: "24px", cursor: "pointer" }}
-          />
-        </Space>
+
+        {/* Thanh tìm kiếm và nút Tạo mới */}
+        <Row gutter={16} justify="space-between" align="middle" className="mb-4">
+          <Col>
+            <Space className="custom-search">
+              <Search
+                placeholder="Tìm kiếm theo tên hoặc mô tả"
+                onSearch={handleSearch}
+                enterButton
+                allowClear
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                style={{ width: 300 }} // Điều chỉnh độ rộng theo ý muốn
+              />
+              <ReloadOutlined
+                onClick={handleReset}
+                style={{ fontSize: "24px", cursor: "pointer" }}
+              />
+            </Space>
+          </Col>
+          <Col>
+            <Button
+              type="primary"
+              className="custom-button"
+              onClick={handleAddPackage}
+            >
+              Tạo mới bệnh
+            </Button>
+          </Col>
+        </Row>
+
+        {/* Bảng danh sách bệnh */}
         <Table
           columns={columns}
-          dataSource={diseases}
+          dataSource={filteredDiseases}
           rowKey="diseaseId"
           loading={loading}
           pagination={pagination}
@@ -157,12 +208,14 @@ function DiseaseManagePage() {
           bordered
           locale={{ emptyText: "Không có dữ liệu" }}
         />
+
         {/* Modal Thêm mới */}
         <AddDiseaseButton
           visible={addModalVisible}
           onClose={() => setAddModalVisible(false)}
           refreshDiseases={fetchDiseases}
         />
+
         {/* Modal Chỉnh sửa */}
         {selectedDisease && (
           <EditDiseaseModal
@@ -175,6 +228,7 @@ function DiseaseManagePage() {
             refreshDiseases={fetchDiseases}
           />
         )}
+
         {/* Modal Xem chi tiết */}
         {selectedDisease && (
           <ViewDiseaseModal

@@ -24,7 +24,8 @@ const AddVaccinePackageModal: React.FC<AddVaccinePackageModalProps> = ({
       const packageData: CreateVaccinePackageDTO = {
         name: values.name,
         description: values.description,
-        totalPrice: parseFloat(values.totalPrice),
+        ageInMonths: values.ageInMonths,
+        totalDoses: parseFloat(values.totalDoses),
       };
       console.log("Package Data to Send:", packageData); // Debug dữ liệu gửi lên
       await vaccinePackageService.createPackage(packageData);
@@ -81,13 +82,19 @@ const AddVaccinePackageModal: React.FC<AddVaccinePackageModalProps> = ({
         </Form.Item>
 
         <Form.Item
-          name="totalPrice"
-          label="Giá tổng"
-          rules={[{ required: true, message: "Hãy nhập giá tổng!" }]}
+          name="ageInMonths"
+          label="Độ tuổi(tháng)"
+          rules={[{ required: true, message: "Hãy nhập độ tuổi(tháng)!" }]}
         >
           <Input type="number" />
         </Form.Item>
-
+        <Form.Item
+          name="totalDoses"
+          label="Tổng số liều"
+          rules={[{ required: true, message: "Hãy nhập tổng số liều!" }]}
+        >
+          <Input type="number" />
+        </Form.Item>
         <Form.Item>
           <Button type="primary" htmlType="submit">
             Xác nhận
