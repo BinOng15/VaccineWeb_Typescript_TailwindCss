@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AxiosResponse } from "axios";
 import { axiosInstance } from "./axiosInstance"; // Giả sử bạn có file cấu hình axios
 import {
@@ -75,29 +76,34 @@ const childProfileService = {
   ): Promise<ChildProfileResponseDTO> => {
     try {
       const formData = new FormData();
-      formData.append("userId", childData.userId.toString());
-      formData.append("fullName", childData.fullName);
-      formData.append("dateOfBirth", childData.dateOfBirth);
-      formData.append("gender", childData.gender.toString());
-      formData.append("relationship", childData.relationship.toString());
-      if (childData.profilePicture) {
-        formData.append("profilePicture", childData.profilePicture);
-      }
+      formData.append("UserId", childData.userId.toString()); // Khớp với backend
+      formData.append("FullName", childData.fullName); // Khớp với backend
+      formData.append("DateOfBirth", childData.dateOfBirth); // Phải là "dd/MM/yyyy"
+      formData.append("Gender", childData.gender.toString()); // Khớp với backend
+      formData.append("Relationship", childData.relationship.toString()); // Khớp với backend
+      formData.append("ProfilePicture", childData.profilePicture); // Khớp với backend
+
+      console.log("Sending formData:", Object.fromEntries(formData)); // Log dữ liệu gửi đi
 
       const response: AxiosResponse = await axiosInstance.post(
         "/create-child-profile",
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" },
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Lỗi khi tạo hồ sơ trẻ em:", error);
+      if (error.response) {
+        console.error("Response status:", error.response.status);
+        console.error("Response data:", error.response.data);
+      }
       throw error;
     }
   },
-
   // Cập nhật hồ sơ trẻ em
   updateChildProfile: async (
     id: number,
@@ -107,7 +113,8 @@ const childProfileService = {
       const formData = new FormData();
       formData.append("fullName", childData.fullName);
       if (childData.dateOfBirth)
-        formData.append("dateOfBirth", childData.dateOfBirth);
+        formData.append("DateOfBirth", childData.dateOfBirth); // Khớp với backend
+
       if (childData.gender)
         formData.append("gender", childData.gender.toString());
       if (childData.relationship)

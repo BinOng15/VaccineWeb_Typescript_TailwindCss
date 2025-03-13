@@ -1,16 +1,19 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import { FaShoppingCart, FaCalendarAlt, FaComments } from "react-icons/fa";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect, useRef } from "react";
+import { FaCalendarAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { userLogout } from "../../service/authService";
 import { notification } from "antd";
+import { useAuth } from "../../context/AuthContext";
+import userService from "../../service/userService"; // Import userService để gọi getUserById
 
 const AppHeader: React.FC = () => {
   const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const { user, logout } = useAuth();
   const [avatarMenuOpen, setAvatarMenuOpen] = useState<boolean>(false);
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
-  const avatarDropdownRef = useRef<HTMLDivElement>(null); // Ref riêng cho avatar dropdown
-  const menuDropdownRef = useRef<HTMLDivElement>(null); // Ref riêng cho menu dropdown
+  const [userData, setUserData] = useState<any | null>(null); // State để lưu dữ liệu người dùng từ API
+  const avatarDropdownRef = useRef<HTMLDivElement>(null);
+  const menuDropdownRef = useRef<HTMLDivElement>(null);
 
   const menuItems = [
     { name: "Trang chủ", path: "/" },
@@ -21,38 +24,39 @@ const AppHeader: React.FC = () => {
       name: "Cẩm nang",
       subMenu: [
         { name: "Lịch tiêm chủng cho trẻ em", path: "/vaccination-schedule" },
-        {
-          name: "Quá trình tiêm chủng cho trẻ em",
-          path: "/cam-nang/huong-dan",
-        },
         { name: "Các loại vắc xin cho trẻ em", path: "/vaccine-types" },
         { name: "Các gói vắc xin cho trẻ em", path: "/vaccine-package" },
       ],
     },
     { name: "Bảng giá", path: "/vaccine-price" },
-    { name: "Liên hệ", path: "/lien-he" },
   ];
 
-  // Hàm kiểm tra trạng thái đăng nhập, sử dụng useCallback để tránh re-render không cần thiết
-  const checkLoginStatus = useCallback(() => {
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("accessToken");
-    setIsLoggedIn(!!token); // Nếu có token thì isLoggedIn = true
-  }, []); // Không cần dependency vì chỉ cần chạy một lần
+  const isLoggedIn = !!user;
 
-  // Kiểm tra trạng thái đăng nhập khi component mount, tránh re-render liên tục
+  // Lấy dữ liệu người dùng từ API khi component mount
   useEffect(() => {
-    checkLoginStatus();
-    // Không cần theo dõi thay đổi token trong dependency array để tránh re-render không cần thiết
-  }, [checkLoginStatus]);
+    const fetchUserData = async () => {
+      if (!user) {
+        console.error("No user found");
+        return;
+      }
+      try {
+        const userData = await userService.getUserById(user.userId);
+        console.log("User data from API:", userData); // Debug dữ liệu trả về
+        setUserData(userData);
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      }
+    };
 
-  // Hàm logout được tối ưu để chỉ navigation một lần
+    fetchUserData();
+  }, [user]); // Chạy lại khi user thay đổi
+
   const handleLogout = async () => {
     try {
-      await userLogout(); // Gọi API logout
-      setIsLoggedIn(false);
+      await logout();
       setAvatarMenuOpen(false);
-      navigate("/login", { replace: true });
+      setUserData(null); // Xóa dữ liệu người dùng khi logout
       notification.success({
         message: "Logout Successful",
         description: "You have been logged out successfully.",
@@ -69,6 +73,20 @@ const AppHeader: React.FC = () => {
   const handleNavigate = (path: string) => {
     navigate(path, { replace: true });
   };
+
+  // Xử lý đường dẫn ảnh (nếu là đường dẫn tương đối)
+  const getAvatarUrl = () => {
+    const defaultAvatar =
+      "https://e7.pngegg.com/pngimages/799/987/png-clipart-computer-icons-avatar-icon-design-avatar-heroes-computer-wallpaper-thumbnail.png";
+    if (!userData?.image) return defaultAvatar;
+
+    // Nếu image là đường dẫn tương đối, thêm base URL
+    if (!userData.image.startsWith("http")) {
+      return `https://yourdomain.com${userData.image}`; // Thay bằng domain thực tế của bạn
+    }
+    return userData.image;
+  };
+
   return (
     <header className="w-full mb-0 relative z-50">
       <div className="flex items-center justify-between px-8 py-3 bg-white shadow-md border-b border-gray-200">
@@ -97,37 +115,22 @@ const AppHeader: React.FC = () => {
         <div className="flex items-center space-x-6 text-[#102A83]">
           <button
             className="flex items-center font-semibold space-x-2"
-            onClick={() => handleNavigate("/vaccine-purchase")}
-          >
-            <FaShoppingCart className="text-[#102A83]" />
-            <span
-              className="text-sm"
-              onClick={() => navigate("/vaccine-types")}
-            >
-              Đặt mua vắc xin
-            </span>
-          </button>
-          <button
-            className="flex items-center font-semibold space-x-2"
             onClick={() => handleNavigate("/vaccine-registration")}
           >
             <FaCalendarAlt className="text-[#102A83]" />
             <span>Đăng ký tiêm</span>
           </button>
-          <button
-            className="flex items-center font-semibold space-x-2"
-            onClick={() => handleNavigate("/consultation")}
-          >
-            <FaComments className="text-[#102A83]" />
-            <span>Tư vấn</span>
-          </button>
 
           {isLoggedIn ? (
             <div className="relative" ref={avatarDropdownRef}>
               <img
-                src="https://e7.pngegg.com/pngimages/799/987/png-clipart-computer-icons-avatar-icon-design-avatar-heroes-computer-wallpaper-thumbnail.png"
+                src={getAvatarUrl()}
                 alt="Avatar"
                 className="w-10 h-10 rounded-full cursor-pointer"
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "https://e7.pngegg.com/pngimages/799/987/png-clipart-computer-icons-avatar-icon-design-avatar-heroes-computer-wallpaper-thumbnail.png";
+                }}
                 onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
               />
               {avatarMenuOpen && (

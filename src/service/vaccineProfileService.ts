@@ -38,14 +38,31 @@ const vaccineProfileService = {
     }
   },
 
+  getVaccineProfileByChildId: async (
+    childId: number
+  ): Promise<VaccineProfileResponseDTO> => {
+    try {
+      const response: AxiosResponse = await axiosInstance.get(
+        `/api/VaccineProfile/get-by-child-id/${childId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        `Lỗi khi lấy thông tin hồ sơ tiêm chủng cho childId ${childId}:`,
+        error
+      );
+      throw error;
+    }
+  },
+
   // Tạo hồ sơ vaccine mới
   createVaccineProfile: async (
     profileData: CreateVaccineProfileDTO
   ): Promise<VaccineProfileResponseDTO> => {
     try {
+      const { childId } = profileData; // Lấy childId từ profileData
       const response: AxiosResponse = await axiosInstance.post(
-        "api/VaccineProfile/create",
-        profileData,
+        `api/VaccineProfile/generate-vaccine-profile/${childId}`,
         {
           headers: {
             "Content-Type": "application/json",

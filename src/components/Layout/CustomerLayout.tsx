@@ -41,7 +41,7 @@ const CustomerLayout: React.FC<MainLayoutProps> = ({ children }) => {
           style={{
             position: "fixed",
             left: 0,
-            top: 76, // Tránh bị Header che
+            top: 120, // Tránh bị Header che
             height: "calc(100vh - 64px)",
             zIndex: 1000,
             background: "#fff",

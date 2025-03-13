@@ -43,9 +43,9 @@ const StaffSidebar: React.FC = () => {
       label: "Các loại bệnh",
     },
     {
-      key: "/staff/manager-payment",
+      key: "/staff/manage-vaccine-schedule",
       icon: <DollarOutlined />,
-      label: "Thanh toán",
+      label: "Lịch tiêm chủng",
     },
   ];
 

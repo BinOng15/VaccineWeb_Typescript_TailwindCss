@@ -35,6 +35,9 @@ function ChildProfile() {
   const [childProfiles, setChildProfiles] = useState<ChildProfileResponseDTO[]>(
     []
   );
+  const [originalChildProfiles, setOriginalChildProfiles] = useState<
+    ChildProfileResponseDTO[]
+  >([]); // Lưu danh sách gốc
   const [loading, setLoading] = useState<boolean>(true);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -57,17 +60,18 @@ function ChildProfile() {
   }, []);
 
   const fetchChildProfileData = async () => {
+    setLoading(true);
     try {
       if (!user) {
         console.error("No user found");
         setLoading(false);
         return;
       }
-      setLoading(true);
+
       const userId = user.userId;
       console.log("Current userId:", userId);
-
       let fetchedChildProfiles: ChildProfileResponseDTO[] = [];
+
       try {
         fetchedChildProfiles = await childProfileService.getAllChildProfiles();
         console.log("All child profiles fetched:", fetchedChildProfiles);
@@ -87,8 +91,8 @@ function ChildProfile() {
         userChildProfiles
       );
 
-      // Không hiển thị lỗi nếu không có ChildProfile, chỉ đặt mảng rỗng
       setChildProfiles(userChildProfiles);
+      setOriginalChildProfiles(userChildProfiles);
       setPagination({
         current: 1,
         pageSize: pagination.pageSize,
@@ -182,7 +186,14 @@ function ChildProfile() {
         try {
           await childProfileService.deleteChildProfile(childId);
           message.success("Hồ sơ trẻ đã được xóa thành công");
-          fetchChildProfileData();
+          setChildProfiles(
+            childProfiles.filter((profile) => profile.childId !== childId)
+          );
+          setOriginalChildProfiles(
+            originalChildProfiles.filter(
+              (profile) => profile.childId !== childId
+            )
+          );
         } catch (error) {
           console.error("Lỗi khi xóa hồ sơ trẻ:", error);
           message.error("Không thể xóa hồ sơ trẻ: " + (error as Error).message);
@@ -254,10 +265,6 @@ function ChildProfile() {
       title: "Ngày sinh",
       dataIndex: "dateOfBirth",
       key: "dateOfBirth",
-      render: (date: string) =>
-        date && date !== "Chưa có dữ liệu"
-          ? moment(date).format("DD/MM/YYYY")
-          : date,
     },
     {
       title: "Giới tính",
@@ -375,6 +382,7 @@ function ChildProfile() {
           visible={isDetailModalVisible}
           onCancel={handleModalClose}
           footer={null}
+          centered
         >
           {selectedChildProfile && (
             <div style={{ padding: 16 }}>
@@ -445,7 +453,6 @@ function ChildProfile() {
             </div>
           )}
         </Modal>
-
         <AddChildProfileModal
           visible={isAddModalVisible}
           onClose={handleModalClose}

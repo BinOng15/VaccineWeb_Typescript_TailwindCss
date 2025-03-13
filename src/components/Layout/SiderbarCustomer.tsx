@@ -3,7 +3,9 @@ import { Menu } from "antd";
 import {
   SettingOutlined,
   FileTextOutlined,
-  DollarOutlined,
+  FileDoneOutlined,
+  FileAddOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -19,19 +21,18 @@ const CustomerSidebar: React.FC = () => {
       label: "Hồ sơ của trẻ",
     },
     {
-      key: "/child-appointment",
-      icon: <SettingOutlined />,
-      label: "Đăng ký tiêm",
-    },
-
-    {
       key: "/child-vaccine-profile",
-      icon: <DollarOutlined />,
+      icon: <FileDoneOutlined />,
       label: "Hồ sơ tiêm chủng",
     },
     {
+      key: "/child-appointment",
+      icon: <FileAddOutlined />,
+      label: "Đăng ký tiêm",
+    },
+    {
       key: "/child-vaccine-schedule",
-      icon: <DollarOutlined />,
+      icon: <CalendarOutlined />,
       label: "Lịch tiêm chủng",
     },
   ];

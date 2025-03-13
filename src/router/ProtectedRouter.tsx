@@ -23,6 +23,9 @@ const VaccineManagement = React.lazy(
 const DiseaseManagement = React.lazy(
   () => import("../pages/Staff/Disease/DiseaseManagement")
 );
+const VaccineScheduleManagement = React.lazy(
+  () => import("../pages/Staff/VaccineSchedule/VaccineScheduleManagement")
+);
 //-------------------------------------------------Doctor-----------------------------------------------
 const DashboardDoctor = React.lazy(
   () => import("../pages/Doctor/DashboardDoctor")
@@ -208,6 +211,15 @@ const AppRouter = () => {
               element={
                 <ProtectedRouter
                   element={<AppointmentManagerment />}
+                  allowedRoles={["Staff"]}
+                />
+              }
+            />
+            <Route
+              path="/staff/manage-vaccine-schedule"
+              element={
+                <ProtectedRouter
+                  element={<VaccineScheduleManagement />}
                   allowedRoles={["Staff"]}
                 />
               }

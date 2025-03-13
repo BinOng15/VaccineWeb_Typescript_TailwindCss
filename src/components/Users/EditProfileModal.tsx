@@ -1,32 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
 import { Modal, Form, Input, DatePicker, message } from "antd";
-import { UpdateUserDTO, UserResponseDTO } from "../../models/User";
-import userService from "../../service/userService";
+import { UserResponseDTO } from "../../models/User";
 import moment from "moment";
+import FileUploader from "../../util/FileUploader";
 
 const { Item } = Form;
 
-interface EditUserModalProps {
+interface EditProfileModalProps {
   visible: boolean;
   onClose: () => void;
   user: UserResponseDTO;
+  onSave: (formData: FormData) => void; // Callback để gửi FormData lên MyProfile
 }
 
-const EditProfileModal: React.FC<EditUserModalProps> = ({
+const EditProfileModal: React.FC<EditProfileModalProps> = ({
   visible,
   onClose,
   user,
+  onSave,
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
-
-  // Lấy token để xác thực
-  const getToken = () => {
-    return (
-      localStorage.getItem("token") || sessionStorage.getItem("accessToken")
-    );
-  };
+  const [newImage, setNewImage] = useState<File | null>(null); // State để lưu file ảnh mới
 
   // Điền dữ liệu vào form khi mở modal
   useEffect(() => {
@@ -37,10 +33,9 @@ const EditProfileModal: React.FC<EditUserModalProps> = ({
         phoneNumber: user.phoneNumber,
         dateOfBirth:
           user.dateOfBirth && user.dateOfBirth !== "Chưa có dữ liệu"
-            ? moment(user.dateOfBirth)
+            ? moment(user.dateOfBirth, "DD/MM/YYYY")
             : null,
         address: user.address,
-        image: user.image,
       });
     }
   }, [visible, user, form]);
@@ -49,25 +44,21 @@ const EditProfileModal: React.FC<EditUserModalProps> = ({
   const handleSaveEdit = async (values: any) => {
     setLoading(true);
     try {
-      const token = getToken();
-      if (!token)
-        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại!");
+      const formData = new FormData();
+      formData.append("FullName", values.fullName);
+      formData.append("Email", values.email);
+      formData.append("PhoneNumber", values.phoneNumber);
+      formData.append(
+        "DateOfBirth",
+        moment(values.dateOfBirth).format("DD/MM/YYYY")
+      );
+      formData.append("Address", values.address);
+      if (newImage) {
+        formData.append("Image", newImage);
+      }
 
-      const updateProfile: UpdateUserDTO = {
-        fullName: values.fullName,
-        email: values.email,
-        password: values.password,
-        phoneNumber: values.phoneNumber,
-        dateOfBirth: moment(values.dateOfBirth).format("YYYY-MM-DD HH:mm:ss"),
-        address: values.address,
-        image: user?.image || "", // Giữ nguyên ảnh đại diện cũ
-        role: user?.role,
-      };
-
-      await userService.updateUser(user.userId, updateProfile);
-      message.success("Cập nhật profile thành công!");
-      form.resetFields();
-      onClose();
+      // Gửi FormData lên MyProfile để xử lý
+      onSave(formData);
     } catch (error) {
       console.error("Lỗi khi cập nhật thông tin người dùng:", error);
       message.error(
@@ -81,8 +72,10 @@ const EditProfileModal: React.FC<EditUserModalProps> = ({
   return (
     <Modal
       title="Chỉnh sửa thông tin cá nhân"
-      visible={visible}
+      open={visible}
       onCancel={() => {
+        form.resetFields();
+        setNewImage(null);
         onClose();
       }}
       onOk={() => form.submit()}
@@ -102,14 +95,8 @@ const EditProfileModal: React.FC<EditUserModalProps> = ({
         >
           <Input />
         </Item>
-        <Item
-          name="email"
-          label="Email"
-          rules={[
-            { required: true, message: "Vui lòng nhập email!", type: "email" },
-          ]}
-        >
-          <Input />
+        <Item name="email" label="Email">
+          <Input disabled /> {/* Email không nên chỉnh sửa */}
         </Item>
         <Item
           name="phoneNumber"
@@ -131,6 +118,12 @@ const EditProfileModal: React.FC<EditUserModalProps> = ({
           rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}
         >
           <Input />
+        </Item>
+        <Item label="Hình ảnh">
+          <FileUploader
+            onUploadSuccess={(file: File) => setNewImage(file)}
+            defaultImage={user.image}
+          />
         </Item>
       </Form>
     </Modal>
