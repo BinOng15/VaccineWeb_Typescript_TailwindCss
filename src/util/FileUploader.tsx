@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Upload, Image, message, Progress } from 'antd';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '../config/firebaseConfig';
-import type { UploadFile, UploadProps } from 'antd';
+import React, { useState, useEffect } from "react";
+import { Upload, Image, message } from "antd";
+import type { UploadFile, UploadProps } from "antd";
 
 interface FileUploaderProps {
-  onUploadSuccess: (url: string) => void;
+  onUploadSuccess: (file: File) => void; // Đổi thành File thay vì URL
   defaultImage?: string;
-  type?: 'image' | 'video';
+  type?: "image" | "video";
 }
 
 const getBase64 = (file: File): Promise<string> =>
@@ -18,16 +16,19 @@ const getBase64 = (file: File): Promise<string> =>
     reader.onerror = (error) => reject(error);
   });
 
-const FileUploader: React.FC<FileUploaderProps> = ({ onUploadSuccess, defaultImage }) => {
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+const FileUploader: React.FC<FileUploaderProps> = ({
+  onUploadSuccess,
+  defaultImage,
+}) => {
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewImage, setPreviewImage] = useState('');
+  const [previewImage, setPreviewImage] = useState("");
   const [fileList, setFileList] = useState<UploadFile[]>([]);
 
   useEffect(() => {
     if (defaultImage) {
-      setFileList([{ uid: '-1', name: 'default_image', url: defaultImage, status: 'done' }]);
+      setFileList([
+        { uid: "-1", name: "default_image", url: defaultImage, status: "done" },
+      ]);
       setPreviewImage(defaultImage);
     }
   }, [defaultImage]);
@@ -40,73 +41,35 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onUploadSuccess, defaultIma
     setPreviewOpen(true);
   };
 
-  const handleChange: UploadProps['onChange'] = ({ fileList: newFileList }) => {
+  const handleChange: UploadProps["onChange"] = ({ fileList: newFileList }) => {
     setFileList(newFileList);
-  };
 
-  const handleUpload = async (file: File) => {
-    if (!file) return;
+    // Khi file được chọn, gọi onUploadSuccess với file gốc
+    const file = newFileList[0]?.originFileObj as File;
+    if (file) {
+      const fileExtension = file.name.split(".").pop()?.toLowerCase();
+      const allowedImageExtensions = ["jpg", "jpeg", "png", "gif"];
 
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    const allowedImageExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+      if (!allowedImageExtensions.includes(fileExtension!)) {
+        message.error("Invalid file type. Only images are allowed.");
+        setFileList([]); // Xóa file không hợp lệ
+        return;
+      }
 
-    if (!allowedImageExtensions.includes(fileExtension!)) {
-      message.error('Invalid file type. Only images are allowed.');
-      return;
-    }
-
-    setUploading(true);
-    setUploadProgress(0);
-
-    try {
-      const storageRef = ref(storage, `images/${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress); // Update upload progress state
-          message.open({
-            key: 'uploadProgress',
-            content: `Uploading: ${Math.round(progress)}%`,
-            duration: 0, // Keep message open until upload completes
-          });
-        },
-        (error) => {
-          message.error('Upload error');
-          console.error('Upload error:', error);
-          setUploading(false);
-        },
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          onUploadSuccess(downloadURL);
-          setUploading(false);
-          setUploadProgress(0);
-          message.destroy('uploadProgress'); // Close the progress message
-          message.success('Upload completed successfully!');
-        }
-      );
-    } catch (error) {
-      message.error('Error uploading file');
-      console.error('Error uploading file:', error);
-      setUploading(false);
+      onUploadSuccess(file); // Trả về file gốc
     }
   };
 
   const uploadProps: UploadProps = {
-    beforeUpload: (file: File) => {
-      handleUpload(file);
-      return false;
-    },
+    beforeUpload: () => false, // Ngăn upload tự động
     fileList,
     onPreview: handlePreview,
     onChange: handleChange,
-    listType: 'picture-circle',
+    listType: "picture-circle",
     showUploadList: {
-      showRemoveIcon: !uploading,
+      showRemoveIcon: true,
     },
-    accept: 'image/*',
+    accept: "image/*",
   };
 
   return (
@@ -114,20 +77,13 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onUploadSuccess, defaultIma
       <Upload {...uploadProps}>
         {fileList.length >= 1 ? null : <div>Upload</div>}
       </Upload>
-      {uploading && (
-        <Progress
-          percent={Math.round(uploadProgress)}
-          status="active"
-          style={{ marginTop: 8 }}
-        />
-      )}
       {previewImage && (
         <Image
-          wrapperStyle={{ display: 'none' }}
+          wrapperStyle={{ display: "none" }}
           preview={{
             visible: previewOpen,
             onVisibleChange: (visible) => setPreviewOpen(visible),
-            afterOpenChange: (visible) => !visible && setPreviewImage(''),
+            afterOpenChange: (visible) => !visible && setPreviewImage(""),
           }}
           src={previewImage}
         />

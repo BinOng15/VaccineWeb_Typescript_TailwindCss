@@ -3,6 +3,7 @@ import { UserResponseDTO } from "../../models/User";
 import userService from "../../service/userService";
 import EditProfileModal from "./EditProfileModal";
 import { useAuth } from "../../context/AuthContext";
+import { message } from "antd";
 
 interface User extends UserResponseDTO {
   userId: number;
@@ -12,7 +13,6 @@ function MyProfile() {
   const [isUser, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [editedUser, setEditedUser] = useState<User | null>(null);
   const { user } = useAuth();
 
   // Fetch dữ liệu người dùng khi component mount
@@ -34,11 +34,11 @@ function MyProfile() {
     };
 
     fetchUserData();
-  }, []);
+  }, [user]);
 
   // Dữ liệu mặc định khi chưa load xong hoặc không có dữ liệu
   const defaultUser = {
-    userId: "",
+    userId: 0,
     email: "Chưa có dữ liệu",
     role: "user",
     fullName: "Chưa có dữ liệu",
@@ -47,6 +47,11 @@ function MyProfile() {
     address: "Chưa có dữ liệu",
     image:
       "https://e7.pngegg.com/pngimages/799/987/png-clipart-computer-icons-avatar-icon-design-avatar-heroes-computer-wallpaper-thumbnail.png",
+    createdDate: "",
+    createdBy: "",
+    modifiedDate: "",
+    modifiedBy: "",
+    isActive: "",
   };
 
   // Sử dụng dữ liệu từ API nếu có, ngược lại dùng dữ liệu mặc định
@@ -56,8 +61,27 @@ function MyProfile() {
     setIsEditModalVisible(true);
   };
 
+  const handleSaveChanges = async (formData: FormData) => {
+    if (!user?.userId) {
+      console.error("User ID is missing");
+      return;
+    }
+
+    try {
+      const success = await userService.updateUser(user.userId, formData);
+      if (success) {
+        const updatedUser = await userService.getUserById(user.userId);
+        setUser(updatedUser);
+        setIsEditModalVisible(false);
+        message.success("Cập nhật thông tin thành công!");
+      }
+    } catch (error) {
+      console.error("Error updating user:", error);
+      message.error("Cập nhật thông tin thất bại!");
+    }
+  };
+
   const handleCloseModal = () => {
-    setEditedUser(null);
     setIsEditModalVisible(false);
   };
 
@@ -84,7 +108,10 @@ function MyProfile() {
             alt="Avatar"
             className="w-24 h-24 rounded-full border-2 border-[#102A83] object-cover"
           />
-          <button className="mt-4 px-4 py-2 bg-[#102A83] text-white rounded-full hover:bg-[#009EE0] transition duration-300">
+          <button
+            className="mt-4 px-4 py-2 bg-[#102A83] text-white rounded-full hover:bg-[#009EE0] transition duration-300"
+            onClick={handleUpdate}
+          >
             Thay đổi ảnh đại diện
           </button>
         </div>
@@ -114,7 +141,7 @@ function MyProfile() {
                       month: "2-digit",
                       year: "numeric",
                     })
-                    .replace(/\//g, "/") // Đảm bảo định dạng dd/mm/yyyy
+                    .replace(/\//g, "/")
                 : displayUser.dateOfBirth}
             </span>
           </div>
@@ -128,16 +155,17 @@ function MyProfile() {
         <div className="mt-6 flex justify-center">
           <button
             className="px-6 py-2 bg-[#102A83] text-white rounded-full hover:bg-[#102A83] transition duration-300"
-            onClick={() => handleUpdate()}
+            onClick={handleUpdate}
           >
             Chỉnh sửa thông tin
           </button>
         </div>
 
-        {editedUser && (
+        {isEditModalVisible && (
           <EditProfileModal
-            user={editedUser}
+            user={displayUser}
             visible={isEditModalVisible}
+            onSave={handleSaveChanges}
             onClose={handleCloseModal}
           />
         )}

@@ -25,7 +25,7 @@ function ChildVaccineProfile() {
   >([]);
   const [originalVaccineProfiles, setOriginalVaccineProfiles] = useState<
     VaccineProfileResponseDTO[]
-  >([]); // Lưu danh sách gốc
+  >([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [childProfiles, setChildProfiles] = useState<ChildProfileResponseDTO[]>(
     []
@@ -33,7 +33,7 @@ function ChildVaccineProfile() {
   const [diseases, setDiseases] = useState<DiseaseResponseDTO[]>([]);
   const [searchText, setSearchText] = useState<string>("");
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-  const [isAddModalVisible, setIsAddModalVisible] = useState<boolean>(false); // State cho modal thêm mới
+  const [isAddModalVisible, setIsAddModalVisible] = useState<boolean>(false);
   const [selectedProfile, setSelectedProfile] =
     useState<VaccineProfileResponseDTO | null>(null);
   const [pagination, setPagination] = useState({
@@ -55,25 +55,24 @@ function ChildVaccineProfile() {
     }
     setLoading(true);
     try {
-      // Lấy danh sách vaccine
       const allDisease = await diseaseService.getAllDiseases();
       setDiseases(allDisease);
 
-      // Lấy danh sách hồ sơ trẻ của user
       const allChildProfiles = await childProfileService.getAllChildProfiles();
+      console.log("All Child Profiles:", allChildProfiles); // Debug dữ liệu childProfiles
       const userChildIds = allChildProfiles
         .filter((profile) => profile.userId === user.userId)
         .map((profile) => profile.childId);
-      setChildProfiles(allChildProfiles); // Lưu toàn bộ childProfiles để ánh xạ
+      setChildProfiles(allChildProfiles);
 
-      // Lấy tất cả hồ sơ vaccine và lọc theo childId
       const allVaccineProfiles =
         await vaccineProfileService.getAllVaccineProfiles();
+      console.log("All Vaccine Profiles:", allVaccineProfiles); // Debug dữ liệu vaccineProfiles
       const filteredProfiles = allVaccineProfiles.filter((profile) =>
         userChildIds.includes(profile.childId)
       );
       setVaccineProfiles(filteredProfiles);
-      setOriginalVaccineProfiles(filteredProfiles); // Lưu danh sách gốc
+      setOriginalVaccineProfiles(filteredProfiles);
       setPagination({
         current: 1,
         pageSize: pagination.pageSize,
@@ -89,13 +88,11 @@ function ChildVaccineProfile() {
     }
   };
 
-  // Xử lý tìm kiếm (theo tên trẻ hoặc vaccine)
   const onSearch = (value: string) => {
     const trimmedValue = value.trim().toLowerCase();
     setSearchText(trimmedValue);
 
     if (!trimmedValue) {
-      // Nếu không có từ khóa, hiển thị danh sách gốc
       setVaccineProfiles(originalVaccineProfiles);
       setPagination({
         ...pagination,
@@ -105,7 +102,6 @@ function ChildVaccineProfile() {
       return;
     }
 
-    // Lọc vaccine profiles dựa trên tên trẻ hoặc vaccine
     const filteredProfiles = originalVaccineProfiles.filter((profile) => {
       const child = childProfiles.find((p) => p.childId === profile.childId);
       const childName = child?.fullName.toLowerCase() || "";
@@ -125,24 +121,16 @@ function ChildVaccineProfile() {
     });
   };
 
-  // Xử lý reset tìm kiếm
   const handleReset = () => {
     setSearchText("");
-    setVaccineProfiles(originalVaccineProfiles);
-    setPagination({
-      ...pagination,
-      current: 1,
-      total: originalVaccineProfiles.length,
-    });
+    fetchData();
   };
 
-  // Xử lý thay đổi phân trang
   const handleTableChange = (pagination: any) => {
     const { current, pageSize } = pagination;
     setPagination((prev) => ({ ...prev, current, pageSize }));
   };
 
-  // Cột cho Table
   const columns: ColumnType<VaccineProfileResponseDTO>[] = [
     {
       title: "STT",
@@ -167,7 +155,19 @@ function ChildVaccineProfile() {
       },
     },
     {
-      title: "Bệnh từng đăng ký",
+      title: "Ngày sinh",
+      dataIndex: "dateOfBirth",
+      key: "dateOfBirth",
+      render: (childId: number) => {
+        const child = childProfiles.find((p) => p.childId === childId);
+        console.log("Child found:", child); // Debug thông tin trẻ
+        return child?.dateOfBirth
+          ? moment(child.dateOfBirth, "DD/MM/YYYY").format("DD/MM/YYYY")
+          : "Không có thông tin";
+      },
+    },
+    {
+      title: "Bệnh",
       dataIndex: "diseaseId",
       key: "diseaseId",
       render: (diseaseId: number) => {
@@ -176,10 +176,19 @@ function ChildVaccineProfile() {
       },
     },
     {
-      title: "Ngày đăng ký",
+      title: "Mũi số",
+      dataIndex: "doseNumber",
+      key: "doseNumber",
+    },
+    {
+      title: "Ngày đăng ký tiêm",
       dataIndex: "vaccinationDate",
       key: "vaccinationDate",
-      render: (date: string) => moment(date).format("DD/MM/YYYY"),
+    },
+    {
+      title: "Ngày tiêm dự kiến",
+      dataIndex: "scheduledDate",
+      key: "scheduledDate",
     },
     {
       title: "Trạng thái",
@@ -211,30 +220,29 @@ function ChildVaccineProfile() {
     },
   ];
 
-  // Xử lý xem chi tiết
   const showModal = (profile: VaccineProfileResponseDTO) => {
+    console.log("Selected Profile:", profile); // Debug selectedProfile
     setSelectedProfile(profile);
     setIsModalVisible(true);
   };
 
-  // Hàm đóng modal
   const handleCancel = () => {
     setIsModalVisible(false);
     setSelectedProfile(null);
   };
 
   const handleAdd = () => {
-    setIsAddModalVisible(true); // Mở modal thêm mới
+    setIsAddModalVisible(true);
   };
 
   const handleAddModalClose = () => {
     setIsAddModalVisible(false);
   };
+
   const handleAddSuccess = () => {
-    fetchData(); // Tải lại danh sách sau khi thêm thành công
+    fetchData();
   };
 
-  // Hàm xóa hồ sơ vaccine
   const confirmDelete = (vaccineProfileId: number) => {
     Modal.confirm({
       title: "Xác nhận xóa hồ sơ vaccine",
@@ -305,7 +313,7 @@ function ChildVaccineProfile() {
               onClick={handleAdd}
               style={{ marginLeft: 8 }}
             >
-              Thêm mới
+              Cập nhật hồ sơ tiêm chủng theo hệ thống
             </Button>
           </Col>
         </Row>
@@ -335,6 +343,12 @@ function ChildVaccineProfile() {
           visible={isModalVisible}
           onCancel={handleCancel}
           footer={null}
+          centered
+          style={{
+            top: "-7%",
+            transform: "translate(10%, -50%)",
+            margin: 0,
+          }}
         >
           {selectedProfile && (
             <div>
@@ -345,13 +359,29 @@ function ChildVaccineProfile() {
                 )?.fullName || "Không tìm thấy"}
               </p>
               <p>
+                <strong>Ngày sinh: </strong>{" "}
+                {(() => {
+                  const child = childProfiles.find(
+                    (p) => p.childId === selectedProfile.childId
+                  );
+                  console.log("Child found:", child); // Debug thông tin trẻ
+                  return child?.dateOfBirth
+                    ? moment(child.dateOfBirth, "DD/MM/YYYY").format(
+                        "DD/MM/YYYY"
+                      )
+                    : "Không có thông tin";
+                })()}
+              </p>
+              <p>
                 <strong>Bệnh từng tiêm: </strong>{" "}
                 {diseases.find((d) => d.diseaseId === selectedProfile.diseaseId)
                   ?.name || "Không tìm thấy vaccine"}
               </p>
               <p>
                 <strong>Ngày tiêm: </strong>{" "}
-                {moment(selectedProfile.vaccinationDate).format("DD/MM/YYYY")}
+                {selectedProfile.vaccinationDate
+                  ? moment(selectedProfile.vaccinationDate).format("DD/MM/YYYY")
+                  : "Chưa đăng ký"}
               </p>
             </div>
           )}

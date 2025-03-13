@@ -1,16 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
-import { Modal, Form, Input as AntInput, message, Select } from "antd";
+import { Modal, Form, message, Select } from "antd";
 import { CreateVaccineProfileDTO } from "../../models/VaccineProfile";
 import vaccineProfileService from "../../service/vaccineProfileService";
 import childProfileService from "../../service/childProfileService";
-import diseaseService from "../../service/diseaseService";
 import { useAuth } from "../../context/AuthContext";
-import moment from "moment";
 import { ChildProfileResponseDTO } from "../../models/ChildProfile";
-import { DiseaseResponseDTO } from "../../models/Disease";
-import { IsCompleted } from "../../models/Type/enum";
-import vaccineSchedulePersonalService from "../../service/vaccineSchedulePersonalService";
 
 const { Option } = Select;
 const { Item } = Form;
@@ -31,7 +26,6 @@ const AddVaccineProfileModal: React.FC<AddVaccineProfileModalProps> = ({
   const [childProfiles, setChildProfiles] = useState<ChildProfileResponseDTO[]>(
     []
   );
-  const [diseases, setDiseases] = useState<DiseaseResponseDTO[]>([]);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -51,9 +45,6 @@ const AddVaccineProfileModal: React.FC<AddVaccineProfileModalProps> = ({
         (profile) => profile.userId === user.userId
       );
       setChildProfiles(userChildProfiles);
-
-      const allDiseases = await diseaseService.getAllDiseases();
-      setDiseases(allDiseases);
     } catch (error) {
       console.error("Failed to fetch data:", error);
       message.error("Không thể tải dữ liệu: " + (error as Error).message);
@@ -65,34 +56,23 @@ const AddVaccineProfileModal: React.FC<AddVaccineProfileModalProps> = ({
     try {
       if (!user) throw new Error("No user found");
 
-      // Chuyển vaccinationDate sang đúng định dạng
-      const formattedDate = values.vaccinationDate
-        ? moment(values.vaccinationDate).format("YYYY-MM-DDTHH:mm:ss")
-        : null;
-
       const newVaccineProfile: CreateVaccineProfileDTO = {
         childId: values.childId,
-        diseaseId: values.diseaseId,
-        vaccinationDate: formattedDate,
-        isCompleted: values.isCompleted,
       };
 
       // Tạo VaccineProfile
       await vaccineProfileService.createVaccineProfile(newVaccineProfile);
 
-      // Sau khi tạo VaccineProfile thành công, tạo lịch tiêm chủng cho trẻ
-      await vaccineSchedulePersonalService.addVaccineScheduleForChild(
-        values.childId
+      message.success(
+        "Cập nhật hồ sơ tiêm chủng và lịch tiêm theo hệ thống thành công"
       );
-
-      message.success("Thêm mới hồ sơ tiêm chủng và lịch tiêm thành công");
       form.resetFields();
       onSuccess();
       onClose();
     } catch (error) {
-      console.error("Lỗi khi thêm hồ sơ tiêm chủng:", error);
+      console.error("Lỗi khi cập nhật hồ sơ tiêm chủng theo hệ thống:", error);
       message.error(
-        "Không thể thêm hồ sơ tiêm chủng: " + (error as Error).message
+        "Không thể cập nhật hồ sơ tiêm chủng: " + (error as Error).message
       );
     } finally {
       setLoading(false);
@@ -101,11 +81,16 @@ const AddVaccineProfileModal: React.FC<AddVaccineProfileModalProps> = ({
 
   return (
     <Modal
-      title="Thêm hồ sơ tiêm chủng cho trẻ"
+      title="Cập nhật hồ sơ tiêm chủng theo hệ thống cho trẻ"
       visible={visible}
       onCancel={onClose}
       onOk={() => form.submit()}
       okText="Lưu"
+      centered
+      style={{
+        transform: "translate(10%, -50%)",
+        margin: 0,
+      }}
       confirmLoading={loading}
     >
       <Form
@@ -125,36 +110,6 @@ const AddVaccineProfileModal: React.FC<AddVaccineProfileModalProps> = ({
                 {child.fullName}
               </Option>
             ))}
-          </Select>
-        </Item>
-        <Item
-          name="diseaseId"
-          label="Bệnh đã tiêm"
-          rules={[{ required: true, message: "Vui lòng chọn bệnh!" }]}
-        >
-          <Select placeholder="Chọn bệnh">
-            {diseases.map((disease) => (
-              <Option key={disease.diseaseId} value={disease.diseaseId}>
-                {disease.name}
-              </Option>
-            ))}
-          </Select>
-        </Item>
-        <Item
-          name="vaccinationDate"
-          label="Ngày tiêm"
-          rules={[{ required: true, message: "Vui lòng nhập ngày tiêm!" }]}
-        >
-          <AntInput type="date" />
-        </Item>
-        <Item
-          name="isCompleted"
-          label="Trạng thái"
-          rules={[{ required: true, message: "Vui lòng chọn trạng thái!" }]}
-        >
-          <Select placeholder="Chọn trạng thái">
-            <Option value={IsCompleted.No}>Chưa tiêm</Option>
-            <Option value={IsCompleted.Yes}>Đã tiêm</Option>
           </Select>
         </Item>
       </Form>

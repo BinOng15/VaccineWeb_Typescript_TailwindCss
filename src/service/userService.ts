@@ -2,7 +2,6 @@ import { AxiosResponse } from "axios";
 import {
   CreateSystemUserDTO,
   PagedResponse,
-  UpdateUserDTO,
   UserResponseDTO,
 } from "../models/User";
 import { axiosInstance } from "./axiosInstance";
@@ -87,11 +86,16 @@ const userService = {
   },
 
   // Cập nhật thông tin người dùng
-  updateUser: async (id: number, userData: UpdateUserDTO): Promise<boolean> => {
+  updateUser: async (id: number, userData: FormData): Promise<boolean> => {
     try {
       const response: AxiosResponse = await axiosInstance.put(
         `api/User/update-user-by-id/${id}`,
-        userData
+        userData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
       return response.data.success;
     } catch (error) {

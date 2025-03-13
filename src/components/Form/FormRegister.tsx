@@ -1,16 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
-import {
-  EyeInvisibleOutlined,
-  EyeOutlined,
-  UploadOutlined,
-} from "@ant-design/icons";
-import { message, Upload, Button } from "antd";
-import { UploadChangeParam } from "antd/es/upload";
-import GoogleLoginButton from "../GoogleLoginButton";
+import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
+import { message, Button } from "antd";
 import userService from "../../service/userService";
-import { CreateUserDTO } from "../../models/User";
+import FileUploader from "../../util/FileUploader";
+import GoogleLoginButton from "../GoogleLoginButton";
+import { useNavigate } from "react-router-dom";
 
 const FormRegister: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
@@ -18,81 +16,105 @@ const FormRegister: React.FC = () => {
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [address, setAddress] = useState<string>("");
   const [dateOfBirth, setDateOfBirth] = useState<string>("");
-  const [image, setImage] = useState<File | null>(null); // State để lưu file
+  const [image, setImage] = useState<File | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Hàm xử lý upload ảnh
-  const handleImageUpload = (info: UploadChangeParam) => {
-    const file = info.file.originFileObj as File;
-    if (file) {
-      setImage(file); // Cập nhật state image với file từ Upload
-    } else {
-      setImage(null); // Đặt lại nếu không có file hợp lệ
-    }
-  };
-
-  // Hàm đăng ký với API
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Kiểm tra mật khẩu khớp
+    // Validation
     if (password !== confirmPassword) {
       message.error("Mật khẩu và xác nhận mật khẩu không khớp!");
       setLoading(false);
       return;
     }
 
-    // Kiểm tra các trường bắt buộc phía client
-    const isAnyFieldEmpty =
-      !email.trim() ||
-      !password.trim() ||
-      !fullName.trim() ||
-      !phoneNumber.trim() ||
-      !address.trim() ||
-      !dateOfBirth ||
-      !image;
-
-    if (isAnyFieldEmpty) {
-      message.error("Vui lòng điền đầy đủ tất cả các trường!");
+    if (!email.trim()) {
+      message.error("Vui lòng nhập email!");
       setLoading(false);
       return;
     }
 
-    // Tạo đối tượng CreateUserDTO
-    const userData: CreateUserDTO = {
-      fullName: fullName.trim(),
-      email: email.trim(),
-      phoneNumber: phoneNumber.trim(),
-      password: password.trim(),
-      address: address.trim(),
-      dateOfBirth,
-      image, // Sử dụng image từ state
-    };
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      message.error("Email không hợp lệ!");
+      setLoading(false);
+      return;
+    }
 
-    // Chuyển đổi sang FormData để gửi file
+    if (!password.trim()) {
+      message.error("Vui lòng nhập mật khẩu!");
+      setLoading(false);
+      return;
+    }
+
+    if (password.trim().length < 6) {
+      message.error("Mật khẩu phải có ít nhất 6 ký tự!");
+      setLoading(false);
+      return;
+    }
+
+    if (!fullName.trim()) {
+      message.error("Vui lòng nhập họ và tên!");
+      setLoading(false);
+      return;
+    }
+
+    if (!phoneNumber.trim()) {
+      message.error("Vui lòng nhập số điện thoại!");
+      setLoading(false);
+      return;
+    }
+
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phoneNumber.trim())) {
+      message.error("Số điện thoại phải có đúng 10 chữ số!");
+      setLoading(false);
+      return;
+    }
+
+    if (!address.trim()) {
+      message.error("Vui lòng nhập địa chỉ!");
+      setLoading(false);
+      return;
+    }
+
+    if (!dateOfBirth) {
+      message.error("Vui lòng chọn ngày sinh!");
+      setLoading(false);
+      return;
+    }
+
+    if (!image) {
+      message.error("Vui lòng tải lên hình ảnh!");
+      setLoading(false);
+      return;
+    }
+
     const formData = new FormData();
-    formData.append("FullName", userData.fullName);
-    formData.append("Email", userData.email);
-    formData.append("PhoneNumber", userData.phoneNumber);
-    formData.append("Password", userData.password);
-    formData.append("Address", userData.address);
-    formData.append("DateOfBirth", userData.dateOfBirth);
-    if (userData.image) {
-      formData.append("Image", userData.image);
+    formData.append("Email", email.trim());
+    formData.append("Password", password.trim());
+    formData.append("FullName", fullName.trim());
+    formData.append("PhoneNumber", phoneNumber.trim());
+    formData.append("Address", address.trim());
+    formData.append("DateOfBirth", dateOfBirth); // Định dạng YYYY-MM-DD
+    if (image) {
+      formData.append("Image", image);
+    }
+
+    // Debug FormData
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
     }
 
     try {
-      // Gửi FormData qua API
       const response = await userService.register(formData);
       console.log("Đăng ký thành công:", response);
-      message.success(
-        "Đăng ký thành công! Vui lòng kiểm tra email để kích hoạt tài khoản."
-      );
-      // Reset form sau khi thành công
+      message.success("Đăng ký thành công! Vui lòng đăng nhập để tiếp tục!");
       setEmail("");
       setPassword("");
       setConfirmPassword("");
@@ -101,25 +123,18 @@ const FormRegister: React.FC = () => {
       setAddress("");
       setDateOfBirth("");
       setImage(null);
-      // Có thể chuyển hướng đến trang đăng nhập sau khi thành công
-      // history.push("/login");
-    } catch (error) {
+      navigate("/login");
+    } catch (error: any) {
       console.error("Lỗi khi đăng ký:", error);
       message.error(
-        `Đăng ký thất bại! ${"Vui lòng kiểm tra lại thông tin hoặc liên hệ admin."}`
+        `Đăng ký thất bại! ${
+          error.response?.data?.message ||
+          "Vui lòng kiểm tra lại thông tin hoặc liên hệ admin."
+        }`
       );
     } finally {
       setLoading(false);
     }
-  };
-
-  // Cấu hình Upload từ antd
-  const uploadProps = {
-    beforeUpload: () => false, // Ngăn upload tự động, xử lý thủ công
-    onChange: handleImageUpload,
-    maxCount: 1, // Chỉ cho phép 1 file
-    accept: "image/*", // Chỉ chấp nhận file ảnh
-    onRemove: () => setImage(null), // Đặt lại image khi xóa file
   };
 
   return (
@@ -127,9 +142,28 @@ const FormRegister: React.FC = () => {
       className="flex items-center justify-center min-h-screen bg-cover bg-center"
       style={{ backgroundImage: "url(/image/loginBackground.png)" }}
     >
-      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-center mb-6">Đăng ký</h2>
+      <div className="w-full max-w-2xl p-8 bg-white rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold text-center mb-6">
+          Đăng ký người dùng
+        </h2>
         <form onSubmit={handleSubmit}>
+          <div className="mb-5 flex justify-center">
+            <div className="text-center">
+              <div className="inline-block">
+                <FileUploader
+                  onUploadSuccess={(file: File) => setImage(file)}
+                  defaultImage=""
+                />
+              </div>
+              <label
+                htmlFor="image"
+                className="block text-sm font-semibold text-gray-700 mt-2"
+              >
+                Tải lên hình ảnh
+              </label>
+            </div>
+          </div>
+
           {/* Email Input */}
           <div className="mb-5">
             <label
@@ -224,24 +258,6 @@ const FormRegister: React.FC = () => {
             />
           </div>
 
-          {/* Image Upload */}
-          <div className="mb-5">
-            <label
-              htmlFor="image"
-              className="block text-sm font-semibold text-gray-700 mb-2"
-            >
-              Hình ảnh
-            </label>
-            <Upload {...uploadProps} showUploadList={{ showRemoveIcon: true }}>
-              <Button icon={<UploadOutlined />}>Chọn hình ảnh</Button>
-            </Upload>
-            {image && (
-              <p className="text-sm text-gray-600 mt-2">
-                Đã chọn: {image.name}
-              </p>
-            )}
-          </div>
-
           {/* Password Input */}
           <div className="mb-4">
             <label
@@ -303,13 +319,15 @@ const FormRegister: React.FC = () => {
           </div>
 
           {/* Sign Up Button */}
-          <button
-            type="submit"
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={loading}
+            block
             className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm"
-            disabled={loading}
           >
             {loading ? "Đang xử lý..." : "Đăng ký"}
-          </button>
+          </Button>
         </form>
 
         {/* Google Login Button */}
@@ -318,7 +336,7 @@ const FormRegister: React.FC = () => {
         </div>
 
         {/* Bottom Links */}
-        <div className="mt-4 text-center text-sm text-gray-600">
+        <div className="mt-4 text-center text-sm text-gray-700">
           <p>
             Bạn đã có tài khoản?{" "}
             <a href="/login" className="text-blue-500">
@@ -327,7 +345,7 @@ const FormRegister: React.FC = () => {
           </p>
         </div>
 
-        <div className="mt-4 text-center text-sm text-gray-600">
+        <div className="mt-4 text-center text-sm text-gray-700">
           <a href="/" className="text-blue-500">
             Trở lại trang chủ
           </a>

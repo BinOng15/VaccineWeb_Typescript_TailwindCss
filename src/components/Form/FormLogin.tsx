@@ -9,8 +9,7 @@ import { authServiceLogin, getCurrentUser } from "../../service/authService";
 
 const FormLogin = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  const [form] = Form.useForm(); // Sử dụng Ant Design Form instance
   const [rememberMe, setRememberMe] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const { user, setUser, login } = useAuth();
@@ -25,22 +24,22 @@ const FormLogin = () => {
           setUser(userData);
           login(token, userData);
           notification.success({
-            message: "Login Successful",
+            message: "Đăng nhập thành công",
           });
         }
       }
     } catch (error: any) {
       notification.error({
-        message: "Login Failed",
+        message: "Đăng nhập thất bại",
         description:
-          error.message || "Invalid email or password. Please try again.",
+          error.message || "Email hoặc mật khẩu không đúng. Vui lòng thử lại.",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  // Tối ưu useEffect để chỉ chạy khi user thay đổi, và dùng replace: true
+  // Điều hướng dựa trên role của user
   useEffect(() => {
     if (user) {
       let destination = "/";
@@ -61,9 +60,9 @@ const FormLogin = () => {
           console.log("Unknown role:", user.role);
           break;
       }
-      navigate(destination, { replace: true }); // Sử dụng replace: true để tránh thêm vào history
+      navigate(destination, { replace: true });
     }
-  }, [user, navigate]); // Chỉ phụ thuộc vào user và navigate
+  }, [user, navigate]);
 
   return (
     <div
@@ -72,7 +71,13 @@ const FormLogin = () => {
     >
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold text-center mb-6">Đăng nhập</h2>
-        <Form name="login_form" onFinish={handleLogin} layout="vertical">
+        <Form
+          form={form}
+          name="login_form"
+          onFinish={handleLogin}
+          layout="vertical"
+          initialValues={{ email: "", password: "" }}
+        >
           <div className="mb-5">
             <Form.Item
               name="email"
@@ -83,10 +88,6 @@ const FormLogin = () => {
               ]}
             >
               <Input
-                type="text"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Nhập email của bạn"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -101,9 +102,6 @@ const FormLogin = () => {
               ]}
             >
               <Input.Password
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 placeholder="Nhập mật khẩu"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 iconRender={(visible) =>

@@ -8,6 +8,7 @@ import {
   Select,
   Upload,
   Button,
+  DatePicker,
 } from "antd";
 import {
   ChildProfileResponseDTO,
@@ -40,11 +41,20 @@ const EditChildProfileModal: React.FC<EditChildProfileModalProps> = ({
   // Điền dữ liệu vào form khi mở modal
   useEffect(() => {
     if (visible && childProfile) {
+      console.log("Raw childProfile.dateOfBirth:", childProfile.dateOfBirth);
+      // Thử các định dạng khác nhau để parse dateOfBirth
+      const dateOfBirthMoment = moment(
+        childProfile.dateOfBirth,
+        ["DD/MM/YYYY", "YYYY-MM-DD", "DD-MM-YYYY"],
+        true
+      );
+      console.log(
+        "Moment dateOfBirth:",
+        dateOfBirthMoment.format("DD-MM-YYYY")
+      );
       form.setFieldsValue({
         fullName: childProfile.fullName,
-        dateOfBirth: moment(childProfile.dateOfBirth).format(
-          "DD-MM-YYYY HH:mm:ss"
-        ),
+        dateOfBirth: dateOfBirthMoment.isValid() ? dateOfBirthMoment : null,
         gender: childProfile.gender,
         relationship: childProfile.relationship,
         imageUrl: childProfile.imageUrl,
@@ -56,24 +66,44 @@ const EditChildProfileModal: React.FC<EditChildProfileModalProps> = ({
   const handleSaveEdit = async (values: any) => {
     setLoading(true);
     if (!childProfile) return;
-
+    const token = getToken();
+    if (!token) {
+      throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại!");
+    }
     try {
+      console.log(
+        "Raw values.dateOfBirth from DatePicker:",
+        values.dateOfBirth
+      );
       if (!values.dateOfBirth) {
-        throw new Error("Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh!");
+        throw new Error("Ngày sinh không hợp lệ. Vui lòng chọn ngày sinh!");
       }
 
-      const token = getToken();
-      if (!token) {
-        throw new Error("Không tìm thấy token. Vui lòng đăng nhập lại!");
+      // values.dateOfBirth đã là moment object từ DatePicker
+      const dateOfBirthMoment = values.dateOfBirth;
+      console.log(
+        "Moment dateOfBirth after selection:",
+        dateOfBirthMoment.format("DD-MM-YYYY")
+      );
+
+      if (!dateOfBirthMoment.isValid()) {
+        throw new Error("Ngày sinh không hợp lệ!");
+      }
+
+      const formattedDate = dateOfBirthMoment.format("YYYY-MM-DD");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(formattedDate)) {
+        throw new Error("Ngày sinh phải có định dạng yyyy-MM-dd!");
       }
 
       const updatedChildProfile: UpdateChildProfileDTO = {
         fullName: values.fullName,
-        dateOfBirth: moment(values.dateOfBirth).format("DD-MM-YYYY HH:mm:ss"),
+        dateOfBirth: formattedDate,
         gender: values.gender,
         relationship: values.relationship,
         profilePicture: values.profilePicture?.file || "",
       };
+
+      console.log("Sending updated child profile data:", updatedChildProfile);
 
       await childProfileService.updateChildProfile(
         childProfile.childId,
@@ -106,6 +136,13 @@ const EditChildProfileModal: React.FC<EditChildProfileModalProps> = ({
       onCancel={onClose}
       onOk={() => form.submit()}
       okText="Lưu"
+      cancelText="Hủy"
+      style={{
+        top: "43%",
+        transform: "translate(0%, -50%)",
+        margin: 0,
+      }}
+      centered
       confirmLoading={loading}
     >
       <Form
@@ -114,6 +151,15 @@ const EditChildProfileModal: React.FC<EditChildProfileModalProps> = ({
         onFinish={handleSaveEdit}
         layout="vertical"
       >
+        <Item
+          label="Hình ảnh"
+          name="profilePicture"
+          rules={[{ required: true, message: "Hãy tải lên hình ảnh của trẻ!" }]}
+        >
+          <Upload beforeUpload={() => false} maxCount={1} accept="image/*">
+            <Button icon={<UploadOutlined />}>Tải lên</Button>
+          </Upload>
+        </Item>
         <Item
           name="fullName"
           label="Họ và tên"
@@ -124,9 +170,19 @@ const EditChildProfileModal: React.FC<EditChildProfileModalProps> = ({
         <Item
           name="dateOfBirth"
           label="Ngày sinh"
-          rules={[{ required: true, message: "Vui lòng nhập ngày sinh!" }]}
+          rules={[{ required: true, message: "Vui lòng chọn ngày sinh!" }]}
         >
-          <AntInput type="date" />
+          <DatePicker
+            format="DD-MM-YYYY"
+            style={{ width: "100%" }}
+            placeholder="Chọn ngày sinh"
+            onChange={(date) => {
+              console.log(
+                "Selected Date:",
+                date ? date.format("DD-MM-YYYY") : null
+              );
+            }}
+          />
         </Item>
         <Item
           name="gender"
@@ -149,19 +205,6 @@ const EditChildProfileModal: React.FC<EditChildProfileModalProps> = ({
             <Option value={Relationship.Father}>Bố</Option>
             <Option value={Relationship.Guardian}>Người giám hộ</Option>
           </Select>
-        </Item>
-        <Item
-          label="Hình ảnh"
-          name="profilePicture"
-          rules={[{ required: true, message: "Hãy tải lên hình ảnh của trẻ!" }]}
-        >
-          <Upload
-            beforeUpload={() => false}
-            maxCount={1}
-            accept="profilePicture/*"
-          >
-            <Button icon={<UploadOutlined />}>Tải lên</Button>
-          </Upload>
         </Item>
       </Form>
     </Modal>
