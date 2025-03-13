@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { message, Select, Spin, Modal } from "antd";
+import { message, Select, Spin, Modal, Descriptions } from "antd";
 import vaccineProfileService from "../../service/vaccineProfileService";
 import childProfileService from "../../service/childProfileService";
 import diseaseService from "../../service/diseaseService";
@@ -7,7 +7,7 @@ import { VaccineProfileResponseDTO } from "../../models/VaccineProfile";
 import { ChildProfileResponseDTO } from "../../models/ChildProfile";
 import { DiseaseResponseDTO } from "../../models/Disease";
 import moment from "moment";
-import { useAuth } from "../../context/AuthContext"; // Import useAuth
+import { useAuth } from "../../context/AuthContext";
 
 const { Option } = Select;
 
@@ -25,12 +25,12 @@ const ChildVaccineSchedule: React.FC = () => {
   const [selectedSchedule, setSelectedSchedule] =
     useState<VaccineProfileResponseDTO | null>(null);
   const [childBirthDate, setChildBirthDate] = useState<string | null>(null);
-  const { user } = useAuth(); // Lấy user từ context
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchChildren();
     fetchDiseases();
-  }, [user]); // Thêm user vào dependency để reload khi user thay đổi
+  }, [user]);
 
   useEffect(() => {
     if (selectedChild) {
@@ -63,13 +63,11 @@ const ChildVaccineSchedule: React.FC = () => {
   const fetchChildren = async () => {
     try {
       const data = await childProfileService.getAllChildProfiles();
-      // Lọc danh sách trẻ thuộc về userId hiện tại
       if (user?.userId) {
         const filteredChildren = data.filter(
           (child) => child.userId === user.userId
         );
         setChildren(filteredChildren);
-        // Nếu chỉ có một trẻ, tự động chọn trẻ đó
         if (filteredChildren.length === 1) {
           setSelectedChild(filteredChildren[0].childId);
         }
@@ -103,7 +101,6 @@ const ChildVaccineSchedule: React.FC = () => {
     setSelectedSchedule(null);
   };
 
-  // Tạo map bệnh ID -> tên bệnh và trẻ ID -> tên trẻ
   const diseaseMap = diseases.reduce((acc, disease) => {
     acc[disease.diseaseId] = disease.name;
     return acc;
@@ -114,51 +111,72 @@ const ChildVaccineSchedule: React.FC = () => {
     return acc;
   }, {} as Record<number, string>);
 
-  // Tạo danh sách các cột tuổi dựa trên scheduledDate
-  const uniqueMonths: { monthsDiff: number; scheduledDate: string }[] = [];
+  const uniqueMonths: {
+    monthsDiff: number;
+    scheduledDate: string;
+    range?: string;
+  }[] = [];
   scheduleData.forEach((item) => {
     const birthDate = moment(childBirthDate, "DD/MM/YYYY");
     const scheduledDate = moment(item.scheduledDate, "DD/MM/YYYY");
     const monthsDiff = scheduledDate.diff(birthDate, "months");
     const scheduledDateStr = scheduledDate.format("DD/MM/YYYY");
 
-    // Chỉ thêm nếu chưa có tháng này với ngày cụ thể
-    if (
-      !uniqueMonths.some(
-        (m) =>
-          m.monthsDiff === monthsDiff && m.scheduledDate === scheduledDateStr
-      )
-    ) {
-      uniqueMonths.push({ monthsDiff, scheduledDate: scheduledDateStr });
+    let range: string | undefined;
+    if (monthsDiff >= 24 && monthsDiff <= 36) {
+      range = "2-3 tuổi";
+    } else if (monthsDiff >= 48 && monthsDiff <= 72) {
+      range = "4-6 tuổi";
+    }
+
+    if (!range) {
+      if (
+        !uniqueMonths.some(
+          (m) =>
+            m.monthsDiff === monthsDiff && m.scheduledDate === scheduledDateStr
+        )
+      ) {
+        uniqueMonths.push({ monthsDiff, scheduledDate: scheduledDateStr });
+      }
+    } else {
+      if (!uniqueMonths.some((m) => m.range === range)) {
+        uniqueMonths.push({
+          monthsDiff,
+          scheduledDate: scheduledDateStr,
+          range,
+        });
+      }
     }
   });
 
-  // Sắp xếp các cột theo monthsDiff
   uniqueMonths.sort((a, b) => a.monthsDiff - b.monthsDiff);
 
-  // Tạo nhãn cho các cột (ví dụ: "Tháng 2 (13/04/2025)")
   const ageColumns = uniqueMonths.map((month) => {
-    if (month.monthsDiff >= 24 && month.monthsDiff <= 36) {
-      return `2-3 tuổi (${month.scheduledDate})`;
-    } else if (month.monthsDiff >= 48 && month.monthsDiff <= 72) {
-      return `4-6 tuổi (${month.scheduledDate})`;
+    if (month.range) {
+      return month.range;
     }
     return `Tháng ${month.monthsDiff} (${month.scheduledDate})`;
   });
 
-  // Ánh xạ lịch tiêm vào các cột tuổi dựa trên scheduledDate
   const scheduleMap = scheduleData.reduce((acc, item) => {
     const birthDate = moment(childBirthDate, "DD/MM/YYYY");
     const scheduledDate = moment(item.scheduledDate, "DD/MM/YYYY");
     const monthsDiff = scheduledDate.diff(birthDate, "months");
-    const scheduledDateStr = scheduledDate.format("DD/MM/YYYY");
 
-    // Tìm chỉ số của cột dựa trên monthsDiff và scheduledDate
-    const columnIndex = uniqueMonths.findIndex(
-      (m) => m.monthsDiff === monthsDiff && m.scheduledDate === scheduledDateStr
-    );
+    let columnIndex = -1;
+    if (monthsDiff >= 24 && monthsDiff <= 36) {
+      columnIndex = uniqueMonths.findIndex((m) => m.range === "2-3 tuổi");
+    } else if (monthsDiff >= 48 && monthsDiff <= 72) {
+      columnIndex = uniqueMonths.findIndex((m) => m.range === "4-6 tuổi");
+    } else {
+      const scheduledDateStr = scheduledDate.format("DD/MM/YYYY");
+      columnIndex = uniqueMonths.findIndex(
+        (m) =>
+          m.monthsDiff === monthsDiff && m.scheduledDate === scheduledDateStr
+      );
+    }
 
-    if (columnIndex === -1) return acc; // Bỏ qua nếu không tìm thấy cột
+    if (columnIndex === -1) return acc;
 
     if (!acc[item.diseaseId]) acc[item.diseaseId] = {};
     acc[item.diseaseId][columnIndex] = acc[item.diseaseId][columnIndex] || [];
@@ -172,7 +190,6 @@ const ChildVaccineSchedule: React.FC = () => {
         Lịch Tiêm Chủng Cá Nhân
       </h1>
 
-      {/* Chọn trẻ */}
       <div className="mb-6 flex flex-col items-center space-y-2 p-4 border border-blue-300 shadow-sm rounded-lg">
         <span className="text-lg font-bold">
           Lựa chọn trẻ để xem lịch tiêm phù hợp
@@ -182,7 +199,7 @@ const ChildVaccineSchedule: React.FC = () => {
           style={{ width: 220, fontWeight: "bold" }}
           onChange={(value: number) => setSelectedChild(value)}
           value={selectedChild}
-          disabled={children.length === 0} // Vô hiệu hóa nếu không có trẻ
+          disabled={children.length === 0}
         >
           {children.map((child) => (
             <Option key={child.childId} value={child.childId}>
@@ -192,7 +209,6 @@ const ChildVaccineSchedule: React.FC = () => {
         </Select>
       </div>
 
-      {/* Bảng hiển thị lịch tiêm */}
       <div className="overflow-x-auto bg-white border border-gray-300">
         <Spin spinning={loading} size="large">
           <table className="w-full table-auto">
@@ -258,48 +274,42 @@ const ChildVaccineSchedule: React.FC = () => {
 
       {/* Modal hiển thị chi tiết */}
       <Modal
-        title="Chi tiết lịch tiêm chủng cá nhân"
+        title="CHI TIẾT LỊCH TIÊM CHỦNG CÁ NHÂN"
         visible={isModalVisible}
         onCancel={handleModalClose}
         footer={null}
         centered
-        style={{
-          transform: "translate(10%, -40%)",
-          margin: 0,
-        }}
       >
         {selectedSchedule && (
-          <div>
-            <p>
-              <strong>Tên trẻ:</strong> {childMap[selectedSchedule.childId]}
-            </p>
-            <p>
-              <strong>Tên bệnh:</strong>{" "}
-              {diseaseMap[selectedSchedule.diseaseId]}
-            </p>
-            <p>
-              <strong>Liều số:</strong> {selectedSchedule.doseNumber}
-            </p>
-            <p>
-              <strong>Ngày đăng ký tiêm:</strong>{" "}
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="Tên trẻ">
+              {childMap[selectedSchedule.childId] || "Không tìm thấy"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Tên bệnh">
+              {diseaseMap[selectedSchedule.diseaseId] || "Không tìm thấy"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Liều số">
+              {selectedSchedule.doseNumber || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày đăng ký tiêm">
               {selectedSchedule.vaccinationDate
-                ? moment(selectedSchedule.vaccinationDate).format("MM/DD/YYYY")
+                ? moment(selectedSchedule.vaccinationDate).format("DD/MM/YYYY")
                 : "Chưa đăng ký"}
-            </p>
-            <p>
-              <strong>Ngày dự kiến tiêm:</strong>{" "}
-              {moment(selectedSchedule.scheduledDate).format("MM/DD/YYYY")}
-            </p>
-            <p>
-              <strong>Tình trạng tiêm:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày dự kiến tiêm">
+              {selectedSchedule.scheduledDate
+                ? moment(selectedSchedule.scheduledDate).format("DD/MM/YYYY")
+                : "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Tình trạng tiêm">
               {selectedSchedule &&
               typeof selectedSchedule.isCompleted === "number"
                 ? selectedSchedule.isCompleted === 0
                   ? "Chưa tiêm"
                   : "Đã tiêm"
                 : "Không xác định"}
-            </p>
-          </div>
+            </Descriptions.Item>
+          </Descriptions>
         )}
       </Modal>
     </div>

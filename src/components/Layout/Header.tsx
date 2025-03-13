@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import { notification } from "antd";
 import { useAuth } from "../../context/AuthContext";
 import userService from "../../service/userService"; // Import userService để gọi getUserById
 
@@ -56,17 +55,9 @@ const AppHeader: React.FC = () => {
     try {
       await logout();
       setAvatarMenuOpen(false);
-      setUserData(null); // Xóa dữ liệu người dùng khi logout
-      notification.success({
-        message: "Logout Successful",
-        description: "You have been logged out successfully.",
-      });
+      setUserData(null);
     } catch (error) {
       console.error("Logout error:", error);
-      notification.error({
-        message: "Logout Failed",
-        description: "An error occurred during logout. Please try again.",
-      });
     }
   };
 

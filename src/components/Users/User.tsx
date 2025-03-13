@@ -21,17 +21,18 @@ import {
 } from "@ant-design/icons";
 import { UserResponseDTO } from "../../models/User";
 import userService from "../../service/userService";
+import { ColumnType } from "antd/es/table";
 
 const { Search } = Input;
 const { TabPane } = Tabs;
 
-// Interface User khớp với UserResponseDTO từ backend
 interface User extends UserResponseDTO {
-  userId: number; // Alias cho id từ UserResponseDTO
+  userId: number;
 }
 
 const UserComponent: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]); // Dữ liệu sau khi lọc
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -42,31 +43,23 @@ const UserComponent: React.FC = () => {
   const [activeTab, setActiveTab] = useState("activeUsers");
   const [isAddUserModalVisible, setIsAddUserModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
-  const [editedUser, setEditedUser] = useState<User | null>(null); // Thay vì editingUserId
-  const [isDetailModalVisible, setIsDetailModalVisible] = useState(false); // State cho modal chi tiết
-  const [selectedUser, setSelectedUser] = useState<User | null>(null); // User được chọn để xem chi tiết
+  const [editedUser, setEditedUser] = useState<User | null>(null);
+  const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
+  // Lấy danh sách người dùng từ API
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const response = await userService.getAllUsers();
       console.log("API Response:", response);
-      const filteredUsers = response
-        .filter((user) =>
-          activeTab === "deletedUsers"
-            ? user.isActive === "Inactive"
-            : user.isActive === "Active"
-        )
-        .map((user) => {
-          return { ...user, userId: user.userId };
-        });
-      console.log("Filtered Users:", filteredUsers);
-      setUsers(filteredUsers);
-      setPagination({
-        current: 1,
-        pageSize: pagination.pageSize,
-        total: filteredUsers.length,
-      });
+      const filteredByStatus = response.filter((user) =>
+        activeTab === "deletedUsers"
+          ? user.isActive === "Inactive"
+          : user.isActive === "Active"
+      );
+      setUsers(filteredByStatus);
+      applyPaginationAndFilter(filteredByStatus, searchKeyword, pagination);
     } catch (error) {
       console.error("Error fetching users:", error);
       message.error("Failed to fetch users: " + (error as Error).message);
@@ -75,28 +68,59 @@ const UserComponent: React.FC = () => {
     }
   };
 
+  // Áp dụng phân trang và lọc
+  const applyPaginationAndFilter = (
+    data: User[],
+    keyword: string,
+    pag: { current: number; pageSize: number; total: number }
+  ) => {
+    let filtered = data;
+    if (keyword) {
+      filtered = data.filter((user) =>
+        user.fullName.toLowerCase().includes(keyword.toLowerCase())
+      );
+    }
+
+    const startIndex = (pag.current - 1) * pag.pageSize;
+    const endIndex = startIndex + pag.pageSize;
+    const paginatedData = filtered.slice(startIndex, endIndex);
+
+    setFilteredUsers(paginatedData);
+    setPagination({
+      ...pag,
+      total: filtered.length, // Tổng số bản ghi sau khi lọc
+    });
+  };
+
   useEffect(() => {
     fetchUsers();
   }, [activeTab]);
 
+  // Xử lý thay đổi phân trang
   const handleTableChange = (pagination: any) => {
     const { current, pageSize } = pagination;
     setPagination((prev) => ({ ...prev, current, pageSize }));
-    fetchUsers();
+    applyPaginationAndFilter(users, searchKeyword, {
+      current,
+      pageSize,
+      total: pagination.total,
+    });
   };
 
+  // Xử lý tìm kiếm
   const onSearch = (value: string) => {
     setSearchKeyword(value);
-    setUsers((prevUsers) =>
-      prevUsers.filter((user) =>
-        user.fullName.toLowerCase().includes(value.toLowerCase())
-      )
-    );
+    setPagination((prev) => ({ ...prev, current: 1 })); // Reset về trang 1 khi tìm kiếm
+    applyPaginationAndFilter(users, value, {
+      ...pagination,
+      current: 1,
+    });
   };
 
   const handleReset = () => {
     setSearchKeyword("");
-    fetchUsers();
+    setPagination((prev) => ({ ...prev, current: 1 }));
+    applyPaginationAndFilter(users, "", { ...pagination, current: 1 });
   };
 
   const handleAddUser = () => {
@@ -107,8 +131,8 @@ const UserComponent: React.FC = () => {
     setIsAddUserModalVisible(false);
     setIsEditModalVisible(false);
     setEditedUser(null);
-    setIsDetailModalVisible(false); // Đóng modal chi tiết
-    setSelectedUser(null); // Reset user được chọn
+    setIsDetailModalVisible(false);
+    setSelectedUser(null);
   };
 
   const handleUpdate = (user: User) => {
@@ -132,6 +156,7 @@ const UserComponent: React.FC = () => {
     setSelectedUser(user);
     setIsDetailModalVisible(true);
   };
+
   const handleDelete = async (userId: number) => {
     Modal.confirm({
       title: "Bạn có chắc chắn muốn xóa người dùng này không?",
@@ -141,9 +166,9 @@ const UserComponent: React.FC = () => {
       cancelText: "Không",
       onOk: async () => {
         try {
-          await userService.deleteUser(userId); // Giả sử userService có phương thức deleteUser
+          await userService.deleteUser(userId);
           message.success("Người dùng đã được xóa thành công");
-          fetchUsers(); // Refresh danh sách người dùng sau khi xóa
+          fetchUsers();
         } catch (error) {
           console.error("Lỗi khi xóa người dùng:", error);
           message.error(
@@ -156,11 +181,24 @@ const UserComponent: React.FC = () => {
       },
     });
   };
+
   const handleTabChange = (key: string) => {
     setActiveTab(key);
+    setPagination((prev) => ({ ...prev, current: 1 })); // Reset về trang 1 khi đổi tab
   };
 
-  const columns = [
+  const columns: ColumnType<UserResponseDTO>[] = [
+    {
+      title: "STT",
+      key: "index",
+      width: 50,
+      align: "center",
+      render: (_: any, __: UserResponseDTO, index: number) => {
+        const currentIndex =
+          (pagination.current - 1) * pagination.pageSize + index + 1;
+        return currentIndex;
+      },
+    },
     {
       title: "Email",
       dataIndex: "email",
@@ -252,7 +290,7 @@ const UserComponent: React.FC = () => {
           </Row>
           <Table
             columns={columns}
-            dataSource={users}
+            dataSource={filteredUsers} // Sử dụng dữ liệu đã phân trang và lọc
             rowKey="userId"
             pagination={{
               current: pagination.current,
@@ -280,7 +318,7 @@ const UserComponent: React.FC = () => {
                 <ReloadOutlined
                   onClick={handleReset}
                   style={{ fontSize: "24px", cursor: "pointer" }}
-                />{" "}
+                />
               </Space>
             </Col>
             <Col>
@@ -291,7 +329,7 @@ const UserComponent: React.FC = () => {
           </Row>
           <Table
             columns={columns}
-            dataSource={users}
+            dataSource={filteredUsers} // Sử dụng dữ liệu đã phân trang và lọc
             rowKey="userId"
             pagination={{
               current: pagination.current,
@@ -321,7 +359,6 @@ const UserComponent: React.FC = () => {
         />
       )}
 
-      {/* Modal để xem chi tiết thông tin user */}
       <Modal
         title="User Details"
         visible={isDetailModalVisible}

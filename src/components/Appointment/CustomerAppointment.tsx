@@ -1,6 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { Table, Space, message, Modal, Row, Col, Button } from "antd";
+import {
+  Table,
+  Space,
+  message,
+  Modal,
+  Row,
+  Col,
+  Button,
+  Descriptions,
+} from "antd";
 import {
   EyeOutlined,
   DeleteOutlined,
@@ -28,7 +37,7 @@ function CustomerAppointment() {
   );
   const [originalAppointments, setOriginalAppointments] = useState<
     AppointmentResponseDTO[]
-  >([]); // Lưu danh sách gốc
+  >([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [childProfiles, setChildProfiles] = useState<ChildProfileResponseDTO[]>(
     []
@@ -65,20 +74,18 @@ function CustomerAppointment() {
       setVaccines(allVaccines);
       setVaccinePackages(allVaccinePackages);
 
-      // Lấy danh sách hồ sơ trẻ của user
       const allChildProfiles = await childProfileService.getAllChildProfiles();
       const userChildIds = allChildProfiles
         .filter((profile) => profile.userId === user.userId)
         .map((profile) => profile.childId);
-      setChildProfiles(allChildProfiles); // Lưu toàn bộ childProfiles để ánh xạ
+      setChildProfiles(allChildProfiles);
 
-      // Lấy tất cả lịch hẹn và lọc theo childId
       const allAppointments = await appointmentService.getAllAppointments();
       const filteredAppointments = allAppointments.filter((appointment) =>
         userChildIds.includes(appointment.childId)
       );
       setAppointments(filteredAppointments);
-      setOriginalAppointments(filteredAppointments); // Lưu danh sách gốc
+      setOriginalAppointments(filteredAppointments);
       setPagination({
         current: 1,
         pageSize: pagination.pageSize,
@@ -94,13 +101,11 @@ function CustomerAppointment() {
     }
   };
 
-  // Xử lý tìm kiếm (theo tên trẻ, vaccine, và package)
   const onSearch = (value: string) => {
     const trimmedValue = value.trim().toLowerCase();
     setSearchText(trimmedValue);
 
     if (!trimmedValue) {
-      // Nếu không có từ khóa, hiển thị danh sách gốc
       setAppointments(originalAppointments);
       setPagination({
         ...pagination,
@@ -110,7 +115,6 @@ function CustomerAppointment() {
       return;
     }
 
-    // Lọc appointments dựa trên tên trẻ, vaccine, hoặc gói vaccine
     const filteredAppointments = originalAppointments.filter((appointment) => {
       const child = childProfiles.find(
         (p) => p.childId === appointment.childId
@@ -142,7 +146,6 @@ function CustomerAppointment() {
     });
   };
 
-  // Xử lý reset tìm kiếm
   const handleReset = () => {
     setSearchText("");
     setAppointments(originalAppointments);
@@ -153,13 +156,11 @@ function CustomerAppointment() {
     });
   };
 
-  // Xử lý thay đổi phân trang
   const handleTableChange = (pagination: any) => {
     const { current, pageSize } = pagination;
     setPagination((prev) => ({ ...prev, current, pageSize }));
   };
 
-  // Cột cho Table
   const columns: ColumnType<AppointmentResponseDTO>[] = [
     {
       title: "STT",
@@ -253,13 +254,11 @@ function CustomerAppointment() {
     },
   ];
 
-  // Xử lý xem chi tiết
   const showModal = (appointment: AppointmentResponseDTO) => {
     setSelectedAppointment(appointment);
     setIsModalVisible(true);
   };
 
-  // Hàm đóng modal
   const handleCancel = () => {
     setIsModalVisible(false);
     setSelectedAppointment(null);
@@ -269,7 +268,6 @@ function CustomerAppointment() {
     navigate("/vaccine-registration");
   };
 
-  // Hàm hủy lịch hẹn
   const confirmCancel = (appointmentId: number, currentStatus: number) => {
     if (currentStatus === 5) {
       message.warning("Lịch tiêm đã được hủy trước đó!");
@@ -328,7 +326,7 @@ function CustomerAppointment() {
                 enterButton
                 allowClear
                 value={searchText}
-                onChange={(e) => setSearchText(e.target.value)} // Chỉ cập nhật giá trị searchText
+                onChange={(e) => setSearchText(e.target.value)}
                 style={{ width: 300 }}
               />
               <ReloadOutlined
@@ -370,25 +368,20 @@ function CustomerAppointment() {
 
         {/* Modal chi tiết */}
         <Modal
-          title="Chi tiết lịch hẹn"
+          title="CHI TIẾT LỊCH HẸN"
           visible={isModalVisible}
           onCancel={handleCancel}
           footer={null}
+          centered
         >
           {selectedAppointment && (
-            <div>
-              <p>
-                <strong>ID Lịch hẹn: </strong>{" "}
-                {selectedAppointment.appointmentId}
-              </p>
-              <p>
-                <strong>Họ tên của trẻ: </strong>{" "}
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label="Họ tên của trẻ">
                 {childProfiles.find(
                   (p) => p.childId === selectedAppointment.childId
                 )?.fullName || "Không tìm thấy"}
-              </p>
-              <p>
-                <strong>Vaccine/Gói vaccine: </strong>
+              </Descriptions.Item>
+              <Descriptions.Item label="Vaccine/Gói vaccine">
                 {selectedAppointment.vaccineId
                   ? vaccines.find(
                       (v) => v.vaccineId === selectedAppointment.vaccineId
@@ -399,30 +392,31 @@ function CustomerAppointment() {
                         p.packageId === selectedAppointment.vaccinePackageId
                     )?.name || "Không tìm thấy gói vaccine"
                   : "Không có vaccine hoặc gói vaccine"}
-              </p>
-              <p>
-                <strong>Ngày hẹn: </strong>{" "}
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày hẹn">
                 {moment(selectedAppointment.appointmentDate).format(
                   "DD/MM/YYYY HH:mm"
                 )}
-              </p>
-              <p>
-                <strong>Trạng thái: </strong>
+              </Descriptions.Item>
+              <Descriptions.Item label="Trạng thái">
                 {selectedAppointment.appointmentStatus === 1
                   ? "Đã lên lịch"
                   : selectedAppointment.appointmentStatus === 2
-                  ? "Hoàn thành"
+                  ? "Chờ tiêm"
                   : selectedAppointment.appointmentStatus === 3
+                  ? "Chờ phản ứng"
+                  : selectedAppointment.appointmentStatus === 4
+                  ? "Hoàn thành"
+                  : selectedAppointment.appointmentStatus === 5
                   ? "Đã hủy"
                   : selectedAppointment.appointmentStatus}
-              </p>
-              <p>
-                <strong>Trạng thái hoạt động: </strong>{" "}
+              </Descriptions.Item>
+              <Descriptions.Item label="Trạng thái hoạt động">
                 {selectedAppointment.isActive === 1
                   ? "Hoạt động"
                   : "Không hoạt động"}
-              </p>
-            </div>
+              </Descriptions.Item>
+            </Descriptions>
           )}
         </Modal>
       </div>

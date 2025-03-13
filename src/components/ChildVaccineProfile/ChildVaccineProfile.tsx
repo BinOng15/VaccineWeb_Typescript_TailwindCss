@@ -1,6 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { Table, Space, message, Modal, Row, Col, Button } from "antd";
+import {
+  Table,
+  Space,
+  message,
+  Modal,
+  Row,
+  Col,
+  Button,
+  Descriptions,
+} from "antd";
 import {
   EyeOutlined,
   DeleteOutlined,
@@ -59,7 +68,7 @@ function ChildVaccineProfile() {
       setDiseases(allDisease);
 
       const allChildProfiles = await childProfileService.getAllChildProfiles();
-      console.log("All Child Profiles:", allChildProfiles); // Debug dữ liệu childProfiles
+      console.log("All Child Profiles:", allChildProfiles);
       const userChildIds = allChildProfiles
         .filter((profile) => profile.userId === user.userId)
         .map((profile) => profile.childId);
@@ -67,7 +76,7 @@ function ChildVaccineProfile() {
 
       const allVaccineProfiles =
         await vaccineProfileService.getAllVaccineProfiles();
-      console.log("All Vaccine Profiles:", allVaccineProfiles); // Debug dữ liệu vaccineProfiles
+      console.log("All Vaccine Profiles:", allVaccineProfiles);
       const filteredProfiles = allVaccineProfiles.filter((profile) =>
         userChildIds.includes(profile.childId)
       );
@@ -109,7 +118,6 @@ function ChildVaccineProfile() {
         diseases
           .find((d) => d.diseaseId === profile.diseaseId)
           ?.name.toLowerCase() || "";
-
       return childName.includes(trimmedValue) || disease.includes(trimmedValue);
     });
 
@@ -152,18 +160,6 @@ function ChildVaccineProfile() {
           (profile) => profile.childId === childId
         );
         return child ? child.fullName : "Không tìm thấy";
-      },
-    },
-    {
-      title: "Ngày sinh",
-      dataIndex: "dateOfBirth",
-      key: "dateOfBirth",
-      render: (childId: number) => {
-        const child = childProfiles.find((p) => p.childId === childId);
-        console.log("Child found:", child); // Debug thông tin trẻ
-        return child?.dateOfBirth
-          ? moment(child.dateOfBirth, "DD/MM/YYYY").format("DD/MM/YYYY")
-          : "Không có thông tin";
       },
     },
     {
@@ -221,7 +217,7 @@ function ChildVaccineProfile() {
   ];
 
   const showModal = (profile: VaccineProfileResponseDTO) => {
-    console.log("Selected Profile:", profile); // Debug selectedProfile
+    console.log("Selected Profile:", profile);
     setSelectedProfile(profile);
     setIsModalVisible(true);
   };
@@ -339,51 +335,52 @@ function ChildVaccineProfile() {
 
         {/* Modal chi tiết */}
         <Modal
-          title="Chi tiết hồ sơ vaccine"
+          title="CHI TIẾT HỒ SƠ TIÊM CHỦNG"
           visible={isModalVisible}
           onCancel={handleCancel}
           footer={null}
           centered
-          style={{
-            top: "-7%",
-            transform: "translate(10%, -50%)",
-            margin: 0,
-          }}
         >
           {selectedProfile && (
-            <div>
-              <p>
-                <strong>Họ tên của trẻ: </strong>{" "}
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label="Họ tên của trẻ">
                 {childProfiles.find(
                   (p) => p.childId === selectedProfile.childId
                 )?.fullName || "Không tìm thấy"}
-              </p>
-              <p>
-                <strong>Ngày sinh: </strong>{" "}
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày sinh">
                 {(() => {
                   const child = childProfiles.find(
                     (p) => p.childId === selectedProfile.childId
                   );
-                  console.log("Child found:", child); // Debug thông tin trẻ
                   return child?.dateOfBirth
                     ? moment(child.dateOfBirth, "DD/MM/YYYY").format(
                         "DD/MM/YYYY"
                       )
                     : "Không có thông tin";
                 })()}
-              </p>
-              <p>
-                <strong>Bệnh từng tiêm: </strong>{" "}
+              </Descriptions.Item>
+              <Descriptions.Item label="Bệnh từng tiêm">
                 {diseases.find((d) => d.diseaseId === selectedProfile.diseaseId)
-                  ?.name || "Không tìm thấy vaccine"}
-              </p>
-              <p>
-                <strong>Ngày tiêm: </strong>{" "}
+                  ?.name || "Không tìm thấy"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Mũi số">
+                {selectedProfile.doseNumber || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày đăng ký tiêm">
                 {selectedProfile.vaccinationDate
                   ? moment(selectedProfile.vaccinationDate).format("DD/MM/YYYY")
                   : "Chưa đăng ký"}
-              </p>
-            </div>
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày tiêm dự kiến">
+                {selectedProfile.scheduledDate
+                  ? moment(selectedProfile.scheduledDate).format("DD/MM/YYYY")
+                  : "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Trạng thái">
+                {selectedProfile.isCompleted === 1 ? "Đã tiêm" : "Chưa tiêm"}
+              </Descriptions.Item>
+            </Descriptions>
           )}
         </Modal>
 

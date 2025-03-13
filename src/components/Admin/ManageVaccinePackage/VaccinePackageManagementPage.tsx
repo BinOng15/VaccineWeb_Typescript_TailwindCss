@@ -10,6 +10,7 @@ import {
   Tabs,
   message,
   Modal,
+  Descriptions,
 } from "antd";
 import {
   EditOutlined,
@@ -28,9 +29,8 @@ import { ColumnType } from "antd/es/table";
 const { Search } = Input;
 const { TabPane } = Tabs;
 
-// Interface VaccinePackage khớp với VaccinePackageResponseDTO từ backend
 interface VaccinePackage extends VaccinePackageResponseDTO {
-  packageId: number; // Alias cho packageId từ VaccinePackageResponseDTO
+  packageId: number;
 }
 
 const VaccinePackageManagePage: React.FC = () => {
@@ -362,49 +362,49 @@ const VaccinePackageManagePage: React.FC = () => {
 
       {/* Modal để xem chi tiết thông tin gói vaccine */}
       <Modal
-        title="Chi tiết Gói vaccine"
+        title="CHI TIẾT GÓI VẮC XIN"
         visible={isDetailModalVisible}
         onCancel={handleCloseModal}
         footer={null}
+        centered
       >
         {selectedPackage && (
-          <div style={{ padding: 16 }}>
-            <p>
-              <strong>Tên gói vaccine:</strong> {selectedPackage.name || "N/A"}
-            </p>
-            <p>
-              <strong>Mô tả:</strong> {selectedPackage.description || "N/A"}
-            </p>
-            <p>
-              <strong>Giá tổng:</strong>{" "}
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="Tên gói vaccine">
+              {selectedPackage.name || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Mô tả">
+              {selectedPackage.description || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Giá tổng">
               {selectedPackage.totalPrice
                 ? `${selectedPackage.totalPrice.toLocaleString()} đồng`
                 : "N/A"}
-            </p>
-            <p>
-              <strong>Trạng thái:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Trạng thái">
               {selectedPackage.isActive === 1 ? "Hoạt động" : "Không hoạt động"}
-            </p>
-            <p>
-              <strong>Ngày tạo:</strong>{" "}
-              {moment(selectedPackage.createdDate).format(
-                "HH:mm - DD/MM/YYYY"
-              ) || "N/A"}
-            </p>
-            <p>
-              <strong>Người tạo:</strong> {selectedPackage.createdBy || "N/A"}
-            </p>
-            <p>
-              <strong>Ngày sửa đổi:</strong>{" "}
-              {moment(selectedPackage.modifiedDate).format(
-                "HH:mm - DD/MM/YYYY"
-              ) || "N/A"}
-            </p>
-            <p>
-              <strong>Người sửa đổi:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày tạo">
+              {selectedPackage.createdDate
+                ? moment(selectedPackage.createdDate).format(
+                    "HH:mm - DD/MM/YYYY"
+                  )
+                : "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Người tạo">
+              {selectedPackage.createdBy || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày sửa đổi">
+              {selectedPackage.modifiedDate
+                ? moment(selectedPackage.modifiedDate).format(
+                    "HH:mm - DD/MM/YYYY"
+                  )
+                : "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Người sửa đổi">
               {selectedPackage.modifiedBy || "N/A"}
-            </p>
-          </div>
+            </Descriptions.Item>
+          </Descriptions>
         )}
       </Modal>
     </div>

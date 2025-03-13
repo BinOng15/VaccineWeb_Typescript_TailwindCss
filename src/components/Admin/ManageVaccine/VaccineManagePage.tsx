@@ -10,6 +10,7 @@ import {
   Tabs,
   message,
   Modal,
+  Descriptions,
 } from "antd";
 import {
   EditOutlined,
@@ -27,9 +28,8 @@ import { ColumnType } from "antd/es/table";
 const { Search } = Input;
 const { TabPane } = Tabs;
 
-// Interface Vaccine khớp với VaccineResponseDTO từ backend
 interface Vaccine extends VaccineResponseDTO {
-  vaccineId: number; // Alias cho VaccineId từ VaccineResponseDTO
+  vaccineId: number;
 }
 
 const VaccineManagePage: React.FC = () => {
@@ -100,7 +100,7 @@ const VaccineManagePage: React.FC = () => {
     setPagination((prev) => ({
       ...prev,
       total: filteredVaccines.length,
-      current: 1, // Reset về trang 1 khi tìm kiếm
+      current: 1,
     }));
   };
 
@@ -146,7 +146,7 @@ const VaccineManagePage: React.FC = () => {
         try {
           await vaccineService.deleteVaccine(vaccineId);
           message.success("Vắc xin đã được xóa thành công");
-          fetchVaccines(); // Refresh danh sách vắc xin sau khi xóa
+          fetchVaccines();
         } catch (error) {
           console.error("Lỗi khi xóa vắc xin:", error);
           message.error("Không thể xóa vắc xin: " + (error as Error).message);
@@ -171,7 +171,7 @@ const VaccineManagePage: React.FC = () => {
 
   const handleTabChange = (key: string) => {
     setActiveTab(key);
-    fetchVaccines(); // Lấy lại dữ liệu khi chuyển tab
+    fetchVaccines();
   };
 
   const columns: ColumnType<VaccineResponseDTO>[] = [
@@ -385,67 +385,67 @@ const VaccineManagePage: React.FC = () => {
 
       {/* Modal để xem chi tiết thông tin vaccine */}
       <Modal
-        title="Chi tiết Vắc xin"
+        title="CHI TIẾT VẮC XIN"
         visible={isDetailModalVisible}
         onCancel={handleCloseModal}
         footer={null}
+        centered
       >
         {selectedVaccine && (
-          <div style={{ padding: 16 }}>
-            <p>
-              <strong>Tên vắc xin:</strong> {selectedVaccine.name || "N/A"}
-            </p>
-            <p>
-              <strong>Thông tin:</strong> {selectedVaccine.description || "N/A"}
-            </p>
-            <p>
-              <strong>Trạng thái:</strong>{" "}
-              {selectedVaccine.isActive === 1 ? "Có" : "Không"}
-            </p>
-            <p>
-              <strong>Giá:</strong> {selectedVaccine.price || "N/A"}
-            </p>
-            <p>
-              <strong>Nhà sản xuất:</strong>{" "}
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="Tên vắc xin">
+              {selectedVaccine.name || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Thông tin">
+              {selectedVaccine.description || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Giá">
+              {selectedVaccine.price
+                ? `${selectedVaccine.price.toLocaleString()} đồng`
+                : "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Nhà sản xuất">
               {selectedVaccine.manufacturer || "N/A"}
-            </p>
-            {selectedVaccine.image && (
-              <p>
-                <strong>Hình ảnh:</strong>
+            </Descriptions.Item>
+            <Descriptions.Item label="Hình ảnh">
+              {selectedVaccine.image ? (
                 <img
                   src={selectedVaccine.image}
                   alt={selectedVaccine.name || "Hình ảnh Vắc xin"}
-                  style={{
-                    width: 100,
-                    height: 100,
-                    objectFit: "contain",
-                    marginTop: 8,
-                  }}
+                  style={{ width: 100, height: 100, objectFit: "contain" }}
                 />
-              </p>
-            )}
-            <p>
-              <strong>Ngày sản xuất:</strong>{" "}
-              {moment(selectedVaccine.dateOfManufacture).format("DD/MM/YYYY") ||
-                "N/A"}
-            </p>
-            <p>
-              <strong>Ngày hết hạn:</strong>{" "}
-              {moment(selectedVaccine.expiryDate).format("DD/MM/YYYY") || "N/A"}
-            </p>
-            <p>
-              <strong>Ngày tạo:</strong>{" "}
-              {moment(selectedVaccine.createdDate).format(
-                "HH:mm - DD/MM/YYYY"
-              ) || "N/A"}
-            </p>
-            <p>
-              <strong>Ngày sửa đổi:</strong>{" "}
-              {moment(selectedVaccine.modifiedDate).format(
-                "HH:mm - DD/MM/YYYY"
-              ) || "N/A"}
-            </p>
-          </div>
+              ) : (
+                "N/A"
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="Trạng thái">
+              {selectedVaccine.isActive === 1 ? "Có" : "Không"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày sản xuất">
+              {selectedVaccine.dateOfManufacture
+                ? moment(selectedVaccine.dateOfManufacture).format("DD/MM/YYYY")
+                : "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày hết hạn">
+              {selectedVaccine.expiryDate
+                ? moment(selectedVaccine.expiryDate).format("DD/MM/YYYY")
+                : "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày tạo">
+              {selectedVaccine.createdDate
+                ? moment(selectedVaccine.createdDate).format(
+                    "HH:mm - DD/MM/YYYY"
+                  )
+                : "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày sửa đổi">
+              {selectedVaccine.modifiedDate
+                ? moment(selectedVaccine.modifiedDate).format(
+                    "HH:mm - DD/MM/YYYY"
+                  )
+                : "N/A"}
+            </Descriptions.Item>
+          </Descriptions>
         )}
       </Modal>
     </div>

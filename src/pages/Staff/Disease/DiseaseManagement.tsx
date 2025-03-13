@@ -5,9 +5,8 @@ import StaffLayout from "../../../components/Layout/StaffLayout";
 const DiseaseManagement = () => {
   return (
     <StaffLayout>
-    <DiseaseManagePage/>
-     
-         </StaffLayout>
+      <DiseaseManagePage />
+    </StaffLayout>
   );
 };
 

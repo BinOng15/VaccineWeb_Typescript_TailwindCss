@@ -112,6 +112,7 @@ const EditChildProfileModal: React.FC<EditChildProfileModalProps> = ({
       message.success("Cập nhật hồ sơ trẻ thành công");
       form.resetFields();
       onSuccess();
+      onClose();
     } catch (error) {
       console.error("Lỗi khi cập nhật hồ sơ trẻ:", error);
       message.error(

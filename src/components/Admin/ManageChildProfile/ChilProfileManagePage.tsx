@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
-import { Table, Input, Space, Row, Col, Modal } from "antd";
+import { Table, Input, Space, Row, Col, Modal, Descriptions } from "antd";
 import { ReloadOutlined, EyeOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { axiosInstance } from "../../../service/axiosInstance";
@@ -24,9 +24,8 @@ const ChildProfileManagePage: React.FC = () => {
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
   const [selectedProfile, setSelectedProfile] =
     useState<ChildProfileResponseDTO | null>(null);
-  const [users, setUsers] = useState<UserResponseDTO[]>([]); // Lưu thông tin người dùng
+  const [users, setUsers] = useState<UserResponseDTO[]>([]);
 
-  // Hàm fetchChildProfiles để lấy tất cả hồ sơ trẻ em từ API
   const fetchChildProfiles = async (
     page = pagination.current,
     pageSize = pagination.pageSize,
@@ -41,10 +40,9 @@ const ChildProfileManagePage: React.FC = () => {
           keyword: keyword || undefined,
         },
       });
-      const data = response.data; // Giả định API trả về mảng trực tiếp
+      const data = response.data;
       setChildProfiles(data || []);
 
-      // Lấy thông tin user cho tất cả userId trong childProfiles
       const uniqueUserIds = [
         ...new Set(
           data.map((profile: ChildProfileResponseDTO) => profile.userId)
@@ -69,7 +67,6 @@ const ChildProfileManagePage: React.FC = () => {
     }
   };
 
-  // Gọi API khi component mount
   useEffect(() => {
     fetchChildProfiles();
   }, []);
@@ -177,7 +174,7 @@ const ChildProfileManagePage: React.FC = () => {
     },
     {
       title: "Tên phụ huynh",
-      dataIndex: "userId", // Sử dụng userId làm dataIndex để lấy đúng giá trị
+      dataIndex: "userId",
       key: "UserName",
       render: (_: number, record: ChildProfileResponseDTO) => {
         const user = users.find((u) => u.userId === record.userId);
@@ -190,7 +187,6 @@ const ChildProfileManagePage: React.FC = () => {
       key: "Relationship",
       render: (relationship: number) => getRelationshipText(relationship),
     },
-
     {
       title: "Trạng thái",
       dataIndex: "isActive",
@@ -252,91 +248,72 @@ const ChildProfileManagePage: React.FC = () => {
 
       {/* Modal hiển thị chi tiết thông tin */}
       <Modal
-        title="Chi tiết Hồ sơ trẻ em"
+        title="CHI TIẾT HỒ SƠ TRẺ EM"
         visible={isDetailModalVisible}
         onCancel={handleCloseModal}
         footer={null}
+        centered
       >
         {selectedProfile && (
-          <div style={{ padding: 16 }}>
-            <p>
-              <strong>ID Hồ sơ:</strong> {selectedProfile.childId}
-            </p>
-            <p>
-              <strong>ID Người dùng:</strong> {selectedProfile.userId}
-            </p>
-            <p>
-              <strong>Tên Phụ huynh:</strong>{" "}
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="Tên Phụ huynh">
               {users.find((u) => u.userId === selectedProfile.userId)
                 ?.fullName || "Không tìm thấy tên"}
-            </p>
-            <p>
-              <strong>Tên đầy đủ:</strong> {selectedProfile.fullName || "N/A"}
-            </p>
-            <p>
-              <strong>Ảnh đại diện:</strong>
+            </Descriptions.Item>
+            <Descriptions.Item label="Tên đầy đủ">
+              {selectedProfile.fullName || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ảnh đại diện">
               {selectedProfile.imageUrl ? (
                 <img
                   src={selectedProfile.imageUrl}
                   alt={selectedProfile.fullName || "Ảnh đại diện"}
-                  style={{
-                    width: 100,
-                    height: 100,
-                    objectFit: "contain",
-                    marginTop: 8,
-                  }}
+                  style={{ width: 100, height: 100, objectFit: "contain" }}
                 />
               ) : (
-                " N/A"
+                "N/A"
               )}
-            </p>
-            <p>
-              <strong>Ngày sinh:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày sinh">
               {selectedProfile.dateOfBirth
                 ? moment(
                     selectedProfile.dateOfBirth,
                     "DD/MM/YYYY HH:mm:ss"
                   ).format("DD/MM/YYYY")
                 : "N/A"}
-            </p>
-            <p>
-              <strong>Giới tính:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Giới tính">
               {getGenderText(selectedProfile.gender)}
-            </p>
-            <p>
-              <strong>Phụ huynh là:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Phụ huynh là">
               {getRelationshipText(selectedProfile.relationship)}
-            </p>
-            <p>
-              <strong>Trạng thái:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Trạng thái">
               {selectedProfile.isActive === 1 ? "Hoạt động" : "Không hoạt động"}
-            </p>
-            <p>
-              <strong>Ngày tạo:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày tạo">
               {selectedProfile.createdDate
                 ? moment(
                     selectedProfile.createdDate,
                     "HH:mm:ss - DD/MM/YYYY"
                   ).format("HH:mm - DD/MM/YYYY")
                 : "N/A"}
-            </p>
-            <p>
-              <strong>Người tạo:</strong> {selectedProfile.createdBy || "N/A"}
-            </p>
-            <p>
-              <strong>Ngày sửa đổi:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Người tạo">
+              {selectedProfile.createdBy || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày sửa đổi">
               {selectedProfile.modifiedDate
                 ? moment(
                     selectedProfile.modifiedDate,
                     "HH:mm:ss - DD/MM/YYYY"
                   ).format("HH:mm - DD/MM/YYYY")
                 : "N/A"}
-            </p>
-            <p>
-              <strong>Người sửa đổi:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Người sửa đổi">
               {selectedProfile.modifiedBy || "N/A"}
-            </p>
-          </div>
+            </Descriptions.Item>
+          </Descriptions>
         )}
       </Modal>
     </div>

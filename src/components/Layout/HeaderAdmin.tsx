@@ -7,6 +7,7 @@ import {
   MenuFoldOutlined,
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const { Header } = Layout;
 
@@ -16,6 +17,8 @@ interface AppHeaderProps {
 }
 
 const HeaderAdmin: React.FC<AppHeaderProps> = ({ collapsed, setCollapsed }) => {
+  const { logout } = useAuth();
+
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
@@ -29,11 +32,12 @@ const HeaderAdmin: React.FC<AppHeaderProps> = ({ collapsed, setCollapsed }) => {
     checkLoginStatus();
   }, []); // Chỉ chạy một lần khi component mount
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("accessToken");
-    sessionStorage.removeItem("user");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   const avatarMenuItems = [

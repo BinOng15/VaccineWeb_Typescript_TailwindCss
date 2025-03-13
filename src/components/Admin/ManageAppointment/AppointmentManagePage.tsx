@@ -1,6 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
-import { Table, Input, Space, Row, Col, Modal, message } from "antd";
+import {
+  Table,
+  Input,
+  Space,
+  Row,
+  Col,
+  Modal,
+  message,
+  Descriptions,
+} from "antd";
 import {
   ReloadOutlined,
   EyeOutlined,
@@ -98,7 +107,6 @@ const AppointmentManagePage: React.FC = () => {
       return;
     }
 
-    // Lọc client-side dựa trên tên trẻ, vaccine, và gói vaccine
     const filteredAppointments = originalAppointments.filter((appointment) => {
       const child = childProfiles.find(
         (p) => p.childId === appointment.childId
@@ -140,7 +148,6 @@ const AppointmentManagePage: React.FC = () => {
     });
   };
 
-  // Hàm handleViewDetail để xem chi tiết lịch hẹn
   const handleViewDetail = (appointment: AppointmentResponseDTO) => {
     if (!appointment || typeof appointment.appointmentId !== "number") {
       console.error("Dữ liệu lịch hẹn không hợp lệ:", appointment);
@@ -156,13 +163,11 @@ const AppointmentManagePage: React.FC = () => {
     setSelectedAppointment(null);
   };
 
-  // Hàm xác nhận lịch hẹn
   const handleConfirmAppointment = async (
     appointmentId: number,
     currentStatus: number
   ) => {
     if (currentStatus === 2 || currentStatus === 4 || currentStatus === 5) {
-      // Không cho xác nhận nếu đã "Chờ tiêm", "Hoàn thành", hoặc "Đã hủy"
       message.warning("Lịch hẹn không thể xác nhận ở trạng thái hiện tại!");
       return;
     }
@@ -176,10 +181,9 @@ const AppointmentManagePage: React.FC = () => {
       cancelText: "Hủy bỏ",
       onOk: async () => {
         try {
-          await appointmentService.updateAppointmentStatus(appointmentId, 2); // Chuyển sang trạng thái 2 (Chờ tiêm)
+          await appointmentService.updateAppointmentStatus(appointmentId, 2);
           message.success("Xác nhận lịch hẹn thành công");
 
-          // Cập nhật state
           const updatedAppointments = appointments.map((appointment) =>
             appointment.appointmentId === appointmentId
               ? { ...appointment, appointmentStatus: 2 }
@@ -249,7 +253,6 @@ const AppointmentManagePage: React.FC = () => {
     });
   };
 
-  // Chuyển đổi giá trị số sang chuỗi cho appointmentStatus
   const getStatusText = (status: number) => {
     switch (status) {
       case 1:
@@ -383,10 +386,7 @@ const AppointmentManagePage: React.FC = () => {
       <h2 className="text-2xl font-bold text-center p-2 rounded-t-lg">
         DANH SÁCH LỊCH ĐĂNG KÝ TIÊM CHỦNG
       </h2>
-      <Row
-        justify="space-between"
-        style={{ marginBottom: 16, marginTop: 24 }} // Khoảng cách với header
-      >
+      <Row justify="space-between" style={{ marginBottom: 16, marginTop: 24 }}>
         <Col>
           <Space>
             <Search
@@ -395,7 +395,7 @@ const AppointmentManagePage: React.FC = () => {
               enterButton
               allowClear
               value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)} // Chỉ cập nhật giá trị
+              onChange={(e) => setSearchKeyword(e.target.value)}
               style={{ width: 300 }}
             />
             <ReloadOutlined
@@ -425,79 +425,63 @@ const AppointmentManagePage: React.FC = () => {
 
       {/* Modal hiển thị chi tiết thông tin */}
       <Modal
-        title="Chi tiết Lịch hẹn tiêm chủng"
+        title="CHI TIẾT LỊCH HẸN TIÊM CHỦNG"
         visible={isDetailModalVisible}
         onCancel={handleCloseModal}
         footer={null}
+        centered
       >
         {selectedAppointment && (
-          <div style={{ padding: 16 }}>
-            <p>
-              <strong>ID Lịch hẹn:</strong> {selectedAppointment.appointmentId}
-            </p>
-            <p>
-              <strong>ID Thanh toán:</strong>{" "}
-              {selectedAppointment.paymentId || "N/A"}
-            </p>
-            <p>
-              <strong>Tên Trẻ em:</strong>{" "}
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="Tên Trẻ em">
               {childProfiles.find(
                 (p) => p.childId === selectedAppointment.childId
               )?.fullName || "Không tìm thấy tên"}
-            </p>
-            <p>
-              <strong>Tên Vắc xin:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Tên Vắc xin">
               {vaccines.find(
                 (v) => v.vaccineId === selectedAppointment.vaccineId
-              )?.name || ""}
-            </p>
-            <p>
-              <strong>Tên Gói vắc xin:</strong>{" "}
+              )?.name || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Tên Gói vắc xin">
               {vaccinePackages.find(
                 (p) => p.packageId === selectedAppointment.vaccinePackageId
-              )?.name || ""}
-            </p>
-            <p>
-              <strong>Ngày hẹn:</strong>{" "}
+              )?.name || "N/A"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày hẹn">
               {selectedAppointment.appointmentDate
                 ? moment(selectedAppointment.appointmentDate).format(
-                    "DD/MM/YYYY"
+                    "DD/MM/YYYY HH:mm"
                   )
                 : "N/A"}
-            </p>
-            <p>
-              <strong>Trạng thái hẹn:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Trạng thái hẹn">
               {getStatusText(selectedAppointment.appointmentStatus)}
-            </p>
-            <p>
-              <strong>Hoạt động:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Hoạt động">
               {selectedAppointment.isActive === 1 ? "Có" : "Không"}
-            </p>
-            <p>
-              <strong>Ngày tạo:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày tạo">
               {selectedAppointment.createdDate
                 ? moment(selectedAppointment.createdDate).format(
-                    "DD/MM/YYYY HH:mm:ss"
+                    "HH:mm - DD/MM/YYYY"
                   )
                 : "N/A"}
-            </p>
-            <p>
-              <strong>Người tạo:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Người tạo">
               {selectedAppointment.createdBy || "N/A"}
-            </p>
-            <p>
-              <strong>Ngày sửa đổi:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Ngày sửa đổi">
               {selectedAppointment.modifiedDate
                 ? moment(selectedAppointment.modifiedDate).format(
-                    "DD/MM/YYYY HH:mm:ss"
+                    "HH:mm - DD/MM/YYYY"
                   )
                 : "N/A"}
-            </p>
-            <p>
-              <strong>Người sửa đổi:</strong>{" "}
+            </Descriptions.Item>
+            <Descriptions.Item label="Người sửa đổi">
               {selectedAppointment.modifiedBy || "N/A"}
-            </p>
-          </div>
+            </Descriptions.Item>
+          </Descriptions>
         )}
       </Modal>
     </div>

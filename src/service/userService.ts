@@ -1,9 +1,5 @@
 import { AxiosResponse } from "axios";
-import {
-  CreateSystemUserDTO,
-  PagedResponse,
-  UserResponseDTO,
-} from "../models/User";
+import { PagedResponse, UserResponseDTO } from "../models/User";
 import { axiosInstance } from "./axiosInstance";
 
 // Các hàm gọi API
@@ -141,13 +137,16 @@ const userService = {
   },
 
   // Tạo người dùng hệ thống (Staff hoặc Doctor)
-  createSystemUser: async (
-    userData: CreateSystemUserDTO
-  ): Promise<UserResponseDTO> => {
+  createSystemUser: async (userData: FormData): Promise<UserResponseDTO> => {
     try {
       const response: AxiosResponse = await axiosInstance.post(
         "api/User/create-system-user",
-        userData
+        userData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
       return response.data;
     } catch (error) {

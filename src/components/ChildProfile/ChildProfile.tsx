@@ -10,6 +10,7 @@ import {
   Modal,
   message,
   Spin,
+  Descriptions, // Thêm Descriptions
 } from "antd";
 import {
   EditOutlined,
@@ -37,7 +38,7 @@ function ChildProfile() {
   );
   const [originalChildProfiles, setOriginalChildProfiles] = useState<
     ChildProfileResponseDTO[]
-  >([]); // Lưu danh sách gốc
+  >([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -52,9 +53,8 @@ function ChildProfile() {
     useState<ChildProfileResponseDTO | null>(null);
   const [editedChildProfile, setEditedChildProfile] =
     useState<ChildProfileResponseDTO | null>(null);
-  const { user } = useAuth(); // Lấy thông tin người dùng từ AuthContext
+  const { user } = useAuth();
 
-  // Fetch dữ liệu hồ sơ trẻ em khi component mount
   useEffect(() => {
     fetchChildProfileData();
   }, []);
@@ -105,7 +105,6 @@ function ChildProfile() {
     }
   };
 
-  // Hàm chuyển đổi enum Gender sang chuỗi hiển thị
   const getGenderLabel = (gender: Gender): string => {
     switch (gender) {
       case Gender.Male:
@@ -118,7 +117,6 @@ function ChildProfile() {
     }
   };
 
-  // Hàm chuyển đổi enum Relationship sang chuỗi hiển thị
   const getRelationshipLabel = (relationship: Relationship | null): string => {
     if (!relationship) return "Không xác định";
     switch (relationship) {
@@ -133,7 +131,6 @@ function ChildProfile() {
     }
   };
 
-  // Xử lý tìm kiếm
   const onSearch = (value: string) => {
     setSearchKeyword(value);
     setChildProfiles((prevChildProfiles) =>
@@ -150,31 +147,26 @@ function ChildProfile() {
     });
   };
 
-  // Xử lý reset tìm kiếm
   const handleReset = () => {
     setSearchKeyword("");
     fetchChildProfileData();
   };
 
-  // Xử lý thay đổi phân trang
   const handleTableChange = (pagination: any) => {
     const { current, pageSize } = pagination;
     setPagination((prev) => ({ ...prev, current, pageSize }));
   };
 
-  // Xử lý xem chi tiết
   const handleViewDetail = (profile: ChildProfileResponseDTO) => {
     setSelectedChildProfile(profile);
     setIsDetailModalVisible(true);
   };
 
-  // Xử lý chỉnh sửa
   const handleEdit = (profile: ChildProfileResponseDTO) => {
     setEditedChildProfile(profile);
     setIsEditModalVisible(true);
   };
 
-  // Xử lý xóa
   const handleDelete = (childId: number) => {
     confirm({
       title: "Bạn có muốn xóa hồ sơ trẻ này không?",
@@ -205,13 +197,11 @@ function ChildProfile() {
     });
   };
 
-  // Xử lý thêm mới
   const handleAdd = () => {
-    console.log("handleAdd called"); // Debug log
+    console.log("handleAdd called");
     setIsAddModalVisible(true);
   };
 
-  // Đóng modal và reload dữ liệu
   const handleModalClose = () => {
     setIsDetailModalVisible(false);
     setIsAddModalVisible(false);
@@ -220,7 +210,6 @@ function ChildProfile() {
     setEditedChildProfile(null);
   };
 
-  // Cột cho Table
   const columns: ColumnType<ChildProfileResponseDTO>[] = [
     {
       title: "STT",
@@ -274,7 +263,7 @@ function ChildProfile() {
       render: (gender: Gender) => getGenderLabel(gender),
     },
     {
-      title: "Mối quan hệ với trẻ",
+      title: "Người dùng là",
       dataIndex: "relationship",
       key: "relationship",
       render: (relationship: Relationship | null) =>
@@ -319,15 +308,14 @@ function ChildProfile() {
       </div>
     );
   }
+
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <div className="w-full max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
-        {/* Tiêu đề */}
         <h1 className="text-3xl font-bold text-[#102A83] mb-6 text-center">
           Danh sách hồ sơ trẻ
         </h1>
 
-        {/* Thanh tìm kiếm, nút reset và nút thêm mới */}
         <Row justify="space-between" style={{ marginBottom: 16 }}>
           <Col>
             <Space>
@@ -358,7 +346,6 @@ function ChildProfile() {
           </Col>
         </Row>
 
-        {/* Table hiển thị danh sách ChildProfile */}
         <Table
           columns={columns}
           dataSource={childProfiles}
@@ -378,81 +365,46 @@ function ChildProfile() {
 
         {/* Modal chi tiết thông tin ChildProfile */}
         <Modal
-          title="Chi tiết hồ sơ trẻ"
+          title="CHI TIẾT HỒ SƠ TRẺ"
           visible={isDetailModalVisible}
           onCancel={handleModalClose}
           footer={null}
           centered
         >
           {selectedChildProfile && (
-            <div style={{ padding: 16 }}>
-              <p>
-                <strong>Họ và tên:</strong>{" "}
+            <Descriptions bordered column={1}>
+              <Descriptions.Item label="Họ và tên">
                 {selectedChildProfile.fullName || "N/A"}
-              </p>
-              <p>
-                <strong>Ngày sinh:</strong>{" "}
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày sinh">
                 {selectedChildProfile.dateOfBirth &&
                 selectedChildProfile.dateOfBirth !== "Chưa có dữ liệu"
                   ? moment(selectedChildProfile.dateOfBirth).format(
                       "DD/MM/YYYY"
                     )
-                  : selectedChildProfile.dateOfBirth}
-              </p>
-              <p>
-                <strong>Giới tính:</strong>{" "}
+                  : selectedChildProfile.dateOfBirth || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Giới tính">
                 {getGenderLabel(selectedChildProfile.gender)}
-              </p>
-              <p>
-                <strong>Mối quan hệ với trẻ:</strong>{" "}
+              </Descriptions.Item>
+              <Descriptions.Item label="Người dùng là">
                 {getRelationshipLabel(selectedChildProfile.relationship)}
-              </p>
-              <p>
-                <strong>Hình ảnh:</strong>{" "}
+              </Descriptions.Item>
+              <Descriptions.Item label="Hình ảnh">
                 {selectedChildProfile.imageUrl ? (
                   <img
                     src={selectedChildProfile.imageUrl}
                     alt={selectedChildProfile.fullName || "Hình ảnh"}
-                    style={{
-                      width: 100,
-                      height: 100,
-                      objectFit: "contain",
-                      marginTop: 8,
-                    }}
+                    style={{ width: 100, height: 100, objectFit: "contain" }}
                   />
                 ) : (
                   "N/A"
                 )}
-              </p>
-              <p>
-                <strong>Ngày tạo:</strong>{" "}
-                {moment(selectedChildProfile.createdDate).format(
-                  "DD/MM/YYYY"
-                ) || "N/A"}
-              </p>
-              <p>
-                <strong>Người tạo:</strong>{" "}
-                {selectedChildProfile.createdBy || "N/A"}
-              </p>
-              <p>
-                <strong>Ngày sửa đổi:</strong>{" "}
-                {moment(selectedChildProfile.modifiedDate).format(
-                  "DD/MM/YYYY"
-                ) || "N/A"}
-              </p>
-              <p>
-                <strong>Người sửa đổi:</strong>{" "}
-                {selectedChildProfile.modifiedBy || "N/A"}
-              </p>
-              <p>
-                <strong>Trạng thái:</strong>{" "}
-                {selectedChildProfile.isActive === 1
-                  ? "Hoạt động"
-                  : "Không hoạt động"}
-              </p>
-            </div>
+              </Descriptions.Item>
+            </Descriptions>
           )}
         </Modal>
+
         <AddChildProfileModal
           visible={isAddModalVisible}
           onClose={handleModalClose}
