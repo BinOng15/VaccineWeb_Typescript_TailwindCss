@@ -1,5 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Table, Space, message, TablePaginationConfig, Button, Row, Col, Input } from "antd";
+import { useState, useEffect } from "react";
+import {
+  Table,
+  Space,
+  message,
+  TablePaginationConfig,
+  Button,
+  Row,
+  Col,
+  Input,
+} from "antd";
 import { ColumnType } from "antd/es/table";
 import {
   ReloadOutlined,
@@ -17,7 +26,9 @@ const { Search } = Input;
 
 function DiseaseManagePage() {
   const [diseases, setDiseases] = useState<DiseaseResponseDTO[]>([]);
-  const [filteredDiseases, setFilteredDiseases] = useState<DiseaseResponseDTO[]>([]);
+  const [filteredDiseases, setFilteredDiseases] = useState<
+    DiseaseResponseDTO[]
+  >([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [pagination, setPagination] = useState<TablePaginationConfig>({
@@ -28,7 +39,8 @@ function DiseaseManagePage() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [viewModalVisible, setViewModalVisible] = useState(false);
-  const [selectedDisease, setSelectedDisease] = useState<DiseaseResponseDTO | null>(null);
+  const [selectedDisease, setSelectedDisease] =
+    useState<DiseaseResponseDTO | null>(null);
 
   // Lấy danh sách bệnh khi component được mount
   useEffect(() => {
@@ -49,7 +61,9 @@ function DiseaseManagePage() {
       }));
     } catch (error) {
       console.error("Failed to fetch diseases:", error);
-      message.error("Không thể tải danh sách bệnh: " + (error as Error).message);
+      message.error(
+        "Không thể tải danh sách bệnh: " + (error as Error).message
+      );
     } finally {
       setLoading(false);
     }
@@ -58,9 +72,10 @@ function DiseaseManagePage() {
   // Hàm tìm kiếm
   const handleSearch = (value: string) => {
     setSearchKeyword(value);
-    const filtered = diseases.filter((disease) =>
-      disease.name.toLowerCase().includes(value.toLowerCase()) ||
-      disease.description.toLowerCase().includes(value.toLowerCase())
+    const filtered = diseases.filter(
+      (disease) =>
+        disease.name.toLowerCase().includes(value.toLowerCase()) ||
+        disease.description.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredDiseases(filtered);
     setPagination((prev) => ({
@@ -168,7 +183,12 @@ function DiseaseManagePage() {
         </h1>
 
         {/* Thanh tìm kiếm và nút Tạo mới */}
-        <Row gutter={16} justify="space-between" align="middle" className="mb-4">
+        <Row
+          gutter={16}
+          justify="space-between"
+          align="middle"
+          className="mb-4"
+        >
           <Col>
             <Space className="custom-search">
               <Search

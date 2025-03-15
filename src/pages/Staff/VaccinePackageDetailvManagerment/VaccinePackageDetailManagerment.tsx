@@ -1,6 +1,5 @@
-import React from 'react'
-import StaffLayout from '../../../components/Layout/StaffLayout';
-import VaccinePackageDetailManagermentPage from '../../../components/Admin/ManageVaccinePackageDetail/VaccinePackageDetailManagermentPage';
+import StaffLayout from "../../../components/Layout/StaffLayout";
+import VaccinePackageDetailManagermentPage from "../../../components/Admin/ManageVaccinePackageDetail/VaccinePackageDetailManagermentPage";
 
 const VaccinePackageDetailManagerment = () => {
   return (
@@ -8,6 +7,6 @@ const VaccinePackageDetailManagerment = () => {
       <VaccinePackageDetailManagermentPage />
     </StaffLayout>
   );
-}
+};
 
-export default VaccinePackageDetailManagerment
+export default VaccinePackageDetailManagerment;

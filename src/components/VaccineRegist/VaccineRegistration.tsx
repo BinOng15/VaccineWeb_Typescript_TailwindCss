@@ -273,7 +273,10 @@ const VaccineRegistration: React.FC = () => {
               }
             >
               {packages.map((pkg) => (
-                <Option key={pkg.packageId} value={pkg.packageId.toString()}>
+                <Option
+                  key={pkg.vaccinePackageId}
+                  value={pkg.vaccinePackageId.toString()}
+                >
                   {pkg.name}
                 </Option>
               ))}
