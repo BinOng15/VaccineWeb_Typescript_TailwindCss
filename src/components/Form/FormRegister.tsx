@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
 import { message, Button } from "antd";
 import userService from "../../service/userService";
-import FileUploader from "../../util/FileUploader";
 import GoogleLoginButton from "../GoogleLoginButton";
 import { useNavigate } from "react-router-dom";
 
@@ -14,9 +13,6 @@ const FormRegister: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
   const [phoneNumber, setPhoneNumber] = useState<string>("");
-  const [address, setAddress] = useState<string>("");
-  const [dateOfBirth, setDateOfBirth] = useState<string>("");
-  const [image, setImage] = useState<File | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
@@ -77,34 +73,11 @@ const FormRegister: React.FC = () => {
       return;
     }
 
-    if (!address.trim()) {
-      message.error("Vui lòng nhập địa chỉ!");
-      setLoading(false);
-      return;
-    }
-
-    if (!dateOfBirth) {
-      message.error("Vui lòng chọn ngày sinh!");
-      setLoading(false);
-      return;
-    }
-
-    if (!image) {
-      message.error("Vui lòng tải lên hình ảnh!");
-      setLoading(false);
-      return;
-    }
-
     const formData = new FormData();
     formData.append("Email", email.trim());
     formData.append("Password", password.trim());
     formData.append("FullName", fullName.trim());
     formData.append("PhoneNumber", phoneNumber.trim());
-    formData.append("Address", address.trim());
-    formData.append("DateOfBirth", dateOfBirth); // Định dạng YYYY-MM-DD
-    if (image) {
-      formData.append("Image", image);
-    }
 
     // Debug FormData
     for (const [key, value] of formData.entries()) {
@@ -120,9 +93,6 @@ const FormRegister: React.FC = () => {
       setConfirmPassword("");
       setFullName("");
       setPhoneNumber("");
-      setAddress("");
-      setDateOfBirth("");
-      setImage(null);
       navigate("/login");
     } catch (error: any) {
       console.error("Lỗi khi đăng ký:", error);
@@ -147,23 +117,6 @@ const FormRegister: React.FC = () => {
           Đăng ký người dùng
         </h2>
         <form onSubmit={handleSubmit}>
-          <div className="mb-5 flex justify-center">
-            <div className="text-center">
-              <div className="inline-block">
-                <FileUploader
-                  onUploadSuccess={(file: File) => setImage(file)}
-                  defaultImage=""
-                />
-              </div>
-              <label
-                htmlFor="image"
-                className="block text-sm font-semibold text-gray-700 mt-2"
-              >
-                Tải lên hình ảnh
-              </label>
-            </div>
-          </div>
-
           {/* Email Input */}
           <div className="mb-5">
             <label
@@ -220,44 +173,6 @@ const FormRegister: React.FC = () => {
               required
             />
           </div>
-
-          {/* Address Input */}
-          <div className="mb-5">
-            <label
-              htmlFor="address"
-              className="block text-sm font-semibold text-gray-700 mb-2"
-            >
-              Địa chỉ
-            </label>
-            <input
-              type="text"
-              id="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Nhập địa chỉ"
-              required
-            />
-          </div>
-
-          {/* Date of Birth Input */}
-          <div className="mb-5">
-            <label
-              htmlFor="dateOfBirth"
-              className="block text-sm font-semibold text-gray-700 mb-2"
-            >
-              Ngày sinh
-            </label>
-            <input
-              type="date"
-              id="dateOfBirth"
-              value={dateOfBirth}
-              onChange={(e) => setDateOfBirth(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
           {/* Password Input */}
           <div className="mb-4">
             <label

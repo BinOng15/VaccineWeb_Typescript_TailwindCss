@@ -4,10 +4,10 @@ import { Gender, Relationship } from "../Type/enum";
 export interface CreateChildProfileDTO {
   userId: number; // ID người dùng (bắt buộc)
   fullName: string; // Họ và tên đầy đủ (bắt buộc, max 50 ký tự)
-  dateOfBirth: string; // Ngày sinh, định dạng chuỗi "dd/MM/yyyy" (ví dụ: "12/03/2025")
-  gender: Gender; // Giới tính (bắt buộc)
-  relationship: Relationship; // Quan hệ với người dùng (bắt buộc)
-  profilePicture: File; // Ảnh đại diện (bắt buộc, kiểu File cho việc tải lên)
+  dateOfBirth: string; // Ngày sinh, định dạng "yyyy-MM-dd" (khớp với backend)
+  gender: Gender; // Giới tính (bắt buộc, enum number)
+  relationship: Relationship; // Quan hệ với người dùng (bắt buộc, enum number)
+  profilePicture: File; // Ảnh đại diện (bắt buộc, kiểu File)
 }
 
 // Giao diện cho DTO cập nhật hồ sơ trẻ em
@@ -24,15 +24,15 @@ export interface ChildProfileResponseDTO {
   childId: number; // ID hồ sơ trẻ em
   userId: number; // ID người dùng
   fullName: string; // Họ và tên đầy đủ
-  imageUrl: string; // URL của ảnh đại diện
-  dateOfBirth: string; // Ngày sinh, định dạng chuỗi (ví dụ: "12/12/2012")
+  imageUrl: string; // URL của ảnh đại diện (sau khi upload lên Cloudinary)
+  dateOfBirth: string; // Ngày sinh, định dạng chuỗi
   gender: number; // Giới tính (số nguyên, ánh xạ sang Gender)
   relationship: number; // Quan hệ với người dùng (số nguyên, ánh xạ sang Relationship)
-  createdDate: string; // Ngày tạo, định dạng chuỗi (ví dụ: "12/03/2025")
+  createdDate: string; // Ngày tạo
   createdBy: string; // Người tạo
-  modifiedDate: string; // Ngày sửa đổi, định dạng chuỗi
+  modifiedDate: string; // Ngày sửa đổi
   modifiedBy: string; // Người sửa đổi
-  isActive: number; // Trạng thái hoạt động (số nguyên, ánh xạ sang IsActive)
+  isActive: number; // Trạng thái hoạt động
 }
 
 // Giao diện cho phản hồi phân trang

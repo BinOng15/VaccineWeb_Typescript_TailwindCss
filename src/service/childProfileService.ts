@@ -3,8 +3,8 @@ import { AxiosResponse } from "axios";
 import { axiosInstance } from "./axiosInstance"; // Giả sử bạn có file cấu hình axios
 import {
   ChildProfileResponseDTO,
-  PagedChildProfileResponse,
   CreateChildProfileDTO,
+  PagedChildProfileResponse,
   UpdateChildProfileDTO,
 } from "../models/ChildProfile";
 
@@ -76,14 +76,15 @@ const childProfileService = {
   ): Promise<ChildProfileResponseDTO> => {
     try {
       const formData = new FormData();
-      formData.append("UserId", childData.userId.toString()); // Khớp với backend
-      formData.append("FullName", childData.fullName); // Khớp với backend
-      formData.append("DateOfBirth", childData.dateOfBirth); // Phải là "dd/MM/yyyy"
-      formData.append("Gender", childData.gender.toString()); // Khớp với backend
-      formData.append("Relationship", childData.relationship.toString()); // Khớp với backend
-      formData.append("ProfilePicture", childData.profilePicture); // Khớp với backend
+      formData.append("UserId", childData.userId.toString());
+      formData.append("FullName", childData.fullName);
+      formData.append("DateOfBirth", childData.dateOfBirth);
+      console.log("DateOfBirth appended to formData:", childData.dateOfBirth); // Log giá trị gửi đi
+      formData.append("Gender", childData.gender.toString());
+      formData.append("Relationship", childData.relationship.toString());
+      formData.append("ProfilePicture", childData.profilePicture);
 
-      console.log("Sending formData:", Object.fromEntries(formData)); // Log dữ liệu gửi đi
+      console.log("Sending formData entries:", Object.fromEntries(formData)); // Log toàn bộ formData
 
       const response: AxiosResponse = await axiosInstance.post(
         "/create-child-profile",
@@ -94,6 +95,8 @@ const childProfileService = {
           },
         }
       );
+
+      console.log("Response from server:", response.data);
       return response.data;
     } catch (error: any) {
       console.error("Lỗi khi tạo hồ sơ trẻ em:", error);

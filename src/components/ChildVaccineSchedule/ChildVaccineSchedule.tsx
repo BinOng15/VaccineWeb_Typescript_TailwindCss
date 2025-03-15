@@ -291,16 +291,17 @@ const ChildVaccineSchedule: React.FC = () => {
             <Descriptions.Item label="Liều số">
               {selectedSchedule.doseNumber || "N/A"}
             </Descriptions.Item>
-            <Descriptions.Item label="Ngày đăng ký tiêm">
-              {selectedSchedule.vaccinationDate
-                ? moment(selectedSchedule.vaccinationDate).format("DD/MM/YYYY")
-                : "Chưa đăng ký"}
-            </Descriptions.Item>
             <Descriptions.Item label="Ngày dự kiến tiêm">
               {selectedSchedule.scheduledDate
                 ? moment(selectedSchedule.scheduledDate).format("DD/MM/YYYY")
                 : "N/A"}
             </Descriptions.Item>
+            <Descriptions.Item label="Ngày tiêm thực tế">
+              {selectedSchedule.vaccinationDate
+                ? moment(selectedSchedule.vaccinationDate).format("DD/MM/YYYY")
+                : "Chưa đăng ký"}
+            </Descriptions.Item>
+
             <Descriptions.Item label="Tình trạng tiêm">
               {selectedSchedule &&
               typeof selectedSchedule.isCompleted === "number"

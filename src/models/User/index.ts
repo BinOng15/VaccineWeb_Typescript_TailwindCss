@@ -28,9 +28,6 @@ export interface CreateUserDTO {
   email: string;
   phoneNumber: string;
   password: string;
-  address: string; // Bắt buộc theo backend
-  dateOfBirth: string;
-  image: File; // Thay string bằng File để xử lý upload
 }
 
 // Interface cho DTO tạo người dùng hệ thống (Staff hoặc Doctor)
@@ -38,10 +35,7 @@ export interface CreateSystemUserDTO {
   fullName: string;
   email: string;
   phoneNumber: string;
-  image: File | null;
   password: string;
-  address: string;
-  dateOfBirth: string;
   role: string;
 }
 

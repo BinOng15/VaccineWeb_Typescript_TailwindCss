@@ -20,6 +20,7 @@ import { getCurrentUser } from "../../service/authService";
 import { Gender, Relationship } from "../../models/Type/enum";
 import { UploadOutlined } from "@ant-design/icons";
 import { CreateVaccineProfileDTO } from "../../models/VaccineProfile";
+import dayjs from "dayjs"; // Import dayjs thay vì moment
 
 const { Option } = Select;
 const { Item } = Form;
@@ -44,74 +45,75 @@ const AddChildProfileModal: React.FC<AddChildProfileModalProps> = ({
     );
   };
 
+  // Hàm để vô hiệu hóa các ngày trong tương lai với dayjs
+  const disabledDate = (current: dayjs.Dayjs) => {
+    // Không cho phép chọn ngày sau ngày hiện tại
+    return current && current.isAfter(dayjs(), "day");
+  };
+
   const handleSaveAdd = async (values: any) => {
     setLoading(true);
     try {
       const token = getToken();
-      if (!token) throw new Error("No token found");
+      if (!token) throw new Error("Không tìm thấy token!");
 
       const userData = await getCurrentUser(token);
-      if (!userData) throw new Error("No user data found");
+      if (!userData) throw new Error("Không tìm thấy dữ liệu người dùng!");
 
-      if (
-        !values.fullName ||
-        !values.dateOfBirth ||
-        !values.gender ||
-        !values.relationship ||
-        !values.profilePicture
-      ) {
-        throw new Error("Vui lòng điền đầy đủ thông tin bắt buộc!");
+      // Validation
+      if (!values.fullName?.trim()) {
+        throw new Error("Vui lòng nhập họ và tên!");
       }
-
-      console.log(
-        "Raw values.dateOfBirth from DatePicker:",
-        values.dateOfBirth
-      );
-      if (!values.dateOfBirth) {
-        throw new Error("Ngày sinh không hợp lệ. Vui lòng chọn ngày sinh!");
-      }
-
-      // values.dateOfBirth đã là moment object từ DatePicker
-      const dateOfBirthMoment = values.dateOfBirth;
-      console.log(
-        "Moment dateOfBirth after selection:",
-        dateOfBirthMoment.format("DD-MM-YYYY")
-      );
-
-      if (!dateOfBirthMoment.isValid()) {
-        throw new Error("Ngày sinh không hợp lệ!");
-      }
-
-      const formattedDate = dateOfBirthMoment.format("YYYY-MM-DD");
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(formattedDate)) {
-        throw new Error("Ngày sinh phải có định dạng yyyy-MM-dd!");
-      }
-      const newChildProfile: CreateChildProfileDTO = {
-        userId: userData.userId,
-        fullName: values.fullName,
-        dateOfBirth: formattedDate,
-        gender: values.gender,
-        relationship: values.relationship,
-        profilePicture: values.profilePicture.file, // Đã bắt buộc
-      };
-
-      // Validate FullName length
-      if (newChildProfile.fullName.length > 50) {
+      if (values.fullName.trim().length > 50) {
         throw new Error("Tên trẻ không được dài quá 50 ký tự!");
       }
 
+      if (!values.dateOfBirth) {
+        throw new Error("Vui lòng chọn ngày sinh!");
+      }
+      const dateOfBirthDayjs = values.dateOfBirth;
+      if (!dateOfBirthDayjs.isValid()) {
+        throw new Error("Ngày sinh không hợp lệ!");
+      }
+      // Backend mong đợi định dạng "dd/MM/yyyy"
+      const formattedDate = dateOfBirthDayjs.format("YYYY-MM-DD"); // Thay thành '2025-03-14'
+      console.log("Formatted DateOfBirth:", formattedDate);
+
+      if (!values.gender && values.gender !== 0) {
+        throw new Error("Vui lòng chọn giới tính!");
+      }
+
+      if (!values.relationship && values.relationship !== 0) {
+        throw new Error("Vui lòng chọn mối quan hệ!");
+      }
+
+      if (!values.profilePicture || !values.profilePicture.file) {
+        throw new Error("Vui lòng tải lên hình ảnh của trẻ!");
+      }
+
+      // Tạo DTO
+      const newChildProfile: CreateChildProfileDTO = {
+        userId: userData.userId,
+        fullName: values.fullName.trim(),
+        dateOfBirth: formattedDate, // Định dạng "dd/MM/yyyy"
+        gender: values.gender,
+        relationship: values.relationship,
+        profilePicture: values.profilePicture.file,
+      };
+
       console.log("Sending child profile data:", newChildProfile);
 
+      // Gửi request tạo child profile
       const childProfileResponse: ChildProfileResponseDTO =
         await childProfileService.createChildProfile(newChildProfile);
       const childId = childProfileResponse.childId;
       console.log("Created childId:", childId);
 
+      // Tạo vaccine profile
       const newVaccineProfile: CreateVaccineProfileDTO = {
         childId: childId,
       };
       console.log("Creating vaccine profile with data:", newVaccineProfile);
-
       await vaccineProfileService.createVaccineProfile(newVaccineProfile);
 
       message.success("Thêm mới hồ sơ trẻ và hồ sơ vaccine thành công");
@@ -124,7 +126,11 @@ const AddChildProfileModal: React.FC<AddChildProfileModalProps> = ({
         console.error("Response status:", error.response.status);
         console.error("Response data:", error.response.data);
       }
-      message.error("Không thể thêm hồ sơ: " + (error as Error).message);
+      message.error(
+        `Thêm hồ sơ thất bại! ${
+          error.response?.data?.message || (error as Error).message
+        }`
+      );
     } finally {
       setLoading(false);
     }
@@ -160,7 +166,7 @@ const AddChildProfileModal: React.FC<AddChildProfileModalProps> = ({
             { max: 50, message: "Tên trẻ không được dài quá 50 ký tự!" },
           ]}
         >
-          <AntInput />
+          <AntInput placeholder="Nhập họ và tên" />
         </Item>
         <Item
           name="dateOfBirth"
@@ -168,15 +174,16 @@ const AddChildProfileModal: React.FC<AddChildProfileModalProps> = ({
           rules={[{ required: true, message: "Vui lòng chọn ngày sinh!" }]}
         >
           <DatePicker
-            format="DD-MM-YYYY"
+            format="DD/MM/YYYY" // Hiển thị và gửi theo định dạng backend yêu cầu
             style={{ width: "100%" }}
             placeholder="Chọn ngày sinh"
-            onChange={(date) => {
+            disabledDate={disabledDate} // Giới hạn ngày không cho chọn sau ngày hiện tại
+            onChange={(date) =>
               console.log(
                 "Selected Date:",
-                date ? date.format("DD-MM-YYYY") : null
-              );
-            }}
+                date ? date.format("DD/MM/YYYY") : null
+              )
+            }
           />
         </Item>
         <Item
@@ -184,7 +191,7 @@ const AddChildProfileModal: React.FC<AddChildProfileModalProps> = ({
           label="Giới tính"
           rules={[{ required: true, message: "Vui lòng chọn giới tính!" }]}
         >
-          <Select>
+          <Select placeholder="Chọn giới tính">
             <Option value={Gender.Male}>Nam</Option>
             <Option value={Gender.Female}>Nữ</Option>
             <Option value={Gender.Unknown}>Không xác định</Option>
@@ -195,7 +202,7 @@ const AddChildProfileModal: React.FC<AddChildProfileModalProps> = ({
           label="Mối quan hệ"
           rules={[{ required: true, message: "Vui lòng chọn mối quan hệ!" }]}
         >
-          <Select>
+          <Select placeholder="Chọn mối quan hệ">
             <Option value={Relationship.Mother}>Mẹ</Option>
             <Option value={Relationship.Father}>Bố</Option>
             <Option value={Relationship.Guardian}>Người giám hộ</Option>
