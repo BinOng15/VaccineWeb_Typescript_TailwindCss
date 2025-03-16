@@ -1,13 +1,12 @@
-
-import ChilProfileManagePage from '../../../components/Admin/ManageChildProfile/ChilProfileManagePage';
-import StaffLayout from '../../../components/Layout/StaffLayout';
+import ChilProfileManagePage from "../../../components/Admin/ManageChildProfile/ChilProfileManagePage";
+import StaffLayout from "../../../components/Layout/StaffLayout";
 
 const ChildProfileManage = () => {
- return (
+  return (
     <StaffLayout>
-      <ChilProfileManagePage/>
+      <ChilProfileManagePage />
     </StaffLayout>
   );
-}
+};
 
-export default ChildProfileManage
+export default ChildProfileManage;
