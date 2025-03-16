@@ -379,9 +379,10 @@ function ChildProfile() {
               <Descriptions.Item label="Ngày sinh">
                 {selectedChildProfile.dateOfBirth &&
                 selectedChildProfile.dateOfBirth !== "Chưa có dữ liệu"
-                  ? moment(selectedChildProfile.dateOfBirth).format(
+                  ? moment(
+                      selectedChildProfile.dateOfBirth,
                       "DD/MM/YYYY"
-                    )
+                    ).format("DD/MM/YYYY")
                   : selectedChildProfile.dateOfBirth || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Giới tính">

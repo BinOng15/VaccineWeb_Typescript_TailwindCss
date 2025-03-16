@@ -21,9 +21,10 @@ const ViewDiseaseModal: React.FC<ViewDiseaseModalProps> = ({
       footer={null}
     >
       <Descriptions bordered column={1}>
-        <Descriptions.Item label="ID">{disease.diseaseId}</Descriptions.Item>
         <Descriptions.Item label="Tên bệnh">{disease.name}</Descriptions.Item>
-        <Descriptions.Item label="Mô tả">{disease.description}</Descriptions.Item>
+        <Descriptions.Item label="Mô tả">
+          {disease.description}
+        </Descriptions.Item>
       </Descriptions>
     </Modal>
   );

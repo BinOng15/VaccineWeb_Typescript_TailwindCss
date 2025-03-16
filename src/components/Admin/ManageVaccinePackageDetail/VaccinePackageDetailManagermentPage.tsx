@@ -221,7 +221,7 @@ const VaccinePackageDetailManagement: React.FC = () => {
       },
     },
     {
-      title: "Mũi tiêm thứ",
+      title: "Liều số",
       dataIndex: "doseNumber",
       key: "doseNumber",
     },
@@ -235,7 +235,7 @@ const VaccinePackageDetailManagement: React.FC = () => {
       title: "Hành động",
       key: "action",
       render: (_, record: VaccinePackageDetail) => (
-        <Space>
+        <Space size="middle">
           <EditOutlined
             onClick={() => handleUpdate(record)}
             style={{ color: "black", cursor: "pointer" }}

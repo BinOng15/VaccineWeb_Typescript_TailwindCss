@@ -321,8 +321,6 @@ const AppointmentManagePage: React.FC = () => {
       dataIndex: "appointmentDate",
       key: "AppointmentDate",
       width: 100,
-      render: (date: string) =>
-        date ? moment(date).format("DD/MM/YYYY") : "N/A",
     },
     {
       title: "Trạng thái hẹn",
@@ -336,8 +334,6 @@ const AppointmentManagePage: React.FC = () => {
       dataIndex: "createdDate",
       key: "CreatedDate",
       width: 100,
-      render: (date: string) =>
-        date ? moment(date).format("DD/MM/YYYY") : "N/A",
     },
     {
       title: "Người tạo",
@@ -350,7 +346,7 @@ const AppointmentManagePage: React.FC = () => {
       key: "action",
       width: 150,
       render: (_: any, record: AppointmentResponseDTO) => (
-        <Space>
+        <Space size="middle">
           <EyeOutlined
             onClick={() => handleViewDetail(record)}
             style={{ color: "blue", cursor: "pointer" }}
@@ -362,15 +358,13 @@ const AppointmentManagePage: React.FC = () => {
                 record.appointmentStatus
               )
             }
-            style={{ color: "green", cursor: "pointer", marginLeft: "8px" }}
+            style={{ color: "green", cursor: "pointer" }}
             title="Xác nhận lịch hẹn"
           />
           <DeleteOutlined
             style={{
               color: "red",
               cursor: "pointer",
-              fontSize: 18,
-              marginLeft: 8,
             }}
             onClick={() =>
               confirmCancel(record.appointmentId, record.appointmentStatus)
@@ -458,8 +452,8 @@ const AppointmentManagePage: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày tạo">
               {selectedAppointment.createdDate
-                ? moment(selectedAppointment.createdDate).format(
-                    "HH:mm - DD/MM/YYYY"
+                ? moment(selectedAppointment.createdDate, "DD/MM/YYYY").format(
+                    "DD/MM/YYYY"
                   )
                 : "N/A"}
             </Descriptions.Item>
@@ -468,8 +462,8 @@ const AppointmentManagePage: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày sửa đổi">
               {selectedAppointment.modifiedDate
-                ? moment(selectedAppointment.modifiedDate).format(
-                    "HH:mm - DD/MM/YYYY"
+                ? moment(selectedAppointment.modifiedDate, "DD/MM/YYYY").format(
+                    "DD/MM/YYYY"
                   )
                 : "N/A"}
             </Descriptions.Item>

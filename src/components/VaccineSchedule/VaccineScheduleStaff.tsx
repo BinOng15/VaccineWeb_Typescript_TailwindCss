@@ -373,8 +373,8 @@ const VaccineScheduleStaff: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 py-10">
-      <h1 className="text-3xl font-bold text-[#102A83] mb-6 text-center">
-        Lịch Tiêm Chủng Chung
+      <h1 className="text-3xl font-bold mb-6 text-center">
+        Lịch Tiêm Chủng Của Hệ Thống
       </h1>
 
       {/* Các nút chức năng */}

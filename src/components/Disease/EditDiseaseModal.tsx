@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
-import { Modal, Form, Input, Button, message, Select } from "antd";
+import { Modal, Form, Input, Button, message } from "antd";
 import { DiseaseResponseDTO } from "../../models/Disease";
 import diseaseService from "../../service/diseaseService";
 import { IsActive } from "../../models/Type/enum";
 
-const { Option } = Select;
+const { TextArea } = Input;
 
 interface EditDiseaseModalProps {
   disease: DiseaseResponseDTO;
@@ -28,7 +28,7 @@ const EditDiseaseModal: React.FC<EditDiseaseModalProps> = ({
       form.setFieldsValue({
         name: disease.name,
         description: disease.description,
-        isActive: disease.isActive, // Giả sử isActive từ backend là "Active"/"Inactive" hoặc 1/0
+        // Không cần set giá trị isActive vào form nữa
       });
     }
   }, [disease, visible, form]);
@@ -61,20 +61,11 @@ const EditDiseaseModal: React.FC<EditDiseaseModalProps> = ({
       return;
     }
 
-    if (!values.isActive) {
-      message.error("Vui lòng chọn trạng thái!");
-      setLoading(false);
-      return;
-    }
-
     // Chuẩn bị dữ liệu gửi lên backend bằng FormData
     const formData = new FormData();
     formData.append("name", values.name.trim());
     formData.append("description", values.description.trim());
-    formData.append(
-      "isActive",
-      values.isActive === IsActive.Active ? IsActive.Active.toString() : IsActive.Inactive.toString()
-    );
+    formData.append("isActive", IsActive.Active.toString()); // Tự động đặt isActive là Active (1)
 
     // Debug FormData
     for (const [key, value] of formData.entries()) {
@@ -132,19 +123,10 @@ const EditDiseaseModal: React.FC<EditDiseaseModalProps> = ({
             { max: 1000, message: "Mô tả không được dài quá 1000 ký tự!" },
           ]}
         >
-          <Input.TextArea placeholder="Nhập mô tả bệnh" />
+          <TextArea placeholder="Nhập mô tả bệnh" />
         </Form.Item>
 
-        <Form.Item
-          name="isActive"
-          label="Trạng thái"
-          rules={[{ required: true, message: "Vui lòng chọn trạng thái!" }]}
-        >
-          <Select>
-            <Option value={IsActive.Active}>Hoạt động</Option>
-            <Option value={IsActive.Inactive}>Không hoạt động</Option>
-          </Select>
-        </Form.Item>
+        {/* Loại bỏ Form.Item cho isActive vì đã đặt mặc định là Active */}
 
         <Form.Item>
           <Button

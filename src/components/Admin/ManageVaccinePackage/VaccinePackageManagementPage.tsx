@@ -275,18 +275,18 @@ const VaccinePackageManagePage: React.FC = () => {
           return null;
         }
         return (
-          <Space>
+          <Space size="middle">
             <EditOutlined
               onClick={() => handleUpdate(record)}
-              style={{ color: "black", cursor: "pointer", marginRight: 8 }}
+              style={{ color: "black", cursor: "pointer" }}
             />
             <EyeOutlined
               onClick={() => handleViewDetail(record)}
-              style={{ color: "blue", cursor: "pointer", marginRight: 8 }}
+              style={{ color: "blue", cursor: "pointer" }}
             />
             <DeleteOutlined
               onClick={() => handleDelete(record.vaccinePackageId)}
-              style={{ color: "red", cursor: "pointer", marginRight: 8 }}
+              style={{ color: "red", cursor: "pointer" }}
             />
             <DollarOutlined
               onClick={() => handleUpdateTotalPrice(record.vaccinePackageId)}

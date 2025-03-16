@@ -148,27 +148,25 @@ function DiseaseManagePage() {
       width: 250,
       render: (_text, record: DiseaseResponseDTO) => (
         <Space size="middle">
-          <Button
-            icon={<EyeOutlined />}
+          <EyeOutlined
             onClick={() => {
               setSelectedDisease(record);
               setViewModalVisible(true);
             }}
             title="Xem chi tiết"
           />
-          <Button
-            icon={<EditOutlined />}
+          <EditOutlined
             onClick={() => {
               setSelectedDisease(record);
               setEditModalVisible(true);
             }}
+            style={{ color: "blue", cursor: "pointer" }}
             title="Chỉnh sửa"
           />
-          <Button
-            icon={<DeleteOutlined />}
+          <DeleteOutlined
             onClick={() => handleDelete(record.diseaseId)}
-            danger
             title="Xóa"
+            style={{ color: "red", cursor: "pointer", marginRight: 8 }}
           />
         </Space>
       ),

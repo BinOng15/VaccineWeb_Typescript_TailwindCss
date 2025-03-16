@@ -198,7 +198,7 @@ const ChildProfileManagePage: React.FC = () => {
       title: "Hành động",
       key: "action",
       render: (_: any, record: ChildProfileResponseDTO) => (
-        <Space>
+        <Space size="middle">
           <EyeOutlined
             onClick={() => handleViewDetail(record)}
             style={{ color: "blue", cursor: "pointer" }}

@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { Modal, Form, Input, DatePicker, message } from "antd";
 import { UserResponseDTO } from "../../models/User";
 import moment from "moment";
-import FileUploader from "../../util/FileUploader";
 
 const { Item } = Form;
 
@@ -22,20 +21,20 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
-  const [newImage, setNewImage] = useState<File | null>(null); // State để lưu file ảnh mới
+  const [newImage, setNewImage] = useState<File | null>(null);
 
   // Điền dữ liệu vào form khi mở modal
   useEffect(() => {
     if (visible && user) {
       form.setFieldsValue({
-        fullName: user.fullName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
+        fullName: user.fullName || "",
+        email: user.email || "",
+        phoneNumber: user.phoneNumber || "",
         dateOfBirth:
-          user.dateOfBirth && user.dateOfBirth !== "Chưa có dữ liệu"
+          user.dateOfBirth && user.dateOfBirth !== "01/01/0001"
             ? moment(user.dateOfBirth, "DD/MM/YYYY")
             : null,
-        address: user.address,
+        address: user.address || "",
       });
     }
   }, [visible, user, form]);
@@ -45,16 +44,23 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append("FullName", values.fullName);
-      formData.append("Email", values.email);
-      formData.append("PhoneNumber", values.phoneNumber);
+      formData.append("FullName", values.fullName || "");
+      formData.append("Email", values.email || "");
+      formData.append("PhoneNumber", values.phoneNumber || "");
       formData.append(
         "DateOfBirth",
-        moment(values.dateOfBirth).format("DD/MM/YYYY")
+        values.dateOfBirth
+          ? moment(values.dateOfBirth).format("DD/MM/YYYY")
+          : ""
       );
-      formData.append("Address", values.address);
+      formData.append("Address", values.address || "");
       if (newImage) {
         formData.append("Image", newImage);
+      }
+
+      // Debug FormData
+      for (const [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
       }
 
       // Gửi FormData lên MyProfile để xử lý
@@ -96,7 +102,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           <Input />
         </Item>
         <Item name="email" label="Email">
-          <Input disabled /> {/* Email không nên chỉnh sửa */}
+          <Input disabled />
         </Item>
         <Item
           name="phoneNumber"
@@ -110,7 +116,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           label="Ngày sinh"
           rules={[{ required: true, message: "Vui lòng chọn ngày sinh!" }]}
         >
-          <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+          <DatePicker
+            format="DD/MM/YYYY"
+            style={{ width: "100%" }}
+            placeholder="Chọn ngày sinh"
+          />
         </Item>
         <Item
           name="address"
@@ -118,12 +128,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}
         >
           <Input />
-        </Item>
-        <Item label="Hình ảnh">
-          <FileUploader
-            onUploadSuccess={(file: File) => setNewImage(file)}
-            defaultImage={user.image}
-          />
         </Item>
       </Form>
     </Modal>

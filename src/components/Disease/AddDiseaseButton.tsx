@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
-import { Modal, Form, Input, Button, message, Select } from "antd";
+import { Modal, Form, Input, Button, message } from "antd";
 
 import diseaseService from "../../service/diseaseService";
 import { IsActive } from "../../models/Type/enum";
 
-const { Option } = Select;
+const { TextArea } = Input;
 
 interface AddDiseaseModalProps {
   visible: boolean;
@@ -49,20 +49,11 @@ const AddDiseaseModal: React.FC<AddDiseaseModalProps> = ({
       return;
     }
 
-    if (!values.isActive) {
-      message.error("Vui lòng chọn trạng thái!");
-      setLoading(false);
-      return;
-    }
-
     // Chuẩn bị dữ liệu gửi lên backend bằng FormData
     const formData = new FormData();
     formData.append("Name", values.name.trim());
     formData.append("Description", values.description.trim());
-    formData.append(
-      "isActive",
-      values.isActive === IsActive.Active ? IsActive.Active.toString() : IsActive.Inactive.toString()
-    );
+    formData.append("isActive", IsActive.Active.toString()); // Đặt isActive mặc định là Active (1)
 
     // Debug FormData
     for (const [key, value] of formData.entries()) {
@@ -121,20 +112,10 @@ const AddDiseaseModal: React.FC<AddDiseaseModalProps> = ({
             { max: 1000, message: "Mô tả không được dài quá 1000 ký tự!" },
           ]}
         >
-          <Input.TextArea placeholder="Nhập mô tả bệnh" />
+          <TextArea placeholder="Nhập mô tả bệnh" />
         </Form.Item>
 
-        <Form.Item
-          name="isActive"
-          label="Trạng thái"
-          rules={[{ required: true, message: "Vui lòng chọn trạng thái!" }]}
-          initialValue={IsActive.Active} // Giá trị mặc định
-        >
-          <Select>
-            <Option value={IsActive.Active}>Hoạt động</Option>
-            <Option value={IsActive.Inactive}>Không hoạt động</Option>
-          </Select>
-        </Form.Item>
+        {/* Loại bỏ Form.Item cho isActive vì đã đặt mặc định là Active */}
 
         <Form.Item>
           <Button

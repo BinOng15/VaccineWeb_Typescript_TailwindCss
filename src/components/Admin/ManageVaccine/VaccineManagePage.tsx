@@ -249,20 +249,20 @@ const VaccineManagePage: React.FC = () => {
           return null;
         }
         return (
-          <span>
+          <Space size="middle">
             <EditOutlined
               onClick={() => handleUpdate(record)}
-              style={{ color: "black", cursor: "pointer", marginRight: 8 }}
+              style={{ color: "black", cursor: "pointer" }}
             />
             <EyeOutlined
               onClick={() => handleViewDetail(record)}
-              style={{ color: "blue", cursor: "pointer", marginRight: 8 }}
+              style={{ color: "blue", cursor: "pointer" }}
             />
             <DeleteOutlined
               onClick={() => handleDelete(record.vaccineId)}
               style={{ color: "red", cursor: "pointer" }}
             />
-          </span>
+          </Space>
         );
       },
     },
@@ -390,6 +390,8 @@ const VaccineManagePage: React.FC = () => {
         onCancel={handleCloseModal}
         footer={null}
         centered
+        style={{ width: "800px", maxHeight: "600px" }}
+        bodyStyle={{ maxHeight: "500px", overflowY: "auto" }}
       >
         {selectedVaccine && (
           <Descriptions bordered column={1}>
@@ -423,25 +425,16 @@ const VaccineManagePage: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày sản xuất">
               {selectedVaccine.dateOfManufacture
-                ? moment(selectedVaccine.dateOfManufacture).format("DD/MM/YYYY")
+                ? moment(
+                    selectedVaccine.dateOfManufacture,
+                    "DD/MM/YYYY"
+                  ).format("DD/MM/YYYY")
                 : "N/A"}
             </Descriptions.Item>
             <Descriptions.Item label="Ngày hết hạn">
               {selectedVaccine.expiryDate
-                ? moment(selectedVaccine.expiryDate).format("DD/MM/YYYY")
-                : "N/A"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Ngày tạo">
-              {selectedVaccine.createdDate
-                ? moment(selectedVaccine.createdDate).format(
-                    "HH:mm - DD/MM/YYYY"
-                  )
-                : "N/A"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Ngày sửa đổi">
-              {selectedVaccine.modifiedDate
-                ? moment(selectedVaccine.modifiedDate).format(
-                    "HH:mm - DD/MM/YYYY"
+                ? moment(selectedVaccine.expiryDate, "DD/MM/YYYY").format(
+                    "DD/MM/YYYY"
                   )
                 : "N/A"}
             </Descriptions.Item>

@@ -188,7 +188,6 @@ function CustomerAppointment() {
       title: "Ngày hẹn",
       dataIndex: "appointmentDate",
       key: "appointmentDate",
-      render: (date: string) => moment(date).format("DD/MM/YYYY HH:mm"),
     },
     {
       title: "Vaccine/Gói vaccine",
@@ -389,14 +388,16 @@ function CustomerAppointment() {
                   : selectedAppointment.vaccinePackageId
                   ? vaccinePackages.find(
                       (p) =>
-                        p.vaccinePackageId === selectedAppointment.vaccinePackageId
+                        p.vaccinePackageId ===
+                        selectedAppointment.vaccinePackageId
                     )?.name || "Không tìm thấy gói vaccine"
                   : "Không có vaccine hoặc gói vaccine"}
               </Descriptions.Item>
               <Descriptions.Item label="Ngày hẹn">
-                {moment(selectedAppointment.appointmentDate).format(
-                  "DD/MM/YYYY HH:mm"
-                )}
+                {moment(
+                  selectedAppointment.appointmentDate,
+                  "DD/MM/YYYY"
+                ).format("DD/MM/YYYY")}
               </Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
                 {selectedAppointment.appointmentStatus === 1
@@ -404,17 +405,12 @@ function CustomerAppointment() {
                   : selectedAppointment.appointmentStatus === 2
                   ? "Chờ tiêm"
                   : selectedAppointment.appointmentStatus === 3
-                  ? "Chờ phản ứng"
+                  ? "Kiểm tra phản ứng"
                   : selectedAppointment.appointmentStatus === 4
                   ? "Hoàn thành"
                   : selectedAppointment.appointmentStatus === 5
                   ? "Đã hủy"
                   : selectedAppointment.appointmentStatus}
-              </Descriptions.Item>
-              <Descriptions.Item label="Trạng thái hoạt động">
-                {selectedAppointment.isActive === 1
-                  ? "Hoạt động"
-                  : "Không hoạt động"}
               </Descriptions.Item>
             </Descriptions>
           )}

@@ -30,8 +30,16 @@ const AddVaccinePackageDetailButton: React.FC<
       try {
         const packages = await vaccinePackageService.getAllPackages();
         const vaccinesList = await vaccineService.getAllVaccines();
-        setVaccinePackages(packages);
-        setVaccines(vaccinesList);
+
+        // Lọc các gói vắc xin có isActive = 1
+        const activePackages = packages.filter((pkg) => pkg.isActive === 1);
+        // Lọc các vắc xin có isActive = 1
+        const activeVaccines = vaccinesList.filter(
+          (vaccine) => vaccine.isActive === 1
+        );
+
+        setVaccinePackages(activePackages);
+        setVaccines(activeVaccines);
       } catch (error) {
         notification.error({
           message: "Error",
@@ -39,6 +47,7 @@ const AddVaccinePackageDetailButton: React.FC<
         });
       }
     };
+
     if (visible) {
       fetchData();
     }
@@ -145,7 +154,7 @@ const AddVaccinePackageDetailButton: React.FC<
         </Form.Item>
 
         <Form.Item
-          label="Số liều"
+          label="Liều số"
           name="doseNumber"
           rules={[{ required: true, message: "Vui lòng nhập số liều!" }]}
         >

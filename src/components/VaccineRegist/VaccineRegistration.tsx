@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Select, Input, DatePicker, Button, notification } from "antd";
 import dayjs from "dayjs";
 import { CreateAppointmentDTO } from "../../models/Appointment";
-import { AppointmentStatus, Gender, IsActive } from "../../models/Type/enum";
+import { Gender } from "../../models/Type/enum";
 import { VaccineResponseDTO } from "../../models/Vaccine";
 import { VaccinePackageResponseDTO } from "../../models/VaccinePackage";
 import { ChildProfileResponseDTO } from "../../models/ChildProfile";
@@ -31,6 +31,7 @@ const VaccineRegistration: React.FC = () => {
     []
   );
   const [loading, setLoading] = useState<boolean>(false);
+  const [userId, setUserId] = useState<number | null>(null);
 
   // Lấy token để xác thực
   const getToken = () => {
@@ -46,6 +47,10 @@ const VaccineRegistration: React.FC = () => {
         const token = getToken();
         if (!token) {
           console.error("No token found");
+          notification.error({
+            message: "Error",
+            description: "Vui lòng đăng nhập lại!",
+          });
           return;
         }
 
@@ -53,15 +58,20 @@ const VaccineRegistration: React.FC = () => {
         const userData = await getCurrentUser(token);
         if (!userData) {
           console.error("Failed to fetch user data");
+          notification.error({
+            message: "Error",
+            description: "Không thể lấy thông tin người dùng!",
+          });
           return;
         }
-        const userId = parseInt(userData.userId.toString(), 10);
+        const currentUserId = parseInt(userData.userId.toString(), 10);
+        setUserId(currentUserId);
+
+        // Lấy danh sách hồ sơ trẻ em
         const allChildProfiles =
           await childProfileService.getAllChildProfiles();
-
-        // Lọc hồ sơ trẻ em dựa trên userId
         const userChildProfiles = allChildProfiles.filter(
-          (profile) => profile.userId === userId
+          (profile) => profile.userId === currentUserId
         );
         setChildProfiles(userChildProfiles);
 
@@ -74,6 +84,10 @@ const VaccineRegistration: React.FC = () => {
         setPackages(allPackages);
       } catch (error) {
         console.error("Failed to fetch data:", error);
+        notification.error({
+          message: "Error",
+          description: "Không thể tải dữ liệu. Vui lòng thử lại!",
+        });
       }
     };
 
@@ -90,7 +104,8 @@ const VaccineRegistration: React.FC = () => {
     if (
       !selectedChildId ||
       !appointmentDate ||
-      (!selectedVaccineId && !selectedPackageId)
+      (!selectedVaccineId && !selectedPackageId) ||
+      !userId
     ) {
       notification.error({
         message: "Error",
@@ -104,13 +119,12 @@ const VaccineRegistration: React.FC = () => {
     try {
       const childId = parseInt(selectedChildId, 10);
       const appointmentData: CreateAppointmentDTO = {
-        paymentId: null, // Có thể để null nếu chưa thanh toán
+        userId: userId,
         childId,
+        paymentDetailId: null, // Có thể để null nếu chưa thanh toán
         vaccineId: selectedVaccineId || undefined, // Chỉ gửi nếu chọn vaccine
         vaccinePackageId: selectedPackageId || undefined, // Chỉ gửi nếu chọn package
-        appointmentDate: appointmentDate.format("YYYY-MM-DD"), // Định dạng ngày
-        appointmentStatus: AppointmentStatus.Pending, // Mặc định là Pending (1)
-        isActive: IsActive.Active, // Mặc định là Active (1)
+        appointmentDate: appointmentDate.format("DD/MM/YYYY"), // Định dạng ISO cho DateTime
       };
 
       console.log("Appointment Data to Send:", appointmentData); // Debug dữ liệu
@@ -119,6 +133,7 @@ const VaccineRegistration: React.FC = () => {
         message: "Success",
         description: "Đăng ký cuộc hẹn thành công!",
       });
+      setSelectedChildId(null);
       setAppointmentDate(null);
       setSelectedVaccineId(null);
       setSelectedPackageId(null);
@@ -316,19 +331,5 @@ const getGenderLabel = (gender: Gender): string => {
       return "Không xác định";
   }
 };
-
-// Hàm chuyển đổi enum Relationship sang chuỗi hiển thị (nếu cần)
-// const getRelationshipLabel = (relationship: Relationship): string => {
-//   switch (relationship) {
-//     case Relationship.Mother:
-//       return "Mẹ";
-//     case Relationship.Father:
-//       return "Bố";
-//     case Relationship.Guardian:
-//       return "Người giám hộ";
-//     default:
-//       return "Không xác định";
-//   }
-// };
 
 export default VaccineRegistration;
