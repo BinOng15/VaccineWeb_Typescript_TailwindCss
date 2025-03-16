@@ -12,6 +12,9 @@ const AdminPage = React.lazy(() => import("../pages/Admin/AdminPage"));
 const UserManagement = React.lazy(
   () => import("../pages/Admin/UserManagement")
 );
+// const AdminRevenuePage = React.lazy(
+//   () => import("../pages/Admin/AdminRevenuePage")
+// );
 
 //-------------------------------------------------Staff------------------------------------------------
 const DashboardStaff = React.lazy(
@@ -26,8 +29,11 @@ const DiseaseManagement = React.lazy(
 const VaccineScheduleManagement = React.lazy(
   () => import("../pages/Staff/VaccineSchedule/VaccineScheduleManagement")
 );
-const  VaccinePackageDetailManagerment = React.lazy(
-  () => import("../pages/Staff/VaccinePackageDetailvManagerment/VaccinePackageDetailManagerment")
+const VaccinePackageDetailManagerment = React.lazy(
+  () =>
+    import(
+      "../pages/Staff/VaccinePackageDetailvManagerment/VaccinePackageDetailManagerment"
+    )
 );
 //-------------------------------------------------Doctor-----------------------------------------------
 const DashboardDoctor = React.lazy(
@@ -162,6 +168,15 @@ const AppRouter = () => {
                 />
               }
             />
+            {/* <Route
+              path="/admin/revenue"
+              element={
+                <ProtectedRouter
+                  element={<AdminRevenuePage />}
+                  allowedRoles={["Admin"]}
+                />
+              }
+            /> */}
 
             {/*----------------------------STAFF---------------------------------*/}
             <Route
@@ -227,7 +242,7 @@ const AppRouter = () => {
                 />
               }
             />
-              <Route
+            <Route
               path="/staff/manage-vaccine-package-detail"
               element={
                 <ProtectedRouter
