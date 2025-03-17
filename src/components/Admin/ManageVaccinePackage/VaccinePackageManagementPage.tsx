@@ -256,13 +256,6 @@ const VaccinePackageManagePage: React.FC = () => {
         totalPrice ? `${totalPrice.toLocaleString()} đồng` : "N/A",
     },
     {
-      title: "Trạng thái",
-      dataIndex: "isActive",
-      key: "isActive",
-      render: (isActive: number) =>
-        isActive === 1 ? "Hoạt động" : "Không hoạt động",
-    },
-    {
       title: "Hành động",
       key: "action",
       render: (_: any, record: VaccinePackage) => {
@@ -432,8 +425,8 @@ const VaccinePackageManagePage: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày tạo">
               {selectedPackage.createdDate
-                ? moment(selectedPackage.createdDate).format(
-                    "HH:mm - DD/MM/YYYY"
+                ? moment(selectedPackage.createdDate, "DD/MM/YYYY").format(
+                    "DD/MM/YYYY"
                   )
                 : "N/A"}
             </Descriptions.Item>
@@ -442,8 +435,8 @@ const VaccinePackageManagePage: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày sửa đổi">
               {selectedPackage.modifiedDate
-                ? moment(selectedPackage.modifiedDate).format(
-                    "HH:mm - DD/MM/YYYY"
+                ? moment(selectedPackage.modifiedDate, "DD/MM/YYYY").format(
+                    "DD/MM/YYYY"
                   )
                 : "N/A"}
             </Descriptions.Item>

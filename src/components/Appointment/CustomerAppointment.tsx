@@ -16,7 +16,10 @@ import {
   ReloadOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { AppointmentResponseDTO } from "../../models/Appointment";
+import {
+  AppointmentResponseDTO,
+  UpdateAppointmentDTO,
+} from "../../models/Appointment";
 import appointmentService from "../../service/appointmentService";
 import childProfileService from "../../service/childProfileService";
 import moment from "moment";
@@ -148,7 +151,7 @@ function CustomerAppointment() {
 
   const handleReset = () => {
     setSearchText("");
-    setAppointments(originalAppointments);
+    fetchData();
     setPagination({
       ...pagination,
       current: 1,
@@ -282,28 +285,15 @@ function CustomerAppointment() {
       cancelText: "Hủy bỏ",
       onOk: async () => {
         try {
-          await appointmentService.updateAppointmentStatus(appointmentId, 5);
-          message.success("Hủy lịch hẹn thành công");
-          setAppointments(
-            appointments.map((appointment) =>
-              appointment.appointmentId === appointmentId
-                ? { ...appointment, appointmentStatus: 5 }
-                : appointment
-            )
-          );
-          setOriginalAppointments(
-            originalAppointments.map((appointment) =>
-              appointment.appointmentId === appointmentId
-                ? { ...appointment, appointmentStatus: 5 }
-                : appointment
-            )
-          );
-          setPagination({
-            ...pagination,
-            total: appointments.length,
+          const updateData: UpdateAppointmentDTO = {
+            appointmentStatus: 5,
+            paymentDetailId: null, // Xóa paymentDetailId khi hủy
+          };
+          await appointmentService.updateAppointment(appointmentId, updateData);
+          message.success("Hủy lịch hẹn thành công", 1.5, () => {
+            fetchData();
           });
         } catch (error) {
-          console.error("Failed to cancel appointment:", error);
           message.error("Hủy lịch hẹn thất bại: " + (error as Error).message);
         }
       },

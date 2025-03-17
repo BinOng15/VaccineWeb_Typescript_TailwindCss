@@ -226,12 +226,6 @@ const VaccinePackageDetailManagement: React.FC = () => {
       key: "doseNumber",
     },
     {
-      title: "Trạng thái",
-      dataIndex: "isActive",
-      key: "isActive",
-      render: (isActive: string) => (isActive === "Active" ? "Có" : "Không"),
-    },
-    {
       title: "Hành động",
       key: "action",
       render: (_, record: VaccinePackageDetail) => (

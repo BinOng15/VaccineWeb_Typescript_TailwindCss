@@ -8,7 +8,7 @@ export interface CreatePaymentDetailDTO {
 export interface UpdatePaymentDetailDTO {
   isCompleted: IsActive;
   administeredDate?: Date | string;
-  notes?: string;
+  notes: string;
   scheduledDate?: Date | string;
   appointmentId?: number;
 }

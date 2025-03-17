@@ -1,11 +1,10 @@
-import AdminRevenue from "../../components/Admin/Dashboard/AdminRevenue";
 import AdminLayout from "../../components/Layout/AdminLayout";
 
 const AdminRevenuePage = () => {
   return (
     <>
       <AdminLayout>
-        <AdminRevenue />
+        <div>213</div>
       </AdminLayout>
     </>
   );

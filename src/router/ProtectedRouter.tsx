@@ -90,6 +90,9 @@ const VaccinePrice = React.lazy(
 const Introductionpage = React.lazy(
   () => import("../pages/Customer/Introductionpage")
 );
+const PaymentCallback = React.lazy(
+  () => import("../components/Payment/PaymentCallBack")
+);
 
 interface ProtectedRouteProps {
   element: JSX.Element;
@@ -140,6 +143,7 @@ const AppRouter = () => {
             <Route path="/Introduction" element={<Introductionpage />} />
 
             <Route path="/child-profile" element={<VaccineProfilePage />} />
+            <Route path="/payment-callback" element={<PaymentCallback />} />
             {/*----------------------------ADMIN---------------------------------*/}
             <Route
               path="/admin/dashboard"

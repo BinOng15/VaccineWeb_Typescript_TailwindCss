@@ -2,7 +2,6 @@ import { AxiosResponse } from "axios";
 import { axiosInstance } from "./axiosInstance"; // Giả sử bạn có file axiosInstance.ts để cấu hình axios
 import {
   PaymentDetailResponseDTO,
-  CreatePaymentDetailDTO,
   UpdatePaymentDetailDTO,
 } from "../models/PaymentDetail";
 
@@ -77,13 +76,11 @@ const paymentDetailService = {
 
   // Tạo payment detail (POST /api/PaymentDetail/generate/{paymentId})
   generatePaymentDetail: async (
-    paymentId: number,
-    paymentDetailData: CreatePaymentDetailDTO
+    paymentId: number
   ): Promise<PaymentDetailResponseDTO> => {
     try {
       const response: AxiosResponse = await axiosInstance.post(
         `api/PaymentDetail/generate/${paymentId}`,
-        paymentDetailData,
         {
           headers: {
             "Content-Type": "application/json",

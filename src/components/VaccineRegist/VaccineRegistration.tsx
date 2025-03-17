@@ -54,7 +54,6 @@ const VaccineRegistration: React.FC = () => {
           return;
         }
 
-        // Lấy thông tin người dùng hiện tại
         const userData = await getCurrentUser(token);
         if (!userData) {
           console.error("Failed to fetch user data");
@@ -67,7 +66,6 @@ const VaccineRegistration: React.FC = () => {
         const currentUserId = parseInt(userData.userId.toString(), 10);
         setUserId(currentUserId);
 
-        // Lấy danh sách hồ sơ trẻ em
         const allChildProfiles =
           await childProfileService.getAllChildProfiles();
         const userChildProfiles = allChildProfiles.filter(
@@ -75,11 +73,9 @@ const VaccineRegistration: React.FC = () => {
         );
         setChildProfiles(userChildProfiles);
 
-        // Lấy danh sách vaccine
         const allVaccines = await vaccineService.getAllVaccines();
         setVaccines(allVaccines);
 
-        // Lấy danh sách package
         const allPackages = await vaccinePackageService.getAllPackages();
         setPackages(allPackages);
       } catch (error) {
@@ -98,6 +94,23 @@ const VaccineRegistration: React.FC = () => {
   const selectedChildProfile = childProfiles.find(
     (profile) => profile.childId.toString() === selectedChildId
   );
+
+  // Tính ngày tối thiểu cho hẹn dựa trên ageInMonths của gói vaccine
+  const calculateMinAppointmentDate = () => {
+    if (!selectedChildProfile || !selectedPackageId) return null;
+
+    const selectedPackage = packages.find(
+      (pkg) => pkg.vaccinePackageId === selectedPackageId
+    );
+    if (!selectedPackage) return null;
+
+    const childBirthDate = dayjs(
+      selectedChildProfile.dateOfBirth,
+      "DD/MM/YYYY"
+    );
+    const minDate = childBirthDate.add(selectedPackage.ageInMonths, "month");
+    return minDate;
+  };
 
   // Xử lý submit để tạo cuộc hẹn
   const handleSubmit = async () => {
@@ -121,13 +134,13 @@ const VaccineRegistration: React.FC = () => {
       const appointmentData: CreateAppointmentDTO = {
         userId: userId,
         childId,
-        paymentDetailId: null, // Có thể để null nếu chưa thanh toán
-        vaccineId: selectedVaccineId || undefined, // Chỉ gửi nếu chọn vaccine
-        vaccinePackageId: selectedPackageId || undefined, // Chỉ gửi nếu chọn package
-        appointmentDate: appointmentDate.format("DD/MM/YYYY"), // Định dạng ISO cho DateTime
+        paymentDetailId: null,
+        vaccineId: selectedVaccineId || undefined,
+        vaccinePackageId: selectedPackageId || undefined,
+        appointmentDate: appointmentDate.format("DD/MM/YYYY"),
       };
 
-      console.log("Appointment Data to Send:", appointmentData); // Debug dữ liệu
+      console.log("Appointment Data to Send:", appointmentData);
       await appointmentService.createAppointment(appointmentData);
       notification.success({
         message: "Success",
@@ -200,7 +213,7 @@ const VaccineRegistration: React.FC = () => {
               className="w-full"
               value={
                 selectedChildProfile?.dateOfBirth
-                  ? dayjs(selectedChildProfile.dateOfBirth)
+                  ? dayjs(selectedChildProfile.dateOfBirth, "DD/MM/YYYY")
                   : undefined
               }
               placeholder="Ngày/tháng/năm"
@@ -234,22 +247,6 @@ const VaccineRegistration: React.FC = () => {
       <div className="mt-8">
         <h3 className="text-xl font-semibold">THÔNG TIN CUỘC HẸN</h3>
         <div className="space-y-6 mt-4">
-          {/* Ngày hẹn */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              <span className="text-red-500">*</span> Ngày hẹn
-            </label>
-            <DatePicker
-              className="w-full"
-              value={appointmentDate}
-              onChange={(date) => setAppointmentDate(date)}
-              placeholder="Chọn ngày hẹn"
-              disabledDate={(current) =>
-                current && current < dayjs().startOf("day")
-              } // Không chọn ngày quá khứ
-            />
-          </div>
-
           {/* Chọn vaccine hoặc gói vaccine */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -262,6 +259,7 @@ const VaccineRegistration: React.FC = () => {
               onChange={(value) => {
                 setSelectedVaccineId(value ? parseInt(value as string) : null);
                 setSelectedPackageId(null); // Reset package khi chọn vaccine
+                setAppointmentDate(null); // Reset ngày hẹn khi thay đổi lựa chọn
               }}
               value={
                 selectedVaccineId ? selectedVaccineId.toString() : undefined
@@ -282,6 +280,7 @@ const VaccineRegistration: React.FC = () => {
               onChange={(value) => {
                 setSelectedPackageId(value ? parseInt(value as string) : null);
                 setSelectedVaccineId(null); // Reset vaccine khi chọn package
+                setAppointmentDate(null); // Reset ngày hẹn khi thay đổi lựa chọn
               }}
               value={
                 selectedPackageId ? selectedPackageId.toString() : undefined
@@ -292,10 +291,32 @@ const VaccineRegistration: React.FC = () => {
                   key={pkg.vaccinePackageId}
                   value={pkg.vaccinePackageId.toString()}
                 >
-                  {pkg.name}
+                  {pkg.name} (Tuổi bắt đầu: {pkg.ageInMonths} tháng)
                 </Option>
               ))}
             </Select>
+          </div>
+          {/* Ngày hẹn */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              <span className="text-red-500">*</span> Ngày hẹn
+            </label>
+            <DatePicker
+              className="w-full"
+              value={appointmentDate}
+              onChange={(date) => setAppointmentDate(date)}
+              placeholder="Chọn ngày hẹn"
+              disabledDate={(current) => {
+                // Nếu chọn vaccine lẻ, chỉ chặn ngày quá khứ
+                if (selectedVaccineId && !selectedPackageId) {
+                  return current && current < dayjs().startOf("day");
+                }
+                // Nếu chọn gói vaccine, kiểm tra độ tuổi
+                const minDate = calculateMinAppointmentDate();
+                if (!minDate || !current) return false;
+                return current && current.isBefore(minDate, "day");
+              }}
+            />
           </div>
         </div>
       </div>

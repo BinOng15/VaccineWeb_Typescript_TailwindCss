@@ -124,27 +124,27 @@ const appointmentService = {
     }
   },
 
-  // Cập nhật trạng thái cuộc hẹn
-  updateAppointmentStatus: async (
-    appointmentId: number,
-    status: AppointmentStatus
-  ): Promise<boolean> => {
-    try {
-      const response: AxiosResponse<{ message: string }> =
-        await axiosInstance.put(
-          `api/Appointment/update-status/${appointmentId}/${status}`
-        );
-      return (
-        response.data.message === "Appointment status updated successfully."
-      );
-    } catch (error) {
-      console.error(
-        `Lỗi khi cập nhật trạng thái cuộc hẹn ${appointmentId}:`,
-        error
-      );
-      throw error;
-    }
-  },
+  // // Cập nhật trạng thái cuộc hẹn
+  // updateAppointmentStatus: async (
+  //   appointmentId: number,
+  //   status: AppointmentStatus
+  // ): Promise<boolean> => {
+  //   try {
+  //     const response: AxiosResponse<{ message: string }> =
+  //       await axiosInstance.put(
+  //         `api/Appointment/update-status/${appointmentId}/${status}`
+  //       );
+  //     return (
+  //       response.data.message === "Appointment status updated successfully."
+  //     );
+  //   } catch (error) {
+  //     console.error(
+  //       `Lỗi khi cập nhật trạng thái cuộc hẹn ${appointmentId}:`,
+  //       error
+  //     );
+  //     throw error;
+  //   }
+  // },
 };
 
 export default appointmentService;

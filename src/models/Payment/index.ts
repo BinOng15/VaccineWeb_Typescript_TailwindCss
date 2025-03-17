@@ -6,6 +6,7 @@ export interface CallBackPaymentDTO {
 }
 
 export interface CreatePaymentDTO {
+  appointmentId: number;
   userId: number;
   vaccinePackageId?: number;
   vaccineId?: number;
@@ -18,6 +19,7 @@ export interface UpdatePaymentDTO {
 
 export interface PaymentResponseDTO {
   paymentId: number;
+  appointmentId: number;
   userId: number;
   vaccinePackageId?: number;
   vaccineId?: number;

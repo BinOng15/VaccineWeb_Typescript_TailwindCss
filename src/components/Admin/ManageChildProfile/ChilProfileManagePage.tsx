@@ -188,13 +188,6 @@ const ChildProfileManagePage: React.FC = () => {
       render: (relationship: number) => getRelationshipText(relationship),
     },
     {
-      title: "Trạng thái",
-      dataIndex: "isActive",
-      key: "IsActive",
-      render: (isActive: number) =>
-        isActive === 1 ? "Hoạt động" : "Không hoạt động",
-    },
-    {
       title: "Hành động",
       key: "action",
       render: (_: any, record: ChildProfileResponseDTO) => (
@@ -253,6 +246,8 @@ const ChildProfileManagePage: React.FC = () => {
         onCancel={handleCloseModal}
         footer={null}
         centered
+        style={{ width: "800px", maxHeight: "600px" }}
+        bodyStyle={{ maxHeight: "500px", overflowY: "auto" }}
       >
         {selectedProfile && (
           <Descriptions bordered column={1}>

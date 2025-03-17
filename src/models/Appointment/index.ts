@@ -30,7 +30,7 @@ export interface AppointmentResponseDTO {
   childId: number;
   vaccineId: number | null;
   vaccinePackageId: number | null;
-  reaction: string | null;
+  reaction?: string;
   appointmentDate: string; // Chuỗi định dạng YYYY-MM-DDTHH:mm:ss
   appointmentStatus: AppointmentStatus;
   isActive: IsActive;
