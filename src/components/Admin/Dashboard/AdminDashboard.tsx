@@ -1,16 +1,15 @@
 import React, { useEffect, useState } from "react";
 import AdminLayout from "../../Layout/AdminLayout";
-import { Row, Col, Card, message } from "antd"; // Thêm message để hiển thị lỗi
-import { Line, Bar, Pie } from "@ant-design/charts";
+import { Row, Col, Card, message } from "antd";
+import { Line, Pie } from "@ant-design/charts"; // Loại bỏ Bar
 import userService from "../../../service/userService";
 import appointmentService from "../../../service/appointmentService";
 import childProfileService from "../../../service/childProfileService";
-import vaccinationRecordService from "../../../service/vaccinationRecordService";
 import vaccinePackageService from "../../../service/vaccinePackageService";
+import vaccinePackageDetailService from "../../../service/vaccinePackageDetailService";
 import paymentService from "../../../service/paymentService";
 import paymentDetailService from "../../../service/paymentDetailService";
 
-// Định nghĩa interface cho các chỉ số của dashboard
 interface DashboardStats {
   totalUsers: number;
   totalAppointments: number;
@@ -23,9 +22,9 @@ interface DashboardStats {
   dailyRevenue: { [key: string]: number };
   monthlyRevenue: { [key: string]: number };
   yearlyRevenue: { [key: string]: number };
+  appointmentStatusCounts: { [key: string]: number }; // Thêm để lưu số lượng theo trạng thái
 }
 
-// Thành phần CardWidget để hiển thị các thẻ thông tin cơ bản
 const CardWidget: React.FC<{
   title: string;
   value: number | string;
@@ -41,26 +40,14 @@ const CardWidget: React.FC<{
   );
 };
 
-// Thành phần DetailedCardWidget để hiển thị thẻ thông tin chi tiết cho vaccine và gói vaccine
 const DetailedCardWidget: React.FC<{
   title: string;
   total: number;
-  details: { label: string; value: number; color: string }[];
-}> = ({ title, total, details }) => {
+}> = ({ title, total }) => {
   return (
     <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500">
       <h3 className="text-sm text-gray-600">{title}</h3>
       <p className="text-2xl font-bold text-gray-800">{total}</p>
-      <div className="mt-2">
-        {details.map((detail, index) => (
-          <div key={index} className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">{detail.label}</span>
-            <span className={`text-sm font-bold text-${detail.color}-500`}>
-              {detail.value}
-            </span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
@@ -78,66 +65,105 @@ const AdminDashboard: React.FC = () => {
     dailyRevenue: {},
     monthlyRevenue: {},
     yearlyRevenue: {},
+    appointmentStatusCounts: {
+      "Đang chờ": 0,
+      "Đang chờ tiêm": 0,
+      "Đang chờ phản hồi": 0,
+      "Đã hoàn tất": 0,
+      "Đã hủy": 0,
+    },
   });
-  const [loading, setLoading] = useState(false); // Thêm trạng thái loading
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true); // Bắt đầu loading
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      // Lấy dữ liệu người dùng
+      const allUsers = await userService.getAllUsers();
+      const totalUsers = Array.isArray(allUsers) ? allUsers.length : 0;
+
+      // Lấy dữ liệu lịch hẹn
+      const allAppointments = await appointmentService.getAllAppointments();
+      const totalAppointments = Array.isArray(allAppointments)
+        ? allAppointments.length
+        : 0;
+
+      // Tính số lượng theo trạng thái lịch hẹn
+      const appointmentStatusCounts = {
+        "Đang chờ": 0,
+        "Đang chờ tiêm": 0,
+        "Đang chờ phản hồi": 0,
+        "Đã hoàn tất": 0,
+        "Đã hủy": 0,
+      };
+      if (Array.isArray(allAppointments)) {
+        allAppointments.forEach((appointment) => {
+          switch (appointment.appointmentStatus) {
+            case 1:
+              appointmentStatusCounts["Đang chờ"] += 1;
+              break;
+            case 2:
+              appointmentStatusCounts["Đang chờ tiêm"] += 1;
+              break;
+            case 3:
+              appointmentStatusCounts["Đang chờ phản hồi"] += 1;
+              break;
+            case 4:
+              appointmentStatusCounts["Đã hoàn tất"] += 1;
+              break;
+            case 5:
+              appointmentStatusCounts["Đã hủy"] += 1;
+              break;
+            default:
+              break;
+          }
+        });
+      }
+
+      // Lấy dữ liệu hồ sơ trẻ
+      const allChildProfiles = await childProfileService.getAllChildProfiles();
+      const totalChildProfiles = Array.isArray(allChildProfiles)
+        ? allChildProfiles.length
+        : 0;
+
+      // Lấy dữ liệu gói vaccine
+      const allVaccinePackages = await vaccinePackageService.getAllPackages();
+      const vaccinatedPackages = Array.isArray(allVaccinePackages)
+        ? allVaccinePackages.filter((p) => p.isActive === 1).length
+        : 0;
+      const pendingPackages = Array.isArray(allVaccinePackages)
+        ? allVaccinePackages.length - vaccinatedPackages
+        : 0;
+
+      // Lấy dữ liệu chi tiết gói vaccine để tính vaccinatedCount và unvaccinatedCount
+      const allVaccinePackageDetails =
+        await vaccinePackageDetailService.getAllPackagesDetail();
+      const vaccinatedCount = Array.isArray(allVaccinePackageDetails)
+        ? allVaccinePackageDetails.filter(
+            (d) => d.isActive === "true" || d.isActive === "1"
+          ).length
+        : 0;
+      const unvaccinatedCount = Array.isArray(allVaccinePackageDetails)
+        ? allVaccinePackageDetails.length - vaccinatedCount
+        : 0;
+
+      // Lấy dữ liệu thanh toán
+      let totalRevenue = 0;
+      const dailyRevenue: { [key: string]: number } = {};
+      const monthlyRevenue: { [key: string]: number } = {};
+      const yearlyRevenue: { [key: string]: number } = {};
+
       try {
-        // Lấy dữ liệu người dùng
-        const users = await userService.getAllUsers();
-        const totalUsers = Array.isArray(users) ? users.length : 0;
-
-        // Lấy dữ liệu lịch hẹn
-        const appointments = await appointmentService.getAllAppointments();
-        const totalAppointments = Array.isArray(appointments)
-          ? appointments.length
-          : 0;
-
-        // Lấy dữ liệu hồ sơ trẻ
-        const childProfiles = await childProfileService.getAllChildProfiles();
-        const totalChildProfiles = Array.isArray(childProfiles)
-          ? childProfiles.length
-          : 0;
-
-        // Lấy dữ liệu vaccine
-        const vaccinationRecords =
-          await vaccinationRecordService.getAllVaccinationRecord();
-        const vaccinatedCount = Array.isArray(vaccinationRecords)
-          ? vaccinationRecords.filter((r) => r.isActive === 1).length
-          : 0;
-        const unvaccinatedCount = Array.isArray(vaccinationRecords)
-          ? vaccinationRecords.length - vaccinatedCount
-          : 0;
-
-        // Lấy dữ liệu gói vaccine
-        const vaccinePackages = await vaccinePackageService.getAllPackages();
-        const vaccinatedPackages = Array.isArray(vaccinePackages)
-          ? vaccinePackages.filter((p) => p.isActive === 1).length
-          : 0;
-        const pendingPackages = Array.isArray(vaccinePackages)
-          ? vaccinePackages.length - vaccinatedPackages
-          : 0;
-
-        // Lấy dữ liệu doanh thu
-        const payments = await paymentService.getAllPayments();
-        const paymentDetails =
-          await paymentDetailService.getAllPaymentDetails();
-
-        const totalRevenue = Array.isArray(payments)
-          ? payments.reduce(
+        const allPayments = await paymentService.getAllPayments();
+        totalRevenue = Array.isArray(allPayments)
+          ? allPayments.reduce(
               (sum, payment) => sum + (payment.totalAmount || 0),
               0
             )
           : 0;
 
-        const dailyRevenue: { [key: string]: number } = {};
-        const monthlyRevenue: { [key: string]: number } = {};
-        const yearlyRevenue: { [key: string]: number } = {};
-
-        if (Array.isArray(payments)) {
-          payments.forEach((payment) => {
+        if (Array.isArray(allPayments)) {
+          allPayments.forEach((payment) => {
             if (payment.paymentDate) {
               const date = new Date(payment.paymentDate);
               const dayKey = date.toLocaleDateString();
@@ -156,9 +182,16 @@ const AdminDashboard: React.FC = () => {
             }
           });
         }
+      } catch (paymentError) {
+        console.warn("Không thể lấy dữ liệu thanh toán:", paymentError);
+      }
 
-        if (Array.isArray(paymentDetails)) {
-          paymentDetails.forEach((detail) => {
+      // Lấy dữ liệu chi tiết thanh toán
+      try {
+        const allPaymentDetails =
+          await paymentDetailService.getAllPaymentDetails();
+        if (Array.isArray(allPaymentDetails)) {
+          allPaymentDetails.forEach((detail) => {
             const date = detail.administeredDate
               ? new Date(detail.administeredDate)
               : new Date();
@@ -177,35 +210,42 @@ const AdminDashboard: React.FC = () => {
               (yearlyRevenue[yearKey] || 0) + (detail.price || 0);
           });
         }
-
-        // Cập nhật state
-        setStats({
-          totalUsers,
-          totalAppointments,
-          totalChildProfiles,
-          vaccinatedCount,
-          unvaccinatedCount,
-          vaccinatedPackages,
-          pendingPackages,
-          totalRevenue,
-          dailyRevenue,
-          monthlyRevenue,
-          yearlyRevenue,
-        });
-      } catch (error) {
-        console.error("Lỗi khi lấy dữ liệu dashboard:", error);
-        message.error(
-          "Không thể tải dữ liệu dashboard: " + (error as Error).message
+      } catch (paymentDetailError) {
+        console.warn(
+          "Không thể lấy dữ liệu chi tiết thanh toán:",
+          paymentDetailError
         );
-      } finally {
-        setLoading(false); // Kết thúc loading
       }
-    };
 
+      // Cập nhật state với dữ liệu lấy được
+      setStats({
+        totalUsers,
+        totalAppointments,
+        totalChildProfiles,
+        vaccinatedCount,
+        unvaccinatedCount,
+        vaccinatedPackages,
+        pendingPackages,
+        totalRevenue,
+        dailyRevenue,
+        monthlyRevenue,
+        yearlyRevenue,
+        appointmentStatusCounts,
+      });
+    } catch (error) {
+      console.error("Lỗi khi lấy dữ liệu dashboard:", error);
+      message.error(
+        "Không thể tải dữ liệu dashboard: " + (error as Error).message
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
 
-  // Tính giá trị doanh thu lớn nhất
   const latestDailyRevenueValue = Object.values(stats.dailyRevenue).reduce(
     (max, value) => (value > max ? value : max),
     0
@@ -219,7 +259,6 @@ const AdminDashboard: React.FC = () => {
     0
   );
 
-  // Dữ liệu cho biểu đồ
   const lineData = [
     { month: "Jan", value: 12 },
     { month: "Feb", value: 19 },
@@ -234,14 +273,22 @@ const AdminDashboard: React.FC = () => {
     { month: "Nov", value: 12 },
   ];
 
-  const barData = [
-    { type: "Đã tiêm", value: stats.vaccinatedCount },
-    { type: "Chưa tiêm", value: stats.unvaccinatedCount },
-  ];
-
+  // Dữ liệu cho biểu đồ Pie "Tình trạng đăng ký tiêm"
   const pieData = [
-    { type: "Đã tiêm", value: stats.vaccinatedPackages },
-    { type: "Chưa tiêm", value: stats.pendingPackages },
+    { type: "Đang chờ", value: stats.appointmentStatusCounts["Đang chờ"] },
+    {
+      type: "Đang chờ tiêm",
+      value: stats.appointmentStatusCounts["Đang chờ tiêm"],
+    },
+    {
+      type: "Đang chờ phản hồi",
+      value: stats.appointmentStatusCounts["Đang chờ phản hồi"],
+    },
+    {
+      type: "Đã hoàn tất",
+      value: stats.appointmentStatusCounts["Đã hoàn tất"],
+    },
+    { type: "Đã hủy", value: stats.appointmentStatusCounts["Đã hủy"] },
   ];
 
   const lineConfig = {
@@ -253,20 +300,11 @@ const AdminDashboard: React.FC = () => {
     height: 300,
   };
 
-  const barConfig = {
-    data: barData,
-    xField: "type",
-    yField: "value",
-    seriesField: "type",
-    color: ["#36A2EB", "#FF6384"],
-    height: 300,
-  };
-
   const pieConfig = {
     data: pieData,
     angleField: "value",
     colorField: "type",
-    color: ["#FFCE56", "#4BC0C0"],
+    color: ["#FFCE56", "#4BC0C0", "#36A2EB", "#FF6384", "#9966FF"], // 5 màu cho 5 trạng thái
     height: 300,
   };
 
@@ -278,7 +316,6 @@ const AdminDashboard: React.FC = () => {
         </h1>
         <div className="p-6 bg-gray-100 rounded-lg">
           {loading && <div className="text-center">Đang tải dữ liệu...</div>}
-          {/* Hàng 1: Tổng doanh thu, Doanh thu theo ngày, Doanh thu theo tháng, Doanh thu theo năm */}
           <Row gutter={[16, 16]} className="mb-6">
             <Col xs={24} sm={12} md={6} lg={6}>
               <CardWidget
@@ -309,8 +346,6 @@ const AdminDashboard: React.FC = () => {
               />
             </Col>
           </Row>
-
-          {/* Hàng 2: Số lượng người dùng, Số lượng đăng ký tiêm, Số lượng hồ sơ tiêm chủng */}
           <Row gutter={[16, 16]} className="mb-6">
             <Col xs={24} sm={12} md={8} lg={8}>
               <CardWidget
@@ -334,61 +369,30 @@ const AdminDashboard: React.FC = () => {
               />
             </Col>
           </Row>
-
-          {/* Hàng 3: Số lượng gói vaccine trong hệ thống, Số lượng vaccine trong hệ thống */}
           <Row gutter={[16, 16]} className="mb-6">
             <Col xs={24} sm={12} md={12} lg={12}>
               <DetailedCardWidget
                 title="Số lượng gói vaccine trong hệ thống"
                 total={stats.vaccinatedPackages + stats.pendingPackages}
-                details={[
-                  {
-                    label: "Đã tiêm",
-                    value: stats.vaccinatedPackages,
-                    color: "green",
-                  },
-                  {
-                    label: "Chưa tiêm",
-                    value: stats.pendingPackages,
-                    color: "red",
-                  },
-                ]}
               />
             </Col>
             <Col xs={24} sm={12} md={12} lg={12}>
               <DetailedCardWidget
                 title="Số lượng vaccine trong hệ thống"
                 total={stats.vaccinatedCount + stats.unvaccinatedCount}
-                details={[
-                  {
-                    label: "Đã tiêm",
-                    value: stats.vaccinatedCount,
-                    color: "green",
-                  },
-                  {
-                    label: "Chưa tiêm",
-                    value: stats.unvaccinatedCount,
-                    color: "red",
-                  },
-                ]}
               />
             </Col>
           </Row>
-
-          {/* Các biểu đồ */}
           <Row gutter={[16, 16]}>
             <Col xs={24} lg={12}>
               <Card title="Số lượng đăng ký tiêm theo tháng">
                 <Line {...lineConfig} />
               </Card>
             </Col>
-            <Col xs={24} lg={6}>
-              <Card title="Tình trạng vaccine">
-                <Bar {...barConfig} />
-              </Card>
-            </Col>
-            <Col xs={24} lg={6}>
-              <Card title="Tình trạng gói vaccine">
+            <Col xs={24} lg={12}>
+              {" "}
+              {/* Tăng width từ lg={6} lên lg={12} để thay thế vị trí của Bar */}
+              <Card title="Tình trạng đăng ký tiêm">
                 <Pie {...pieConfig} />
               </Card>
             </Col>
