@@ -28,9 +28,13 @@ import { VaccineResponseDTO } from "../../models/Vaccine";
 import { VaccinePackageResponseDTO } from "../../models/VaccinePackage";
 import vaccineService from "../../service/vaccineService";
 import vaccinePackageService from "../../service/vaccinePackageService";
+import paymentService from "../../service/paymentService"; // Thêm service payment
+import paymentDetailService from "../../service/paymentDetailService";
+import vaccinePackageDetailService from "../../service/vaccinePackageDetailService"; // Thêm service vaccinePackageDetail
 import Search from "antd/es/input/Search";
 import { ColumnType } from "antd/es/table";
 import { ChildProfileResponseDTO } from "../../models/ChildProfile";
+import { PaymentDetailResponseDTO } from "../../models/PaymentDetail";
 import { useNavigate } from "react-router-dom";
 
 function CustomerAppointment() {
@@ -49,6 +53,12 @@ function CustomerAppointment() {
   const [vaccinePackages, setVaccinePackages] = useState<
     VaccinePackageResponseDTO[]
   >([]);
+  const [paymentDetailsMap, setPaymentDetailsMap] = useState<{
+    [key: number]: PaymentDetailResponseDTO[];
+  }>({});
+  const [vaccineNameMap, setVaccineNameMap] = useState<Map<number, string>>(
+    new Map()
+  );
   const [searchText, setSearchText] = useState<string>("");
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [selectedAppointment, setSelectedAppointment] =
@@ -74,21 +84,90 @@ function CustomerAppointment() {
     try {
       const allVaccines = await vaccineService.getAllVaccines();
       const allVaccinePackages = await vaccinePackageService.getAllPackages();
-      setVaccines(allVaccines);
-      setVaccinePackages(allVaccinePackages);
-
       const allChildProfiles = await childProfileService.getAllChildProfiles();
+      const allAppointments = await appointmentService.getAllAppointments();
+      const allPayments = await paymentService.getAllPayments(); // Lấy tất cả payment
+
       const userChildIds = allChildProfiles
         .filter((profile) => profile.userId === user.userId)
         .map((profile) => profile.childId);
       setChildProfiles(allChildProfiles);
+      setVaccines(allVaccines);
+      setVaccinePackages(allVaccinePackages);
 
-      const allAppointments = await appointmentService.getAllAppointments();
       const filteredAppointments = allAppointments.filter((appointment) =>
         userChildIds.includes(appointment.childId)
       );
       setAppointments(filteredAppointments);
       setOriginalAppointments(filteredAppointments);
+
+      // Tạo paymentDetailsMap
+      const appointmentIds = filteredAppointments.map(
+        (app) => app.appointmentId
+      );
+      const relevantPayments = allPayments.filter((payment) =>
+        appointmentIds.includes(payment.appointmentId)
+      );
+      const paymentIds = relevantPayments.map((payment) => payment.paymentId);
+
+      const paymentDetailsPromises = paymentIds.map(async (paymentId) => {
+        try {
+          const paymentDetails =
+            await paymentDetailService.getPaymentDetailsByPaymentId(paymentId);
+          return { paymentId, paymentDetails };
+        } catch (error) {
+          console.error(
+            `Lỗi khi lấy payment details cho payment ${paymentId}:`,
+            error
+          );
+          return { paymentId, paymentDetails: [] };
+        }
+      });
+
+      const paymentDetailsData = await Promise.all(paymentDetailsPromises);
+      const newPaymentDetailsMap = paymentDetailsData.reduce(
+        (acc, { paymentId, paymentDetails }) => {
+          const appointmentId = relevantPayments.find(
+            (p) => p.paymentId === paymentId
+          )?.appointmentId;
+          if (appointmentId) acc[appointmentId] = paymentDetails;
+          return acc;
+        },
+        {} as { [key: number]: PaymentDetailResponseDTO[] }
+      );
+
+      // Tạo vaccineNameMap
+      const uniqueVaccinePackageDetailIds = new Set(
+        paymentDetailsData
+          .flatMap((item) => item.paymentDetails)
+          .map((detail) => detail.vaccinePackageDetailId || 0)
+          .filter((id): id is number => id !== 0)
+      );
+      const newVaccineNameMap = new Map<number, string>();
+      for (const packageDetailId of uniqueVaccinePackageDetailIds) {
+        try {
+          const packageDetail =
+            await vaccinePackageDetailService.getPackageDetailById(
+              packageDetailId
+            );
+          const vaccine = allVaccines.find(
+            (v) => v.vaccineId === packageDetail.vaccineId
+          );
+          newVaccineNameMap.set(
+            packageDetailId,
+            vaccine ? vaccine.name : "Không xác định"
+          );
+        } catch (error) {
+          console.error(
+            `Lỗi khi lấy vaccine cho packageDetailId ${packageDetailId}:`,
+            error
+          );
+          newVaccineNameMap.set(packageDetailId, "Không xác định");
+        }
+      }
+      setVaccineNameMap(newVaccineNameMap);
+      setPaymentDetailsMap(newPaymentDetailsMap);
+
       setPagination({
         current: 1,
         pageSize: pagination.pageSize,
@@ -211,6 +290,25 @@ function CustomerAppointment() {
       },
     },
     {
+      title: "Mũi Tiêm",
+      key: "doseSequence",
+      width: 150,
+      render: (record: AppointmentResponseDTO) => {
+        const details = paymentDetailsMap[record.appointmentId] || [];
+        if (!record.paymentDetailId) return "-";
+        const selectedDetail = details.find(
+          (detail) => detail.paymentDetailId === record.paymentDetailId
+        );
+        if (!selectedDetail) return "-";
+        const vaccineName =
+          vaccineNameMap.get(selectedDetail.vaccinePackageDetailId) ||
+          "Không xác định";
+        return selectedDetail.doseSequence
+          ? `Mũi ${selectedDetail.doseSequence} - ${vaccineName}`
+          : "-";
+      },
+    },
+    {
       title: "Trạng thái",
       dataIndex: "appointmentStatus",
       key: "appointmentStatus",
@@ -242,8 +340,9 @@ function CustomerAppointment() {
           />
           <DeleteOutlined
             style={{
-              color: "red",
-              cursor: "pointer",
+              color: record.appointmentStatus === 1 ? "red" : "gray",
+              cursor:
+                record.appointmentStatus === 1 ? "pointer" : "not-allowed",
               fontSize: 18,
               marginLeft: 8,
             }}
@@ -276,6 +375,13 @@ function CustomerAppointment() {
       return;
     }
 
+    if (currentStatus !== 1) {
+      message.warning(
+        "Chỉ có thể hủy lịch hẹn khi trạng thái là 'Đã lên lịch'!"
+      );
+      return;
+    }
+
     Modal.confirm({
       title: "Xác nhận hủy lịch tiêm",
       content:
@@ -287,7 +393,7 @@ function CustomerAppointment() {
         try {
           const updateData: UpdateAppointmentDTO = {
             appointmentStatus: 5,
-            paymentDetailId: null, // Xóa paymentDetailId khi hủy
+            paymentDetailId: null,
           };
           await appointmentService.updateAppointment(appointmentId, updateData);
           message.success("Hủy lịch hẹn thành công", 1.5, () => {
@@ -388,6 +494,29 @@ function CustomerAppointment() {
                   selectedAppointment.appointmentDate,
                   "DD/MM/YYYY"
                 ).format("DD/MM/YYYY")}
+              </Descriptions.Item>
+              <Descriptions.Item label="Tên Mũi Tiêm">
+                {paymentDetailsMap[selectedAppointment?.appointmentId || 0]
+                  ?.length > 0
+                  ? (() => {
+                      const selectedDetail = paymentDetailsMap[
+                        selectedAppointment?.appointmentId || 0
+                      ].find(
+                        (detail) =>
+                          detail.paymentDetailId ===
+                          selectedAppointment?.paymentDetailId
+                      );
+                      const vaccineName =
+                        selectedDetail && selectedDetail.vaccinePackageDetailId
+                          ? vaccineNameMap.get(
+                              selectedDetail.vaccinePackageDetailId
+                            ) || "Không xác định"
+                          : "-";
+                      return selectedDetail?.doseSequence
+                        ? `Mũi ${selectedDetail.doseSequence} - ${vaccineName}`
+                        : "-";
+                    })()
+                  : "-"}
               </Descriptions.Item>
               <Descriptions.Item label="Trạng thái">
                 {selectedAppointment.appointmentStatus === 1

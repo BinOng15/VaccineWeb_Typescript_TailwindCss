@@ -1,161 +1,143 @@
-import React from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useState } from "react";
+import { message, Spin } from "antd";
+import vaccineScheduleService from "../../service/vaccineScheduleService";
+import diseaseService from "../../service/diseaseService";
+import { VaccineScheduleResponseDTO } from "../../models/VaccineSchedule";
+import { DiseaseResponseDTO } from "../../models/Disease";
 import MainLayout from "../Layout/MainLayout";
 
-const vaccineData = [
-  {
-    vaccine: "Lao",
-    schedule: ["x", "", "", "", "", "", "", "", "", "", "", "x", "", "", ""],
-  },
-  {
-    vaccine: "Viêm gan B",
-    schedule: ["x", "", "x", "", "", "", "", "", "", "", "", "", "", "", "x"],
-  },
-  {
-    vaccine: "Bạch hầu, ho gà, uốn ván",
-    schedule: ["", "", "x", "", "x", "", "x", "", "", "", "", "x", "", "", ""],
-  },
-  {
-    vaccine: "Bại liệt",
-    schedule: ["", "", "x", "", "x", "", "x", "", "", "", "", "x", "", "", ""],
-  },
-  {
-    vaccine: "Viêm phổi, viêm màng não do Hib",
-    schedule: ["", "", "x", "", "x", "", "x", "", "", "", "", "x", "", "", ""],
-  },
-  {
-    vaccine: "Tiêu chảy do Rota Virus",
-    schedule: [
-      "",
-      "Phác đồ 2 hoặc 3 liều, mỗi liều cách nhau tối thiểu 1 tháng",
-    ],
-  },
-  {
-    vaccine: "Viêm màng não, nhiễm trùng huyết do phế cầu",
-    schedule: ["", "", "x", "", "x", "", "x", "", "", "", "", "x", "", "", ""],
-  },
-  {
-    vaccine: "Viêm màng não do não mô cầu nhóm B, C",
-    schedule: ["", "", "", "", "", "", "", "", "x", "", "", "", "", "", ""],
-  },
-  {
-    vaccine: "Cúm",
-    schedule: [
-      "",
-      "",
-      "",
-      "",
-      "Phác đồ: 2 liều tiêm cách nhau ít nhất 1 tháng, sau đó nhắc lại mỗi năm.",
-    ],
-  },
-  {
-    vaccine: "Sởi",
-    schedule: ["", "", "", "", "", "", "", "", "", "", "", "x", "", "", ""],
-  },
-  {
-    vaccine: "Viêm não Nhật Bản",
-    schedule: ["", "", "", "", "", "", "", "", "x", "", "x", "x", "", "", ""],
-  },
-];
-
 const VaccinationSchedule: React.FC = () => {
+  const [scheduleData, setScheduleData] = useState<
+    VaccineScheduleResponseDTO[]
+  >([]);
+  const [diseases, setDiseases] = useState<DiseaseResponseDTO[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetchScheduleData();
+    fetchDiseases();
+  }, []);
+
+  const fetchScheduleData = async () => {
+    try {
+      setLoading(true);
+      const data = await vaccineScheduleService.getAllVaccineSchedules();
+      setScheduleData(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Lỗi tải lịch tiêm chủng:", error);
+      message.error("Không thể tải lịch tiêm chủng");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDiseases = async () => {
+    try {
+      const data = await diseaseService.getAllDiseases();
+      setDiseases(data);
+    } catch (error) {
+      console.error("Lỗi tải danh sách bệnh:", error);
+      message.error("Không thể tải danh sách bệnh");
+    }
+  };
+
+  // Tạo bản đồ bệnh ID -> tên bệnh và vaccine ID -> tên vaccine
+  const diseaseMap = diseases.reduce((acc, disease) => {
+    acc[disease.diseaseId] = disease.name;
+    return acc;
+  }, {} as Record<number, string>);
+
+  // Tạo danh sách các cột tuổi (1 tháng, 2 tháng, ..., 12 tháng, 2 tuổi)
+  const ageColumns = [...Array(12).keys()]
+    .map((i) => `${i + 1} tháng`)
+    .concat(["2-3 tuổi", "4-6 tuổi"]);
+
+  // Ánh xạ lịch tiêm vào các cột tuổi dựa trên ageInMonths
+  const scheduleMap = scheduleData.reduce((acc, item) => {
+    const age = item.ageInMonths;
+    let columnIndex: number;
+
+    if (age <= 12) {
+      columnIndex = age - 1; // 1-12 tháng vào cột 0-11
+    } else if (age >= 24 && age <= 36) {
+      columnIndex = 12; // 24-36 tháng vào cột "2-3 tuổi" (cột 12)
+    } else if (age >= 48 && age <= 72) {
+      columnIndex = 13; // 48-72 tháng vào cột "4-6 tuổi" (cột 13)
+    } else {
+      return acc; // Bỏ qua nếu tuổi không nằm trong khoảng
+    }
+
+    if (!acc[item.diseaseId]) acc[item.diseaseId] = {};
+    acc[item.diseaseId][columnIndex] = acc[item.diseaseId][columnIndex] || [];
+    acc[item.diseaseId][columnIndex].push(item); // Lưu mảng các lịch tiêm trong cùng khoảng tuổi
+    return acc;
+  }, {} as Record<number, Record<number, VaccineScheduleResponseDTO[]>>);
+
   return (
     <MainLayout>
-      <div className="p-4 max-w-6xl mx-auto mb-10">
-        <h2 className="text-xl font-bold text-center bg-gray-200 p-2 rounded-t-lg">
-          LỊCH TIÊM CHỦNG CHO TRẺ
-        </h2>
+      <div className="min-h-screen bg-gray-100 py-10 p-20">
+        <h1 className="text-3xl font-bold mb-6 text-center">
+          LỊCH TIÊM CHỦNG CHO TRẺ TỪ 1 THÁNG TỚI 6 TUỔI
+        </h1>
+
+        {/* Bảng hiển thị lịch tiêm */}
         <div className="overflow-x-auto bg-white border border-gray-300">
-          <table className="w-full table-auto">
-            <thead>
-              <tr className="bg-blue-900 text-white">
-                <th className="border px-4 py-2 no-ellipsis" rowSpan={2}>
-                  Tuổi / Vaccine
-                </th>
-                <th className="border px-4 py-2 " colSpan={9}>
-                  Tháng
-                </th>
-                <th className="border px-4 py-2 no-ellipsis" colSpan={6}>
-                  Tuổi
-                </th>
-              </tr>
-              <tr className="bg-blue-900 text-white">
-                {[
-                  "Sơ sinh",
-                  "2",
-                  "3",
-                  "4",
-                  "5",
-                  "6",
-                  "7",
-                  "8",
-                  "9",
-                  "10-11",
-                  "12",
-                  "2",
-                  "3-4",
-                  "5-6",
-                  "7-8",
-                ].map((month) => (
-                  <th key={month} className="border px-2 py-1">
-                    {month}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {vaccineData.map((row, index) => (
-                <tr key={index} className="odd:bg-gray-100">
-                  <td className="border px-4 py-2 font-medium">
-                    {row.vaccine}
-                  </td>
-                  {row.vaccine === "Cúm" ? (
-                    <>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center" colSpan={12}>
-                        {row.schedule[4]}
-                      </td>
-                    </>
-                  ) : row.vaccine === "Tiêu chảy do Rota Virus" ? (
-                    <>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center" colSpan={4}>
-                        {row.schedule[1]}
-                      </td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                    </>
-                  ) : row.vaccine === "Bại liệt" ? (
-                    <>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center"></td>
-                      <td className="border px-2 py-1 text-center" colSpan={12}>
-                        {row.schedule[4]}
-                      </td>
-                    </>
-                  ) : (
-                    row.schedule.map((cell, i) => (
-                      <td key={i} className="border px-2 py-1 text-center">
-                        {cell}
-                      </td>
-                    ))
-                  )}
+          <Spin spinning={loading} size="large">
+            <table className="w-full table-auto">
+              <thead>
+                <tr className="bg-blue-900 text-white">
+                  <th className="border px-4 py-2">Bệnh</th>
+                  {ageColumns.map((age, index) => (
+                    <th key={index} className="border px-4 py-2">
+                      {age}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {Object.keys(diseaseMap).length > 0 ? (
+                  Object.entries(diseaseMap).map(([diseaseId]) => {
+                    const schedulesForDisease =
+                      scheduleMap[parseInt(diseaseId)] || {};
+                    let scheduleIndex = 1; // Bắt đầu số thứ tự từ 1
+
+                    return (
+                      <tr key={diseaseId} className="odd:bg-gray-100">
+                        <td className="border px-4 py-2 font-medium">
+                          {diseaseMap[parseInt(diseaseId)]}
+                        </td>
+                        {ageColumns.map((_, columnIndex) => {
+                          const schedules =
+                            schedulesForDisease[columnIndex] || [];
+                          const displayNumber =
+                            schedules.length > 0 ? scheduleIndex++ : "";
+
+                          return (
+                            <td
+                              key={columnIndex}
+                              className="border px-4 py-2 text-center cursor-pointer hover:bg-gray-200"
+                            >
+                              {displayNumber}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={ageColumns.length + 1}
+                      className="text-center py-4"
+                    >
+                      Không có lịch tiêm chủng nào được tìm thấy
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </Spin>
         </div>
       </div>
     </MainLayout>

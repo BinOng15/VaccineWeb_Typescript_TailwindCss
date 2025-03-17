@@ -32,7 +32,7 @@ const CustomerSidebar: React.FC = () => {
     {
       key: "/child-vaccine-schedule",
       icon: <CalendarOutlined />,
-      label: "Lịch tiêm chủng",
+      label: "Hồ sơ tiêm chủng",
     },
   ];
 

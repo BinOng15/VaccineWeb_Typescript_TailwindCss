@@ -6,6 +6,7 @@ import {
   CallBackPaymentDTO,
   UpdatePaymentDTO,
   VnPaymentResponseModel,
+  VnPaymentRequestModel,
 } from "../models/Payment";
 
 // Các hàm gọi API cho Payment
@@ -24,7 +25,9 @@ const paymentService = {
   },
 
   // Tạo URL thanh toán (POST /api/VNPay/create-payment-url)
-  createPaymentUrl: async (paymentData: CreatePaymentDTO): Promise<string> => {
+  createPaymentUrl: async (
+    paymentData: VnPaymentRequestModel
+  ): Promise<string> => {
     try {
       const response: AxiosResponse = await axiosInstance.post(
         "api/VNPay/create-payment-url",
@@ -35,7 +38,7 @@ const paymentService = {
           },
         }
       );
-      return response.data; // Giả sử backend trả về URL dưới dạng string
+      return response.data.url; // Giả sử backend trả về URL dưới dạng string
     } catch (error) {
       console.error("Error creating payment URL:", error);
       throw error;

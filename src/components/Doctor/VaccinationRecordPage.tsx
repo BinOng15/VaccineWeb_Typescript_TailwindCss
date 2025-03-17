@@ -1,16 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
-import {
-  Table,
-  Input,
-  Space,
-  Row,
-  Col,
-  Modal,
-  Button,
-  message,
-  Form,
-} from "antd";
+import { Table, Input, Space, Row, Col, Modal, message, Form, Tag } from "antd";
 import { ReloadOutlined, EyeOutlined, CheckOutlined } from "@ant-design/icons";
 import moment from "moment";
 import appointmentService from "../../service/appointmentService";
@@ -18,8 +8,9 @@ import childProfileService from "../../service/childProfileService";
 import userService from "../../service/userService";
 import vaccineService from "../../service/vaccineService";
 import vaccinePackageService from "../../service/vaccinePackageService";
-import paymentService from "../../service/paymentService"; // Sử dụng paymentService để getAllPayments
+import paymentService from "../../service/paymentService";
 import paymentDetailService from "../../service/paymentDetailService";
+import vaccinePackageDetailService from "../../service/vaccinePackageDetailService";
 import {
   AppointmentResponseDTO,
   UpdateAppointmentDTO,
@@ -28,10 +19,7 @@ import { ChildProfileResponseDTO } from "../../models/ChildProfile";
 import { UserResponseDTO } from "../../models/User";
 import { VaccineResponseDTO } from "../../models/Vaccine";
 import { VaccinePackageResponseDTO } from "../../models/VaccinePackage";
-import {
-  PaymentDetailResponseDTO,
-  UpdatePaymentDetailDTO,
-} from "../../models/PaymentDetail";
+import { PaymentDetailResponseDTO } from "../../models/PaymentDetail";
 import { ColumnType } from "antd/es/table";
 
 const { Search } = Input;
@@ -62,22 +50,85 @@ const VaccinationRecordPage: React.FC = () => {
   const [paymentDetailsMap, setPaymentDetailsMap] = useState<{
     [key: number]: PaymentDetailResponseDTO[];
   }>({});
+  const [vaccineNameMap, setVaccineNameMap] = useState<Map<number, string>>(
+    new Map()
+  );
   const [reactionForm] = Form.useForm();
 
   const getAppointmentStatusText = (status: number) => {
+    let text = "";
+    let style = {};
+
     switch (status) {
       case 1:
-        return "Đang chờ";
+        text = "Đã lên lịch";
+        style = {
+          color: "#1890ff", // Màu xanh lam
+          backgroundColor: "#e6f7ff", // Nền xanh nhạt
+          padding: "2px 8px",
+          borderRadius: "4px",
+        };
+        break;
       case 2:
-        return "Đang chờ tiêm";
+        text = "Chờ tiêm";
+        style = {
+          color: "#fa8c16", // Màu cam
+          backgroundColor: "#fff7e6", // Nền cam nhạt
+          padding: "2px 8px",
+          borderRadius: "4px",
+        };
+        break;
       case 3:
-        return "Đang chờ phản hồi";
+        text = "Chờ phản ứng";
+        style = {
+          color: "#722ed1", // Màu tím
+          backgroundColor: "#f9f0ff", // Nền tím nhạt
+          padding: "2px 8px",
+          borderRadius: "4px",
+        };
+        break;
       case 4:
-        return "Đã hoàn tất";
+        text = "Hoàn thành";
+        style = {
+          color: "#52c41a", // Màu xanh lá
+          backgroundColor: "#f6ffed", // Nền xanh lá nhạt
+          padding: "2px 8px",
+          borderRadius: "4px",
+        };
+        break;
       case 5:
-        return "Đã hủy";
+        text = "Đã hủy";
+        style = {
+          color: "#ff4d4f", // Màu đỏ
+          backgroundColor: "#fff1f0", // Nền đỏ nhạt
+          padding: "2px 8px",
+          borderRadius: "4px",
+        };
+        break;
       default:
-        return "Không xác định";
+        text = String(status);
+        style = {
+          color: "#000",
+          padding: "2px 8px",
+          borderRadius: "4px",
+        };
+    }
+
+    return <span style={style}>{text}</span>;
+  };
+
+  const getStatusColor = (status: number) => {
+    switch (status) {
+      case 2:
+        return "gold"; // Đang chờ tiêm - Vàng
+      case 3:
+        return "orange"; // Đang chờ phản hồi - Cam
+      case 4:
+        return "green"; // Đã hoàn tất - Xanh lá
+      case 5:
+        return "red"; // Đã hủy - Đỏ
+      default:
+        return "default"; // Không xác định - Mặc định
     }
   };
 
@@ -88,7 +139,6 @@ const VaccinationRecordPage: React.FC = () => {
   ) => {
     setLoading(true);
     try {
-      // Lấy danh sách vaccine, gói vaccine
       const allVaccines = await vaccineService.getAllVaccines();
       const allVaccinePackages = await vaccinePackageService.getAllPackages();
       setVaccines(allVaccines);
@@ -101,7 +151,6 @@ const VaccinationRecordPage: React.FC = () => {
         appointmentStatus: appointment.appointmentStatus || 2,
       }));
 
-      // Lọc chỉ hiển thị appointment có status là 2, 3 hoặc 4
       let filteredAppointments = updatedAppointments.filter(
         (appointment) =>
           appointment.appointmentStatus === 2 ||
@@ -186,7 +235,6 @@ const VaccinationRecordPage: React.FC = () => {
         {} as { [key: number]: { childFullName: string; userFullName: string } }
       );
 
-      // Lấy tất cả payments và payment details
       const allPayments = await paymentService.getAllPayments();
       const appointmentIds = paginatedAppointments.map(
         (app) => app.appointmentId
@@ -216,13 +264,41 @@ const VaccinationRecordPage: React.FC = () => {
           const appointmentId = relevantPayments.find(
             (p) => p.paymentId === paymentId
           )?.appointmentId;
-          if (appointmentId) {
-            acc[appointmentId] = paymentDetails;
-          }
+          if (appointmentId) acc[appointmentId] = paymentDetails;
           return acc;
         },
         {} as { [key: number]: PaymentDetailResponseDTO[] }
       );
+
+      const uniqueVaccinePackageDetailIds = new Set(
+        paymentDetailsData
+          .flatMap((item) => item.paymentDetails)
+          .map((detail) => detail.vaccinePackageDetailId || 0)
+          .filter((id): id is number => id !== 0)
+      );
+      const newVaccineNameMap = new Map<number, string>();
+      for (const packageDetailId of uniqueVaccinePackageDetailIds) {
+        try {
+          const packageDetail =
+            await vaccinePackageDetailService.getPackageDetailById(
+              packageDetailId
+            );
+          const vaccine = allVaccines.find(
+            (v) => v.vaccineId === packageDetail.vaccineId
+          );
+          newVaccineNameMap.set(
+            packageDetailId,
+            vaccine ? vaccine.name : "Không xác định"
+          );
+        } catch (error) {
+          console.error(
+            `Lỗi khi lấy vaccine cho packageDetailId ${packageDetailId}:`,
+            error
+          );
+          newVaccineNameMap.set(packageDetailId, "Không xác định");
+        }
+      }
+      setVaccineNameMap(newVaccineNameMap);
 
       setChildMap(newChildMap);
       setPaymentDetailsMap(newPaymentDetailsMap);
@@ -241,76 +317,32 @@ const VaccinationRecordPage: React.FC = () => {
     }
   };
 
-  const handleConfirmClick = async (appointment: AppointmentResponseDTO) => {
+  const handleConfirmAndCompleteDose = async (
+    appointment: AppointmentResponseDTO
+  ) => {
     if (appointment.appointmentStatus !== 2) {
-      message.error("Chỉ có thể xác nhận khi trạng thái là 'Đang chờ tiêm'");
+      message.error("Chỉ có thể xác nhận khi trạng thái là 'Đang chờ tiêm'!");
       return;
     }
+
     try {
-      const updateData: UpdateAppointmentDTO = {
-        appointmentStatus: 3, // Chuyển trạng thái sang "Đang chờ phản hồi"
+      const updateAppointmentData: UpdateAppointmentDTO = {
+        appointmentStatus: 3,
       };
       await appointmentService.updateAppointment(
         appointment.appointmentId,
-        updateData
+        updateAppointmentData
       );
 
       message.success(
-        "Đã cập nhật trạng thái sang 'Đang chờ phản hồi'",
-        1.5,
-        () => {
-          fetchAppointments(
-            pagination.current,
-            pagination.pageSize,
-            searchKeyword
-          );
-          setSelectedAppointment({ ...appointment, appointmentStatus: 3 });
-          setIsReactionModalVisible(true); // Mở modal nhập phản ứng
-        }
+        "Đã chuyển sang 'Đang chờ phản hồi'. Vui lòng nhập phản ứng!"
       );
-    } catch (error) {
-      console.error("Lỗi khi cập nhật trạng thái sang 3:", error);
-      message.error("Cập nhật trạng thái thất bại.");
-    }
-  };
-
-  const handleCompleteDose = async (appointment: AppointmentResponseDTO) => {
-    if (
-      !appointment.vaccinePackageId ||
-      !paymentDetailsMap[appointment.appointmentId]?.length
-    ) {
-      message.error("Không có mũi tiêm để hoàn thành.");
-      return;
-    }
-
-    const paymentDetails = paymentDetailsMap[appointment.appointmentId] || [];
-    try {
-      // Lặp qua tất cả paymentDetails của appointment và cập nhật isCompleted thành 1
-      for (const detail of paymentDetails) {
-        if (detail.isCompleted !== 1) {
-          // Chỉ cập nhật nếu chưa hoàn thành
-          const updateData: UpdatePaymentDetailDTO = {
-            isCompleted: 1, // Đặt isCompleted thành 1 (hoàn thành)
-            administeredDate: moment().format("DD/MM/YYYY"), // Thêm ngày hoàn thành (tùy chọn)
-            notes: `Hoàn thành mũi ${detail.doseSequence} vào ${moment().format(
-              "DD/MM/YYYY"
-            )}`,
-            scheduledDate: detail.scheduledDate, // Giữ nguyên ngày dự kiến (tùy chọn)
-            appointmentId: appointment.appointmentId,
-          };
-          await paymentDetailService.updatePaymentDetail(
-            detail.paymentDetailId,
-            updateData
-          );
-        }
-      }
-
-      message.success("Cập nhật trạng thái hoàn thành thành công!");
-      // Làm mới dữ liệu để phản ánh thay đổi
+      setSelectedAppointment({ ...appointment, appointmentStatus: 3 });
+      setIsReactionModalVisible(true);
       fetchAppointments(pagination.current, pagination.pageSize, searchKeyword);
     } catch (error) {
-      console.error("Lỗi khi cập nhật trạng thái hoàn thành:", error);
-      message.error("Cập nhật trạng thái thất bại.");
+      console.error("Lỗi khi xác nhận hoàn thành liều tiêm:", error);
+      message.error("Xác nhận thất bại.");
     }
   };
 
@@ -324,12 +356,10 @@ const VaccinationRecordPage: React.FC = () => {
         appointmentStatus: 4,
         reaction: reaction,
       };
-      console.log("Sending Update Data:", updateData);
-      const response = await appointmentService.updateAppointment(
+      await appointmentService.updateAppointment(
         selectedAppointment.appointmentId,
         updateData
       );
-      console.log("Server Response:", response);
 
       message.success(
         "Đã cập nhật trạng thái sang 'Đã hoàn tất' và lưu phản ứng",
@@ -379,15 +409,28 @@ const VaccinationRecordPage: React.FC = () => {
     setSelectedAppointment(null);
   };
 
-  const getIsActiveText = (isActive: number) => {
-    return isActive === 1 ? "Có" : isActive === 0 ? "Không" : "Không xác định";
+  const getVaccineOrPackageName = (appointment: AppointmentResponseDTO) => {
+    if (appointment.vaccineId) {
+      return (
+        vaccines.find((v) => v.vaccineId === appointment.vaccineId)?.name ||
+        "N/A"
+      );
+    }
+    if (appointment.vaccinePackageId) {
+      return (
+        vaccinePackages.find(
+          (p) => p.vaccinePackageId === appointment.vaccinePackageId
+        )?.name || "N/A"
+      );
+    }
+    return "N/A";
   };
 
   const columns: ColumnType<AppointmentResponseDTO>[] = [
     {
       title: "STT",
       key: "index",
-      width: 50,
+      width: 10,
       align: "center",
       render: (_: any, __: AppointmentResponseDTO, index: number) =>
         (pagination.current - 1) * pagination.pageSize + index + 1,
@@ -411,101 +454,71 @@ const VaccinationRecordPage: React.FC = () => {
           : "N/A",
     },
     {
-      title: "Tên Vaccine",
-      key: "vaccineName",
+      title: "Tên Vaccine/Gói Vaccine",
+      key: "vaccineOrPackageName",
       render: (appointment: AppointmentResponseDTO) =>
-        appointment.vaccineId
-          ? vaccines.find((v) => v.vaccineId === appointment.vaccineId)?.name ||
-            "N/A"
-          : "N/A",
+        getVaccineOrPackageName(appointment),
     },
     {
-      title: "Tên Gói Vaccine",
-      key: "vaccinePackageName",
-      render: (appointment: AppointmentResponseDTO) =>
-        appointment.vaccinePackageId
-          ? vaccinePackages.find(
-              (p) => p.vaccinePackageId === appointment.vaccinePackageId
-            )?.name || "N/A"
-          : "N/A",
-    },
-    {
-      title: "Tên Mũi Tiêm",
+      title: "Mũi Tiêm",
       key: "doseSequence",
+      width: 150,
       render: (appointment: AppointmentResponseDTO) => {
         const details = paymentDetailsMap[appointment.appointmentId] || [];
-        return details.length > 0
-          ? details[0]?.doseSequence
-            ? `Mũi ${details[0].doseSequence}`
-            : "N/A"
+        if (!appointment.paymentDetailId) return "N/A";
+        const selectedDetail = details.find(
+          (detail) => detail.paymentDetailId === appointment.paymentDetailId
+        );
+        if (!selectedDetail) return "N/A";
+        const vaccineName =
+          vaccineNameMap.get(selectedDetail.vaccinePackageDetailId) ||
+          "Không xác định";
+        return selectedDetail.doseSequence
+          ? `Mũi ${selectedDetail.doseSequence} - ${vaccineName}`
           : "N/A";
       },
     },
-    {
-      title: "Ngày hẹn",
-      dataIndex: "appointmentDate",
-    },
+    { title: "Ngày hẹn", dataIndex: "appointmentDate" },
     {
       title: "Trạng thái",
       key: "appointmentStatus",
-      render: (appointment: AppointmentResponseDTO) =>
-        getAppointmentStatusText(appointment.appointmentStatus),
+      render: (appointment: AppointmentResponseDTO) => (
+        <Tag color={getStatusColor(appointment.appointmentStatus)}>
+          {getAppointmentStatusText(appointment.appointmentStatus)}
+        </Tag>
+      ),
     },
     {
       title: "Phản ứng",
       dataIndex: "reaction",
-      render: (reaction: string) => reaction || "N/A",
-    },
-    {
-      title: "Hoàn thành mũi tiêm",
-      key: "completeDose",
       width: 100,
-      render: (_: any, appointment: AppointmentResponseDTO) => {
-        // Chỉ hiển thị nút nếu appointment có vaccinePackageId và có paymentDetails
-        if (
-          !appointment.vaccinePackageId ||
-          !paymentDetailsMap[appointment.appointmentId]?.length
-        ) {
-          return <span style={{ color: "gray" }}>-</span>;
-        }
-
-        const paymentDetails =
-          paymentDetailsMap[appointment.appointmentId] || [];
-        return (
-          <Button
-            type="primary"
-            size="small"
-            onClick={() => handleCompleteDose(appointment)}
-            disabled={paymentDetails.every(
-              (detail) => detail.isCompleted === 1
-            )}
-          >
-            Hoàn thành
-          </Button>
-        );
-      },
+      render: (reaction: string) => reaction || "N/A",
     },
     {
       title: "Hành động",
       key: "action",
+      width: 120,
+      align: "center",
       render: (_: any, appointment: AppointmentResponseDTO) => (
         <Space size="middle">
           <EyeOutlined
-            type="link"
             onClick={() => handleViewDetail(appointment)}
-            style={{ color: "blue", cursor: "pointer" }}
+            style={{ color: "blue", cursor: "pointer", fontSize: "18px" }}
             title="Chi tiết lịch tiêm"
           />
           <CheckOutlined
-            type="primary"
-            onClick={() => handleConfirmClick(appointment)}
-            style={{ color: "green", cursor: "pointer" }}
+            onClick={() => handleConfirmAndCompleteDose(appointment)}
+            style={{
+              color: appointment.appointmentStatus === 2 ? "green" : "gray",
+              cursor:
+                appointment.appointmentStatus === 2 ? "pointer" : "not-allowed",
+              fontSize: "18px",
+            }}
             title="Hoàn thành lịch tiêm"
           />
         </Space>
       ),
     },
-    // Thêm cột mới để hoàn thành mũi tiêm
   ];
 
   return (
@@ -568,33 +581,31 @@ const VaccinationRecordPage: React.FC = () => {
                 : "N/A"}
             </p>
             <p>
-              <strong>Tên Vaccine:</strong>{" "}
-              {selectedAppointment.vaccineId
-                ? vaccines.find(
-                    (v) => v.vaccineId === selectedAppointment.vaccineId
-                  )?.name || "N/A"
-                : "N/A"}
-            </p>
-            <p>
-              <strong>Tên Gói Vaccine:</strong>{" "}
-              {selectedAppointment.vaccinePackageId
-                ? vaccinePackages.find(
-                    (p) =>
-                      p.vaccinePackageId ===
-                      selectedAppointment.vaccinePackageId
-                  )?.name || "N/A"
-                : "N/A"}
+              <strong>Tên Vaccine/Gói Vaccine:</strong>{" "}
+              {getVaccineOrPackageName(selectedAppointment)}
             </p>
             <p>
               <strong>Tên Mũi Tiêm:</strong>{" "}
-              {paymentDetailsMap[selectedAppointment.appointmentId]?.length > 0
-                ? paymentDetailsMap[selectedAppointment.appointmentId][0]
-                    ?.doseSequence
-                  ? `Mũi ${
-                      paymentDetailsMap[selectedAppointment.appointmentId][0]
-                        .doseSequence
-                    }`
-                  : "N/A"
+              {paymentDetailsMap[selectedAppointment?.appointmentId || 0]
+                ?.length > 0
+                ? (() => {
+                    const selectedDetail = paymentDetailsMap[
+                      selectedAppointment?.appointmentId || 0
+                    ].find(
+                      (detail) =>
+                        detail.paymentDetailId ===
+                        selectedAppointment?.paymentDetailId
+                    );
+                    const vaccineName =
+                      selectedDetail && selectedDetail.vaccinePackageDetailId
+                        ? vaccineNameMap.get(
+                            selectedDetail.vaccinePackageDetailId
+                          ) || "Không xác định"
+                        : "N/A";
+                    return selectedDetail?.doseSequence
+                      ? `Mũi ${selectedDetail.doseSequence} - ${vaccineName}`
+                      : "N/A";
+                  })()
                 : "N/A"}
             </p>
             <p>
@@ -608,14 +619,16 @@ const VaccinationRecordPage: React.FC = () => {
             </p>
             <p>
               <strong>Trạng thái:</strong>{" "}
-              {getAppointmentStatusText(selectedAppointment.appointmentStatus)}
+              <Tag
+                color={getStatusColor(selectedAppointment.appointmentStatus)}
+              >
+                {getAppointmentStatusText(
+                  selectedAppointment.appointmentStatus
+                )}
+              </Tag>
             </p>
             <p>
               <strong>Phản ứng:</strong> {selectedAppointment.reaction || "N/A"}
-            </p>
-            <p>
-              <strong>Hoạt động:</strong>{" "}
-              {getIsActiveText(selectedAppointment.isActive)}
             </p>
           </div>
         )}

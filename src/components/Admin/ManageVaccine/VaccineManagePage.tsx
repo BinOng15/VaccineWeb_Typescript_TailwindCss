@@ -7,7 +7,6 @@ import {
   Space,
   Row,
   Col,
-  Tabs,
   message,
   Modal,
   Descriptions,
@@ -26,14 +25,14 @@ import moment from "moment";
 import { ColumnType } from "antd/es/table";
 
 const { Search } = Input;
-const { TabPane } = Tabs;
 
 interface Vaccine extends VaccineResponseDTO {
   vaccineId: number;
 }
 
 const VaccineManagePage: React.FC = () => {
-  const [vaccines, setVaccines] = useState<Vaccine[]>([]);
+  const [allVaccines, setAllVaccines] = useState<Vaccine[]>([]); // Lưu trữ toàn bộ vaccine từ API
+  const [displayedVaccines, setDisplayedVaccines] = useState<Vaccine[]>([]); // Vaccine hiển thị sau khi lọc
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -41,7 +40,6 @@ const VaccineManagePage: React.FC = () => {
     total: 0,
   });
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [activeTab, setActiveTab] = useState("activeVaccines");
   const [isAddVaccineModalVisible, setIsAddVaccineModalVisible] =
     useState(false);
   const [isEditVaccineModalVisible, setIsEditVaccineModalVisible] =
@@ -55,18 +53,25 @@ const VaccineManagePage: React.FC = () => {
     try {
       const response = await vaccineService.getAllVaccines();
       console.log("Phản hồi API:", response);
-      const filteredVaccines = response
-        .filter((vaccine) =>
-          activeTab === "inactiveVaccines"
-            ? vaccine.isActive === 0
-            : vaccine.isActive === 1
-        )
-        .map((vaccine) => ({ ...vaccine, vaccineId: vaccine.vaccineId }));
-      console.log("Vắc xin đã lọc:", filteredVaccines);
-      setVaccines(filteredVaccines);
+      const vaccinesWithId = response.map((vaccine) => ({
+        ...vaccine,
+        vaccineId: vaccine.vaccineId,
+      }));
+      setAllVaccines(vaccinesWithId); // Lưu trữ toàn bộ vaccine
+
+      // Chỉ hiển thị vaccine có isActive = 1, và lọc theo từ khóa tìm kiếm
+      const filteredVaccines = vaccinesWithId.filter(
+        (vaccine) =>
+          vaccine.isActive === 1 &&
+          (searchKeyword
+            ? vaccine.name.toLowerCase().includes(searchKeyword.toLowerCase())
+            : true)
+      );
+      setDisplayedVaccines(filteredVaccines);
       setPagination((prev) => ({
         ...prev,
         total: filteredVaccines.length,
+        current: 1,
       }));
     } catch (error) {
       console.error("Lỗi khi lấy vắc xin:", error);
@@ -80,7 +85,7 @@ const VaccineManagePage: React.FC = () => {
 
   useEffect(() => {
     fetchVaccines();
-  }, [activeTab]);
+  }, []); // Không còn phụ thuộc vào activeTab
 
   const handleTableChange = (pagination: any) => {
     const { current, pageSize } = pagination;
@@ -93,10 +98,14 @@ const VaccineManagePage: React.FC = () => {
 
   const onSearch = (value: string) => {
     setSearchKeyword(value);
-    const filteredVaccines = vaccines.filter((vaccine) =>
-      vaccine.name.toLowerCase().includes(value.toLowerCase())
+    const filteredVaccines = allVaccines.filter(
+      (vaccine) =>
+        vaccine.isActive === 1 &&
+        (value
+          ? vaccine.name.toLowerCase().includes(value.toLowerCase())
+          : true)
     );
-    setVaccines(filteredVaccines);
+    setDisplayedVaccines(filteredVaccines);
     setPagination((prev) => ({
       ...prev,
       total: filteredVaccines.length,
@@ -169,11 +178,6 @@ const VaccineManagePage: React.FC = () => {
     setIsDetailModalVisible(true);
   };
 
-  const handleTabChange = (key: string) => {
-    setActiveTab(key);
-    fetchVaccines();
-  };
-
   const columns: ColumnType<VaccineResponseDTO>[] = [
     {
       title: "STT",
@@ -232,13 +236,6 @@ const VaccineManagePage: React.FC = () => {
       key: "Manufacturer",
     },
     {
-      title: "Trạng thái",
-      dataIndex: "isActive",
-      key: "IsActive",
-      width: 120,
-      render: (isActive: number) => (isActive === 1 ? "Có" : "Không"),
-    },
-    {
       title: "Hành động",
       key: "action",
       width: 120,
@@ -273,100 +270,50 @@ const VaccineManagePage: React.FC = () => {
       <h2 className="text-2xl font-bold text-center p-2 rounded-t-lg">
         QUẢN LÝ VẮC XIN
       </h2>
-      <Tabs
-        className="custom-tabs"
-        defaultActiveKey="activeVaccines"
-        onChange={handleTabChange}
-      >
-        <TabPane tab="Vắc xin đang có" key="activeVaccines">
-          <Row justify="space-between" style={{ marginBottom: 16 }}>
-            <Col>
-              <Space className="custom-search">
-                <Search
-                  placeholder="Tìm kiếm theo từ khóa"
-                  onSearch={onSearch}
-                  enterButton
-                  allowClear
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                />
-                <ReloadOutlined
-                  onClick={handleReset}
-                  style={{ fontSize: "24px", cursor: "pointer" }}
-                />
-              </Space>
-            </Col>
-            <Col>
-              <Button
-                type="primary"
-                className="custom-button"
-                onClick={handleAddVaccine}
-              >
-                Tạo mới vắc xin
-              </Button>
-            </Col>
-          </Row>
-          <Table
-            columns={columns}
-            dataSource={vaccines.slice(
-              (pagination.current - 1) * pagination.pageSize,
-              pagination.current * pagination.pageSize
-            )}
-            rowKey="vaccineId"
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-            }}
-            loading={loading}
-            onChange={handleTableChange}
-          />
-        </TabPane>
-        <TabPane tab="Vắc xin đã hết" key="inactiveVaccines">
-          <Row justify="space-between" style={{ marginBottom: 16 }}>
-            <Col>
-              <Space>
-                <Search
-                  placeholder="Tìm kiếm theo từ khóa"
-                  onSearch={onSearch}
-                  enterButton
-                  allowClear
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                />
-                <ReloadOutlined
-                  onClick={handleReset}
-                  style={{ fontSize: "24px", cursor: "pointer" }}
-                />
-              </Space>
-            </Col>
-            <Col>
-              <Button type="primary" onClick={handleAddVaccine}>
-                Tạo mới vắc xin
-              </Button>
-            </Col>
-          </Row>
-          <Table
-            columns={columns}
-            dataSource={vaccines.slice(
-              (pagination.current - 1) * pagination.pageSize,
-              pagination.current * pagination.pageSize
-            )}
-            rowKey="vaccineId"
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-            }}
-            loading={loading}
-            onChange={handleTableChange}
-          />
-        </TabPane>
-      </Tabs>
+      <Row justify="space-between" style={{ marginBottom: 16 }}>
+        <Col>
+          <Space className="custom-search">
+            <Search
+              placeholder="Tìm kiếm theo từ khóa"
+              onSearch={onSearch}
+              enterButton
+              allowClear
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+            />
+            <ReloadOutlined
+              onClick={handleReset}
+              style={{ fontSize: "24px", cursor: "pointer" }}
+            />
+          </Space>
+        </Col>
+        <Col>
+          <Button
+            type="primary"
+            className="custom-button"
+            onClick={handleAddVaccine}
+          >
+            Tạo mới vắc xin
+          </Button>
+        </Col>
+      </Row>
+      <Table
+        columns={columns}
+        dataSource={displayedVaccines.slice(
+          (pagination.current - 1) * pagination.pageSize,
+          pagination.current * pagination.pageSize
+        )}
+        rowKey="vaccineId"
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          showSizeChanger: true,
+          showQuickJumper: true,
+        }}
+        loading={loading}
+        onChange={handleTableChange}
+      />
 
       <AddVaccineModal
         visible={isAddVaccineModalVisible}

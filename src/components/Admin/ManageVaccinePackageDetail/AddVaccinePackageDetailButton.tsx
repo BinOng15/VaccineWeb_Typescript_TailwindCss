@@ -23,13 +23,16 @@ const AddVaccinePackageDetailButton: React.FC<
   >([]);
   const [vaccines, setVaccines] = useState<VaccineResponseDTO[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [packageDetails, setPackageDetails] = useState<any[]>([]); // Lưu trữ danh sách VaccinePackageDetail
 
-  // Lấy danh sách gói vắc xin và vắc xin khi modal mở
+  // Lấy danh sách gói vắc xin, vắc xin và chi tiết gói vắc xin khi modal mở
   useEffect(() => {
     const fetchData = async () => {
       try {
         const packages = await vaccinePackageService.getAllPackages();
         const vaccinesList = await vaccineService.getAllVaccines();
+        const details =
+          await vaccinePackageDetailService.getAllPackagesDetail();
 
         // Lọc các gói vắc xin có isActive = 1
         const activePackages = packages.filter((pkg) => pkg.isActive === 1);
@@ -40,6 +43,7 @@ const AddVaccinePackageDetailButton: React.FC<
 
         setVaccinePackages(activePackages);
         setVaccines(activeVaccines);
+        setPackageDetails(details); // Lưu trữ danh sách VaccinePackageDetail
       } catch (error) {
         notification.error({
           message: "Error",
@@ -66,6 +70,22 @@ const AddVaccinePackageDetailButton: React.FC<
       }
 
       const totalDoses = selectedPackage.totalDoses;
+
+      // Đếm số lượng VaccinePackageDetail hiện tại của gói vắc xin được chọn
+      const currentDetailsCount = packageDetails.filter(
+        (detail) => detail.vaccinePackageId === values.vaccinePackageId
+      ).length;
+
+      // Kiểm tra xem số lượng VaccinePackageDetail hiện tại đã đạt totalDoses chưa
+      if (currentDetailsCount >= totalDoses) {
+        notification.error({
+          message: "Error",
+          description: `Số lượng chi tiết gói vắc xin đã đạt tối đa (${totalDoses}) cho gói "${selectedPackage.name}"!`,
+        });
+        setLoading(false);
+        return;
+      }
+
       const doseNumber = values.doseNumber;
 
       // Kiểm tra điều kiện: doseNumber không được vượt quá totalDoses

@@ -41,17 +41,24 @@ const Payment = () => {
   useEffect(() => {
     const updatePaymentStatusAndGenerateDetails = async (paymentId: number) => {
       try {
+        // Kiểm tra xem paymentId có hợp lệ không
+        if (!Number.isInteger(paymentId) || paymentId <= 0) {
+          throw new Error("Payment ID không hợp lệ");
+        }
+
         // Cập nhật trạng thái thanh toán thành 2 (thành công)
-        await paymentService.updatePayment(paymentId, {
+        const updatedPayment = await paymentService.updatePayment(paymentId, {
           paymentStatus: 2,
         });
-        console.log(`Payment status updated to 2 for paymentId: ${paymentId}`);
+        console.log(
+          `Payment status updated to 2 for paymentId: ${paymentId}`,
+          updatedPayment
+        );
 
         // Gọi API generatePaymentDetail để tạo chi tiết thanh toán
-        const paymentDetails = await paymentDetailService.generatePaymentDetail(
-          paymentId
-        );
-        console.log("Generated Payment Details:", paymentDetails);
+        const generatedDetails =
+          await paymentDetailService.generatePaymentDetail(paymentId);
+        console.log("Generated Payment Details:", generatedDetails);
         message.success("Tạo chi tiết thanh toán thành công!");
       } catch (error) {
         message.error(
@@ -84,16 +91,33 @@ const Payment = () => {
 
     // Kiểm tra nếu thanh toán thành công (responseCode === "00")
     if (newPaymentDetails.responseCode === "00") {
-      // Trích xuất paymentId từ orderInfo (giả định orderInfo chứa paymentId)
-      const orderInfo = newPaymentDetails.orderInfo || "";
-      const paymentIdMatch = orderInfo.match(/paymentId:(\d+)/);
-      const paymentId = paymentIdMatch ? parseInt(paymentIdMatch[1], 10) : 0;
+      // Lấy paymentId từ orderInfo
+      let paymentId = 0;
+      if (newPaymentDetails.orderInfo) {
+        paymentId = parseInt(newPaymentDetails.orderInfo, 10);
+      }
 
-      if (paymentId) {
+      // Kiểm tra và điều chỉnh paymentId
+      if (paymentId && !isNaN(paymentId)) {
+        // Đảm bảo paymentId nằm trong phạm vi hợp lệ (nếu cần)
+        if (paymentId > 2147483647) {
+          console.warn(
+            "Payment ID vượt quá giới hạn int32, thử cắt bớt:",
+            paymentId
+          );
+          paymentId = paymentId % 2147483647; // Cắt bớt nếu cần
+        }
         updatePaymentStatusAndGenerateDetails(paymentId); // Cập nhật trạng thái và tạo chi tiết thanh toán
       } else {
         message.error("Không tìm thấy paymentId để xử lý!");
+        console.log("OrderInfo:", newPaymentDetails.orderInfo);
+        console.log("TxnRef:", newPaymentDetails.txnRef);
       }
+    } else {
+      console.log(
+        "Thanh toán không thành công, responseCode:",
+        newPaymentDetails.responseCode
+      );
     }
   }, []);
 

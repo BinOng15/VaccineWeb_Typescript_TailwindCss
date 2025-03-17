@@ -7,7 +7,6 @@ import {
   Space,
   Row,
   Col,
-  Tabs,
   message,
   Modal,
   Descriptions,
@@ -27,7 +26,6 @@ import vaccinePackageService from "../../../service/vaccinePackageService";
 import { ColumnType } from "antd/es/table";
 
 const { Search } = Input;
-const { TabPane } = Tabs;
 
 interface VaccinePackage extends VaccinePackageResponseDTO {
   vaccinePackageId: number;
@@ -42,7 +40,6 @@ const VaccinePackageManagePage: React.FC = () => {
     total: 0,
   });
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [activeTab, setActiveTab] = useState("activePackages");
   const [isAddPackageModalVisible, setIsAddPackageModalVisible] =
     useState(false);
   const [isEditPackageModalVisible, setIsEditPackageModalVisible] =
@@ -55,23 +52,23 @@ const VaccinePackageManagePage: React.FC = () => {
     null
   );
 
-  const fetchVaccinePackages = async () => {
+  const fetchVaccinePackages = async (
+    page: number = 1,
+    pageSize: number = 5
+  ) => {
     setLoading(true);
     try {
-      const response = await vaccinePackageService.getAllPackages();
-      console.log("Phản hồi API:", response);
+      const response = await vaccinePackageService.getAllPackages(); // Giả sử API hỗ trợ phân trang
       const filteredPackages = response
-        .filter((pkg) =>
-          activeTab === "inactivePackages"
-            ? pkg.isActive === 0
-            : pkg.isActive === 1
-        )
+        .filter((pkg) => pkg.isActive === 1)
         .map((pkg) => ({ ...pkg, vaccinePackageId: pkg.vaccinePackageId }));
-      console.log("Gói vaccine đã lọc:", filteredPackages);
-      setVaccinePackages(filteredPackages);
+      const start = (page - 1) * pageSize;
+      const end = start + pageSize;
+      const paginatedPackages = filteredPackages.slice(start, end);
+      setVaccinePackages(paginatedPackages);
       setPagination({
-        current: 1,
-        pageSize: pagination.pageSize,
+        current: page,
+        pageSize: pageSize,
         total: filteredPackages.length,
       });
     } catch (error) {
@@ -84,21 +81,31 @@ const VaccinePackageManagePage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchVaccinePackages();
-  }, [activeTab]);
-
   const handleTableChange = (pagination: any) => {
     const { current, pageSize } = pagination;
-    setPagination((prev) => ({ ...prev, current, pageSize }));
-    fetchVaccinePackages();
+    fetchVaccinePackages(current, pageSize);
   };
+
+  useEffect(() => {
+    fetchVaccinePackages();
+  }, []); // Không còn phụ thuộc vào activeTab
+
+  // const handleTableChange = (pagination: any) => {
+  //   const { current, pageSize } = pagination;
+  //   setPagination((prev) => ({ ...prev, current, pageSize }));
+  //   fetchVaccinePackages();
+  // };
 
   const onSearch = (value: string) => {
     setSearchKeyword(value);
     setVaccinePackages((prevPackages) =>
-      prevPackages.filter((pkg) =>
-        pkg.name.toLowerCase().includes(value.toLowerCase())
+      prevPackages.filter(
+        (pkg) =>
+          pkg.isActive === 1 &&
+          (value
+            ? pkg.name.toLowerCase().includes(value.toLowerCase()) ||
+              pkg.description.toLowerCase().includes(value.toLowerCase())
+            : true)
       )
     );
   };
@@ -212,10 +219,6 @@ const VaccinePackageManagePage: React.FC = () => {
     });
   };
 
-  const handleTabChange = (key: string) => {
-    setActiveTab(key);
-  };
-
   const columns: ColumnType<VaccinePackageResponseDTO>[] = [
     {
       title: "STT",
@@ -296,94 +299,47 @@ const VaccinePackageManagePage: React.FC = () => {
       <h2 className="text-2xl font-bold text-center p-2 rounded-t-lg">
         QUẢN LÝ GÓI VẮC XIN
       </h2>
-      <Tabs
-        className="custom-tabs"
-        defaultActiveKey="activePackages"
-        onChange={handleTabChange}
-      >
-        <TabPane tab="Gói vaccine đang hoạt động" key="activePackages">
-          <Row justify="space-between" style={{ marginBottom: 16 }}>
-            <Col>
-              <Space className="custom-search">
-                <Search
-                  placeholder="Tìm kiếm theo tên hoặc mô tả"
-                  onSearch={onSearch}
-                  enterButton
-                  allowClear
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                />
-                <ReloadOutlined
-                  onClick={handleReset}
-                  style={{ fontSize: "24px", cursor: "pointer" }}
-                />
-              </Space>
-            </Col>
-            <Col>
-              <Button
-                type="primary"
-                className="custom-button"
-                onClick={handleAddPackage}
-              >
-                Tạo mới gói vaccine
-              </Button>
-            </Col>
-          </Row>
-          <Table
-            columns={columns}
-            dataSource={vaccinePackages}
-            rowKey="vaccinePackageId"
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-            }}
-            loading={loading}
-            onChange={handleTableChange}
-          />
-        </TabPane>
-        <TabPane tab="Gói vaccine không hoạt động" key="inactivePackages">
-          <Row justify="space-between" style={{ marginBottom: 16 }}>
-            <Col>
-              <Space>
-                <Search
-                  placeholder="Tìm kiếm theo tên hoặc mô tả"
-                  onSearch={onSearch}
-                  enterButton
-                  allowClear
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                />
-                <ReloadOutlined
-                  onClick={handleReset}
-                  style={{ fontSize: "24px", cursor: "pointer" }}
-                />
-              </Space>
-            </Col>
-            <Col>
-              <Button type="primary" onClick={handleAddPackage}>
-                Tạo mới gói vaccine
-              </Button>
-            </Col>
-          </Row>
-          <Table
-            columns={columns}
-            dataSource={vaccinePackages}
-            rowKey="vaccinePackageId"
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-            }}
-            loading={loading}
-            onChange={handleTableChange}
-          />
-        </TabPane>
-      </Tabs>
+      <Row justify="space-between" style={{ marginBottom: 16 }}>
+        <Col>
+          <Space className="custom-search">
+            <Search
+              placeholder="Tìm kiếm theo tên hoặc mô tả"
+              onSearch={onSearch}
+              enterButton
+              allowClear
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+            />
+            <ReloadOutlined
+              onClick={handleReset}
+              style={{ fontSize: "24px", cursor: "pointer" }}
+            />
+          </Space>
+        </Col>
+        <Col>
+          <Button
+            type="primary"
+            className="custom-button"
+            onClick={handleAddPackage}
+          >
+            Tạo mới gói vaccine
+          </Button>
+        </Col>
+      </Row>
+      <Table
+        columns={columns}
+        dataSource={vaccinePackages}
+        rowKey="vaccinePackageId"
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          showSizeChanger: true,
+          showQuickJumper: true,
+        }}
+        loading={loading}
+        onChange={handleTableChange}
+      />
 
       <AddVaccinePackageModal
         visible={isAddPackageModalVisible}

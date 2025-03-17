@@ -1,13 +1,20 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
-import { message, Select, Spin, Modal, Descriptions } from "antd";
+import { message, Select, Spin, Modal, Descriptions, Button } from "antd";
+import { CheckOutlined } from "@ant-design/icons";
 import vaccineProfileService from "../../service/vaccineProfileService";
 import childProfileService from "../../service/childProfileService";
 import diseaseService from "../../service/diseaseService";
-import { VaccineProfileResponseDTO } from "../../models/VaccineProfile";
+import {
+  UpdateVaccineProfileDTO,
+  VaccineProfileResponseDTO,
+} from "../../models/VaccineProfile";
 import { ChildProfileResponseDTO } from "../../models/ChildProfile";
 import { DiseaseResponseDTO } from "../../models/Disease";
+import { AppointmentResponseDTO } from "../../models/Appointment"; // Đảm bảo bạn đã import AppointmentResponseDTO
 import moment from "moment";
 import { useAuth } from "../../context/AuthContext";
+import appointmentService from "../../service/appointmentService";
 
 const { Option } = Select;
 
@@ -25,6 +32,13 @@ const ChildVaccineSchedule: React.FC = () => {
   const [selectedSchedule, setSelectedSchedule] =
     useState<VaccineProfileResponseDTO | null>(null);
   const [childBirthDate, setChildBirthDate] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [appointments, setAppointments] = useState<AppointmentResponseDTO[]>(
+    []
+  ); // Danh sách appointments
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<
+    number | null
+  >(null); // appointmentId được chọn
   const { user } = useAuth();
 
   useEffect(() => {
@@ -91,14 +105,110 @@ const ChildVaccineSchedule: React.FC = () => {
     }
   };
 
+  const fetchAppointments = async (childId: number) => {
+    try {
+      const data = await appointmentService.getAppointmentsByChildId(childId);
+      setAppointments(data);
+      if (data.length > 0) {
+        setSelectedAppointmentId(data[0].appointmentId); // Chọn mặc định cuộc hẹn đầu tiên
+      } else {
+        setSelectedAppointmentId(null);
+      }
+    } catch (error) {
+      console.error("Lỗi tải danh sách cuộc hẹn:", error);
+      message.error("Không thể tải danh sách cuộc hẹn");
+      setAppointments([]);
+      setSelectedAppointmentId(null);
+    }
+  };
+
   const handleCellClick = (schedule: VaccineProfileResponseDTO) => {
     setSelectedSchedule(schedule);
     setIsModalVisible(true);
+    setAppointments([]); // Reset danh sách appointments
+    setSelectedAppointmentId(null); // Reset appointmentId được chọn
+
+    // Gọi API để lấy danh sách appointments khi mở modal
+    fetchAppointments(schedule.childId);
   };
 
   const handleModalClose = () => {
     setIsModalVisible(false);
     setSelectedSchedule(null);
+    setAppointments([]); // Reset danh sách appointments khi đóng modal
+    setSelectedAppointmentId(null); // Reset appointmentId được chọn
+  };
+
+  const handleUpdateVaccineProfile = async () => {
+    if (!selectedSchedule || !selectedAppointmentId) return;
+
+    try {
+      setIsUpdating(true);
+
+      // Lấy appointmentDate từ appointment được chọn và định dạng theo dd/MM/yyyy
+      const selectedAppointment = appointments.find(
+        (app) => app.appointmentId === selectedAppointmentId
+      );
+      if (!selectedAppointment) {
+        message.error("Không tìm thấy cuộc hẹn được chọn!");
+        setIsUpdating(false);
+        return;
+      }
+      const formattedDate = moment(
+        selectedAppointment.appointmentDate,
+        "DD/MM/YYYY"
+      ).format("DD/MM/YYYY");
+
+      // Tạo payload với trường request
+      const updateData: UpdateVaccineProfileDTO = {
+        childId: selectedSchedule.childId,
+        appointmentId: selectedAppointmentId,
+        vaccinationDate: formattedDate,
+        diseaseId: selectedSchedule.diseaseId,
+      };
+
+      console.log("Payload gửi đi:", JSON.stringify(updateData, null, 2));
+
+      // Gửi yêu cầu cập nhật
+      await vaccineProfileService.updateVaccineProfile(
+        selectedSchedule.vaccineProfileId,
+        updateData
+      );
+
+      // Cập nhật dữ liệu cục bộ
+      setScheduleData((prev) =>
+        prev.map((item) =>
+          item.vaccineProfileId === selectedSchedule.vaccineProfileId
+            ? {
+                ...item,
+                vaccinationDate: formattedDate,
+                isCompleted: 1,
+                appointmentId: selectedAppointmentId,
+              }
+            : item
+        )
+      );
+
+      setSelectedSchedule((prev) =>
+        prev
+          ? {
+              ...prev,
+              vaccinationDate: formattedDate,
+              isCompleted: 1,
+              appointmentId: selectedAppointmentId,
+            }
+          : null
+      );
+
+      message.success("Cập nhật lịch tiêm chủng thành công");
+    } catch (error: any) {
+      console.error("Lỗi cập nhật lịch tiêm:", error);
+      const errorMessage =
+        error.response?.data?.detail || "Không thể cập nhật lịch tiêm chủng";
+      message.error(errorMessage);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const diseaseMap = diseases.reduce((acc, disease) => {
@@ -187,7 +297,7 @@ const ChildVaccineSchedule: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <h1 className="text-3xl font-bold text-[#102A83] mb-6 text-center">
-        Lịch Tiêm Chủng Cá Nhân
+        Hồ Sơ Tiêm Chủng Cá Nhân
       </h1>
 
       <div className="mb-6 flex flex-col items-center space-y-2 p-4 border border-blue-300 shadow-sm rounded-lg">
@@ -272,12 +382,26 @@ const ChildVaccineSchedule: React.FC = () => {
         </Spin>
       </div>
 
-      {/* Modal hiển thị chi tiết */}
       <Modal
-        title="CHI TIẾT LỊCH TIÊM CHỦNG CÁ NHÂN"
+        title="CHI TIẾT HỒ SƠ TIÊM CHỦNG CÁ NHÂN"
         visible={isModalVisible}
         onCancel={handleModalClose}
-        footer={null}
+        footer={[
+          <Button key="close" onClick={handleModalClose}>
+            Đóng
+          </Button>,
+          selectedSchedule?.isCompleted === 0 && (
+            <Button
+              key="submit"
+              type="primary"
+              loading={isUpdating}
+              onClick={handleUpdateVaccineProfile}
+              disabled={!selectedAppointmentId} // Vô hiệu hóa nút nếu chưa chọn cuộc hẹn
+            >
+              Cập nhật
+            </Button>
+          ),
+        ]}
         centered
       >
         {selectedSchedule && (
@@ -293,21 +417,67 @@ const ChildVaccineSchedule: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày dự kiến tiêm">
               {selectedSchedule.scheduledDate
-                ? moment(selectedSchedule.scheduledDate).format("DD/MM/YYYY")
+                ? moment(selectedSchedule.scheduledDate, "DD/MM/YYYY").format(
+                    "DD/MM/YYYY"
+                  )
                 : "N/A"}
             </Descriptions.Item>
             <Descriptions.Item label="Ngày tiêm thực tế">
-              {selectedSchedule.vaccinationDate
-                ? moment(selectedSchedule.vaccinationDate).format("DD/MM/YYYY")
-                : "Chưa đăng ký"}
+              {selectedSchedule.vaccinationDate ? (
+                <>
+                  {moment(
+                    selectedSchedule.vaccinationDate,
+                    "DD/MM/YYYY"
+                  ).format("DD/MM/YYYY")}
+                  {selectedSchedule.isCompleted === 1 && (
+                    <CheckOutlined style={{ color: "green", marginLeft: 8 }} />
+                  )}
+                </>
+              ) : selectedSchedule.isCompleted === 0 ? (
+                selectedAppointmentId && appointments.length > 0 ? (
+                  moment(
+                    appointments.find(
+                      (app) => app.appointmentId === selectedAppointmentId
+                    )?.appointmentDate,
+                    "DD/MM/YYYY"
+                  ).format("DD/MM/YYYY") || "Chưa chọn cuộc hẹn"
+                ) : (
+                  "Chưa chọn cuộc hẹn"
+                )
+              ) : (
+                "Chưa có"
+              )}
             </Descriptions.Item>
-
+            <Descriptions.Item label="Cuộc hẹn">
+              {selectedSchedule.isCompleted === 0 ? (
+                <Select
+                  placeholder="Chọn cuộc hẹn"
+                  style={{ width: "100%" }}
+                  onChange={(value: number) => setSelectedAppointmentId(value)}
+                  value={selectedAppointmentId}
+                  disabled={appointments.length === 0}
+                >
+                  {appointments.map((appointment) => (
+                    <Option
+                      key={appointment.appointmentId}
+                      value={appointment.appointmentId}
+                    >
+                      {`Cuộc hẹn ${appointment.appointmentId} - ${moment(
+                        appointment.appointmentDate,
+                        "DD/MM/YYYY"
+                      ).format("DD/MM/YYYY")}`}
+                    </Option>
+                  ))}
+                </Select>
+              ) : (
+                selectedSchedule.appointmentId || "Không có"
+              )}
+            </Descriptions.Item>
             <Descriptions.Item label="Tình trạng tiêm">
-              {selectedSchedule &&
-              typeof selectedSchedule.isCompleted === "number"
-                ? selectedSchedule.isCompleted === 0
-                  ? "Chưa tiêm"
-                  : "Đã tiêm"
+              {selectedSchedule.isCompleted === 0
+                ? "Chưa tiêm"
+                : selectedSchedule.isCompleted === 1
+                ? "Đã tiêm"
                 : "Không xác định"}
             </Descriptions.Item>
           </Descriptions>
