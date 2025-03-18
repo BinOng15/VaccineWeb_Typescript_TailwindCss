@@ -240,7 +240,7 @@ const AppointmentManagePage: React.FC = () => {
       setSelectedAppointment(latestAppointment);
 
       // Kiểm tra trạng thái sau khi tải lại
-      if (latestAppointment.appointmentStatus !== 1) {
+      if (latestAppointment.appointmentStatus !== 2) {
         message.error(
           "Chỉ có thể chọn mũi tiêm khi trạng thái là 'Đã lên lịch'!"
         );
