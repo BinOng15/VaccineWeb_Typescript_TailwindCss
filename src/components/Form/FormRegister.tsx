@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
 import { message, Button } from "antd";
 import userService from "../../service/userService";
-import GoogleLoginButton from "../GoogleLoginButton";
+//import GoogleLoginButton from "../GoogleLoginButton";
 import { useNavigate } from "react-router-dom";
 
 const FormRegister: React.FC = () => {
@@ -246,9 +246,9 @@ const FormRegister: React.FC = () => {
         </form>
 
         {/* Google Login Button */}
-        <div className="mt-4 flex justify-center">
+        {/* <div className="mt-4 flex justify-center">
           <GoogleLoginButton />
-        </div>
+        </div> */}
 
         {/* Bottom Links */}
         <div className="mt-4 text-center text-sm text-gray-700">
