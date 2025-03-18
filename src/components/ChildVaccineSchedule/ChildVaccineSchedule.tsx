@@ -11,7 +11,7 @@ import {
 } from "../../models/VaccineProfile";
 import { ChildProfileResponseDTO } from "../../models/ChildProfile";
 import { DiseaseResponseDTO } from "../../models/Disease";
-import { AppointmentResponseDTO } from "../../models/Appointment"; // Đảm bảo bạn đã import AppointmentResponseDTO
+import { AppointmentResponseDTO } from "../../models/Appointment";
 import moment from "moment";
 import { useAuth } from "../../context/AuthContext";
 import appointmentService from "../../service/appointmentService";
@@ -35,10 +35,10 @@ const ChildVaccineSchedule: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [appointments, setAppointments] = useState<AppointmentResponseDTO[]>(
     []
-  ); // Danh sách appointments
+  );
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<
     number | null
-  >(null); // appointmentId được chọn
+  >(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -108,11 +108,21 @@ const ChildVaccineSchedule: React.FC = () => {
   const fetchAppointments = async (childId: number) => {
     try {
       const data = await appointmentService.getAppointmentsByChildId(childId);
-      setAppointments(data);
-      if (data.length > 0) {
-        setSelectedAppointmentId(data[0].appointmentId); // Chọn mặc định cuộc hẹn đầu tiên
+      // Lọc các cuộc hẹn có appointmentStatus = 4 (Hoàn thành) và là tiêm lẻ (vaccineId không null, vaccinePackageId = null)
+      const completedSingleVaccinations = data.filter(
+        (app) =>
+          app.appointmentStatus === 4 &&
+          app.vaccineId !== null &&
+          app.vaccinePackageId === null
+      );
+      setAppointments(completedSingleVaccinations);
+      if (completedSingleVaccinations.length > 0) {
+        setSelectedAppointmentId(completedSingleVaccinations[0].appointmentId); // Chọn mặc định cuộc hẹn đầu tiên
       } else {
         setSelectedAppointmentId(null);
+        message.warning(
+          "Không có cuộc hẹn tiêm lẻ nào đã hoàn thành! (Chỉ các cuộc hẹn tiêm lẻ được hiển thị)"
+        );
       }
     } catch (error) {
       console.error("Lỗi tải danh sách cuộc hẹn:", error);
@@ -355,7 +365,18 @@ const ChildVaccineSchedule: React.FC = () => {
                             }
                           >
                             {schedules.length > 0 ? (
-                              <div>{schedules[0].doseNumber}</div>
+                              <div>
+                                {schedules[0].doseNumber}
+                                {schedules[0].isCompleted === 1 && (
+                                  <CheckOutlined
+                                    style={{
+                                      color: "green",
+                                      marginLeft: 4,
+                                      verticalAlign: "middle",
+                                    }}
+                                  />
+                                )}
+                              </div>
                             ) : (
                               ""
                             )}
@@ -396,7 +417,7 @@ const ChildVaccineSchedule: React.FC = () => {
               type="primary"
               loading={isUpdating}
               onClick={handleUpdateVaccineProfile}
-              disabled={!selectedAppointmentId} // Vô hiệu hóa nút nếu chưa chọn cuộc hẹn
+              disabled={!selectedAppointmentId || appointments.length === 0}
             >
               Cập nhật
             </Button>
@@ -429,9 +450,13 @@ const ChildVaccineSchedule: React.FC = () => {
                     selectedSchedule.vaccinationDate,
                     "DD/MM/YYYY"
                   ).format("DD/MM/YYYY")}
-                  {selectedSchedule.isCompleted === 1 && (
-                    <CheckOutlined style={{ color: "green", marginLeft: 8 }} />
-                  )}
+                  <CheckOutlined
+                    style={{
+                      color: "green",
+                      marginLeft: 8,
+                      verticalAlign: "middle",
+                    }}
+                  />
                 </>
               ) : selectedSchedule.isCompleted === 0 ? (
                 selectedAppointmentId && appointments.length > 0 ? (

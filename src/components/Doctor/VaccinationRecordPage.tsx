@@ -47,9 +47,9 @@ const VaccinationRecordPage: React.FC = () => {
   const [vaccinePackages, setVaccinePackages] = useState<
     VaccinePackageResponseDTO[]
   >([]);
-  const [paymentDetailsMap, setPaymentDetailsMap] = useState<{
-    [key: number]: PaymentDetailResponseDTO[];
-  }>({});
+  const [allPaymentDetails, setAllPaymentDetails] = useState<
+    PaymentDetailResponseDTO[]
+  >([]);
   const [vaccineNameMap, setVaccineNameMap] = useState<Map<number, string>>(
     new Map()
   );
@@ -63,8 +63,8 @@ const VaccinationRecordPage: React.FC = () => {
       case 1:
         text = "Đã lên lịch";
         style = {
-          color: "#1890ff", // Màu xanh lam
-          backgroundColor: "#e6f7ff", // Nền xanh nhạt
+          color: "#1890ff",
+          backgroundColor: "#e6f7ff",
           padding: "2px 8px",
           borderRadius: "4px",
         };
@@ -72,8 +72,8 @@ const VaccinationRecordPage: React.FC = () => {
       case 2:
         text = "Chờ tiêm";
         style = {
-          color: "#fa8c16", // Màu cam
-          backgroundColor: "#fff7e6", // Nền cam nhạt
+          color: "#fa8c16",
+          backgroundColor: "#fff7e6",
           padding: "2px 8px",
           borderRadius: "4px",
         };
@@ -81,8 +81,8 @@ const VaccinationRecordPage: React.FC = () => {
       case 3:
         text = "Chờ phản ứng";
         style = {
-          color: "#722ed1", // Màu tím
-          backgroundColor: "#f9f0ff", // Nền tím nhạt
+          color: "#722ed1",
+          backgroundColor: "#f9f0ff",
           padding: "2px 8px",
           borderRadius: "4px",
         };
@@ -90,8 +90,8 @@ const VaccinationRecordPage: React.FC = () => {
       case 4:
         text = "Hoàn thành";
         style = {
-          color: "#52c41a", // Màu xanh lá
-          backgroundColor: "#f6ffed", // Nền xanh lá nhạt
+          color: "#52c41a",
+          backgroundColor: "#f6ffed",
           padding: "2px 8px",
           borderRadius: "4px",
         };
@@ -99,8 +99,8 @@ const VaccinationRecordPage: React.FC = () => {
       case 5:
         text = "Đã hủy";
         style = {
-          color: "#ff4d4f", // Màu đỏ
-          backgroundColor: "#fff1f0", // Nền đỏ nhạt
+          color: "#ff4d4f",
+          backgroundColor: "#fff1f0",
           padding: "2px 8px",
           borderRadius: "4px",
         };
@@ -120,15 +120,15 @@ const VaccinationRecordPage: React.FC = () => {
   const getStatusColor = (status: number) => {
     switch (status) {
       case 2:
-        return "gold"; // Đang chờ tiêm - Vàng
+        return "gold";
       case 3:
-        return "orange"; // Đang chờ phản hồi - Cam
+        return "orange";
       case 4:
-        return "green"; // Đã hoàn tất - Xanh lá
+        return "green";
       case 5:
-        return "red"; // Đã hủy - Đỏ
+        return "red";
       default:
-        return "default"; // Không xác định - Mặc định
+        return "default";
     }
   };
 
@@ -258,21 +258,14 @@ const VaccinationRecordPage: React.FC = () => {
         }
       });
 
-      const paymentDetailsData = await Promise.all(paymentDetailsPromises);
-      const newPaymentDetailsMap = paymentDetailsData.reduce(
-        (acc, { paymentId, paymentDetails }) => {
-          const appointmentId = relevantPayments.find(
-            (p) => p.paymentId === paymentId
-          )?.appointmentId;
-          if (appointmentId) acc[appointmentId] = paymentDetails;
-          return acc;
-        },
-        {} as { [key: number]: PaymentDetailResponseDTO[] }
-      );
+      const allPaymentDetailsResponse =
+        await paymentDetailService.getAllPaymentDetails();
+      setAllPaymentDetails(allPaymentDetailsResponse);
+
+      await Promise.all(paymentDetailsPromises); // Giữ logic này để không làm gián đoạn (dù không sử dụng)
 
       const uniqueVaccinePackageDetailIds = new Set(
-        paymentDetailsData
-          .flatMap((item) => item.paymentDetails)
+        allPaymentDetailsResponse
           .map((detail) => detail.vaccinePackageDetailId || 0)
           .filter((id): id is number => id !== 0)
       );
@@ -301,7 +294,6 @@ const VaccinationRecordPage: React.FC = () => {
       setVaccineNameMap(newVaccineNameMap);
 
       setChildMap(newChildMap);
-      setPaymentDetailsMap(newPaymentDetailsMap);
       setAppointments(paginatedAppointments);
       setPagination({
         current: page,
@@ -462,20 +454,27 @@ const VaccinationRecordPage: React.FC = () => {
     {
       title: "Mũi Tiêm",
       key: "doseSequence",
-      width: 150,
+      width: 200,
       render: (appointment: AppointmentResponseDTO) => {
-        const details = paymentDetailsMap[appointment.appointmentId] || [];
-        if (!appointment.paymentDetailId) return "N/A";
-        const selectedDetail = details.find(
+        if (!appointment.paymentDetailId)
+          return <span style={{ color: "gray" }}>-</span>;
+        const selectedPaymentDetail = allPaymentDetails.find(
           (detail) => detail.paymentDetailId === appointment.paymentDetailId
         );
-        if (!selectedDetail) return "N/A";
+        if (!selectedPaymentDetail)
+          return <span style={{ color: "gray" }}>-</span>;
+
         const vaccineName =
-          vaccineNameMap.get(selectedDetail.vaccinePackageDetailId) ||
+          vaccineNameMap.get(selectedPaymentDetail.vaccinePackageDetailId) ||
           "Không xác định";
-        return selectedDetail.doseSequence
-          ? `Mũi ${selectedDetail.doseSequence} - ${vaccineName}`
-          : "N/A";
+        const statusText =
+          selectedPaymentDetail.isCompleted === 1 ? " (Hoàn thành)" : "";
+        return (
+          <span style={{ color: "red" }}>
+            Mũi {selectedPaymentDetail.doseSequence} - Vaccine: {vaccineName}
+            {statusText}
+          </span>
+        );
       },
     },
     { title: "Ngày hẹn", dataIndex: "appointmentDate" },
@@ -586,12 +585,9 @@ const VaccinationRecordPage: React.FC = () => {
             </p>
             <p>
               <strong>Tên Mũi Tiêm:</strong>{" "}
-              {paymentDetailsMap[selectedAppointment?.appointmentId || 0]
-                ?.length > 0
+              {allPaymentDetails.length > 0
                 ? (() => {
-                    const selectedDetail = paymentDetailsMap[
-                      selectedAppointment?.appointmentId || 0
-                    ].find(
+                    const selectedDetail = allPaymentDetails.find(
                       (detail) =>
                         detail.paymentDetailId ===
                         selectedAppointment?.paymentDetailId
@@ -602,8 +598,10 @@ const VaccinationRecordPage: React.FC = () => {
                             selectedDetail.vaccinePackageDetailId
                           ) || "Không xác định"
                         : "N/A";
+                    const statusText =
+                      selectedDetail?.isCompleted === 1 ? " (Hoàn thành)" : "";
                     return selectedDetail?.doseSequence
-                      ? `Mũi ${selectedDetail.doseSequence} - ${vaccineName}`
+                      ? `Mũi ${selectedDetail.doseSequence} - ${vaccineName}${statusText}`
                       : "N/A";
                   })()
                 : "N/A"}

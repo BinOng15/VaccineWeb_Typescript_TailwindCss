@@ -2,7 +2,7 @@
 import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { Form, Button, notification, Input } from "antd";
-import GoogleLoginButton from "../GoogleLoginButton";
+//import GoogleLoginButton from "../GoogleLoginButton";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { authServiceLogin, getCurrentUser } from "../../service/authService";
@@ -137,9 +137,9 @@ const FormLogin = () => {
             Đăng nhập
           </Button>
         </Form>
-        <div className="mt-4 flex justify-center">
+        {/* <div className="mt-4 flex justify-center">
           <GoogleLoginButton />
-        </div>
+        </div> */}
         <div className="mt-4 text-center text-sm text-gray-600">
           <p>
             Bạn chưa có tài khoản?{" "}

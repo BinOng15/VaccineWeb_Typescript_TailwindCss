@@ -28,9 +28,8 @@ import { VaccineResponseDTO } from "../../models/Vaccine";
 import { VaccinePackageResponseDTO } from "../../models/VaccinePackage";
 import vaccineService from "../../service/vaccineService";
 import vaccinePackageService from "../../service/vaccinePackageService";
-import paymentService from "../../service/paymentService"; // Thêm service payment
 import paymentDetailService from "../../service/paymentDetailService";
-import vaccinePackageDetailService from "../../service/vaccinePackageDetailService"; // Thêm service vaccinePackageDetail
+import vaccinePackageDetailService from "../../service/vaccinePackageDetailService";
 import Search from "antd/es/input/Search";
 import { ColumnType } from "antd/es/table";
 import { ChildProfileResponseDTO } from "../../models/ChildProfile";
@@ -53,9 +52,9 @@ function CustomerAppointment() {
   const [vaccinePackages, setVaccinePackages] = useState<
     VaccinePackageResponseDTO[]
   >([]);
-  const [paymentDetailsMap, setPaymentDetailsMap] = useState<{
-    [key: number]: PaymentDetailResponseDTO[];
-  }>({});
+  const [allPaymentDetails, setAllPaymentDetails] = useState<
+    PaymentDetailResponseDTO[]
+  >([]);
   const [vaccineNameMap, setVaccineNameMap] = useState<Map<number, string>>(
     new Map()
   );
@@ -86,7 +85,8 @@ function CustomerAppointment() {
       const allVaccinePackages = await vaccinePackageService.getAllPackages();
       const allChildProfiles = await childProfileService.getAllChildProfiles();
       const allAppointments = await appointmentService.getAllAppointments();
-      const allPayments = await paymentService.getAllPayments(); // Lấy tất cả payment
+      const allPaymentDetailsResponse =
+        await paymentDetailService.getAllPaymentDetails();
 
       const userChildIds = allChildProfiles
         .filter((profile) => profile.userId === user.userId)
@@ -94,6 +94,7 @@ function CustomerAppointment() {
       setChildProfiles(allChildProfiles);
       setVaccines(allVaccines);
       setVaccinePackages(allVaccinePackages);
+      setAllPaymentDetails(allPaymentDetailsResponse);
 
       const filteredAppointments = allAppointments.filter((appointment) =>
         userChildIds.includes(appointment.childId)
@@ -101,45 +102,9 @@ function CustomerAppointment() {
       setAppointments(filteredAppointments);
       setOriginalAppointments(filteredAppointments);
 
-      // Tạo paymentDetailsMap
-      const appointmentIds = filteredAppointments.map(
-        (app) => app.appointmentId
-      );
-      const relevantPayments = allPayments.filter((payment) =>
-        appointmentIds.includes(payment.appointmentId)
-      );
-      const paymentIds = relevantPayments.map((payment) => payment.paymentId);
-
-      const paymentDetailsPromises = paymentIds.map(async (paymentId) => {
-        try {
-          const paymentDetails =
-            await paymentDetailService.getPaymentDetailsByPaymentId(paymentId);
-          return { paymentId, paymentDetails };
-        } catch (error) {
-          console.error(
-            `Lỗi khi lấy payment details cho payment ${paymentId}:`,
-            error
-          );
-          return { paymentId, paymentDetails: [] };
-        }
-      });
-
-      const paymentDetailsData = await Promise.all(paymentDetailsPromises);
-      const newPaymentDetailsMap = paymentDetailsData.reduce(
-        (acc, { paymentId, paymentDetails }) => {
-          const appointmentId = relevantPayments.find(
-            (p) => p.paymentId === paymentId
-          )?.appointmentId;
-          if (appointmentId) acc[appointmentId] = paymentDetails;
-          return acc;
-        },
-        {} as { [key: number]: PaymentDetailResponseDTO[] }
-      );
-
       // Tạo vaccineNameMap
       const uniqueVaccinePackageDetailIds = new Set(
-        paymentDetailsData
-          .flatMap((item) => item.paymentDetails)
+        allPaymentDetailsResponse
           .map((detail) => detail.vaccinePackageDetailId || 0)
           .filter((id): id is number => id !== 0)
       );
@@ -166,7 +131,6 @@ function CustomerAppointment() {
         }
       }
       setVaccineNameMap(newVaccineNameMap);
-      setPaymentDetailsMap(newPaymentDetailsMap);
 
       setPagination({
         current: 1,
@@ -292,20 +256,27 @@ function CustomerAppointment() {
     {
       title: "Mũi Tiêm",
       key: "doseSequence",
-      width: 150,
+      width: 200,
       render: (record: AppointmentResponseDTO) => {
-        const details = paymentDetailsMap[record.appointmentId] || [];
-        if (!record.paymentDetailId) return "-";
-        const selectedDetail = details.find(
+        if (!record.paymentDetailId)
+          return <span style={{ color: "gray" }}>-</span>;
+        const selectedPaymentDetail = allPaymentDetails.find(
           (detail) => detail.paymentDetailId === record.paymentDetailId
         );
-        if (!selectedDetail) return "-";
+        if (!selectedPaymentDetail)
+          return <span style={{ color: "gray" }}>-</span>;
+
         const vaccineName =
-          vaccineNameMap.get(selectedDetail.vaccinePackageDetailId) ||
+          vaccineNameMap.get(selectedPaymentDetail.vaccinePackageDetailId) ||
           "Không xác định";
-        return selectedDetail.doseSequence
-          ? `Mũi ${selectedDetail.doseSequence} - ${vaccineName}`
-          : "-";
+        const statusText =
+          selectedPaymentDetail.isCompleted === 1 ? " (Hoàn thành)" : "";
+        return (
+          <span style={{ color: "red" }}>
+            Mũi {selectedPaymentDetail.doseSequence} - Vaccine: {vaccineName}
+            {statusText}
+          </span>
+        );
       },
     },
     {
@@ -496,12 +467,9 @@ function CustomerAppointment() {
                 ).format("DD/MM/YYYY")}
               </Descriptions.Item>
               <Descriptions.Item label="Tên Mũi Tiêm">
-                {paymentDetailsMap[selectedAppointment?.appointmentId || 0]
-                  ?.length > 0
+                {allPaymentDetails.length > 0
                   ? (() => {
-                      const selectedDetail = paymentDetailsMap[
-                        selectedAppointment?.appointmentId || 0
-                      ].find(
+                      const selectedDetail = allPaymentDetails.find(
                         (detail) =>
                           detail.paymentDetailId ===
                           selectedAppointment?.paymentDetailId
@@ -512,8 +480,12 @@ function CustomerAppointment() {
                               selectedDetail.vaccinePackageDetailId
                             ) || "Không xác định"
                           : "-";
+                      const statusText =
+                        selectedDetail?.isCompleted === 1
+                          ? " (Hoàn thành)"
+                          : "";
                       return selectedDetail?.doseSequence
-                        ? `Mũi ${selectedDetail.doseSequence} - ${vaccineName}`
+                        ? `Mũi ${selectedDetail.doseSequence} - ${vaccineName}${statusText}`
                         : "-";
                     })()
                   : "-"}

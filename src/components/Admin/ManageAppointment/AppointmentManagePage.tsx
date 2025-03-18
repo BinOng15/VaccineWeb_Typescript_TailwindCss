@@ -478,7 +478,7 @@ const AppointmentManagePage: React.FC = () => {
         onOk: async () => {
           try {
             const updateData: UpdateAppointmentDTO = {
-              appointmentStatus: AppointmentStatus.Pending,
+              appointmentStatus: AppointmentStatus.WaitingForInjection,
             };
             const updatedAppointment =
               await appointmentService.updateAppointment(
