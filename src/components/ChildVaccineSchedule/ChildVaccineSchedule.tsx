@@ -15,6 +15,7 @@ import { AppointmentResponseDTO } from "../../models/Appointment";
 import moment from "moment";
 import { useAuth } from "../../context/AuthContext";
 import appointmentService from "../../service/appointmentService";
+import { AppointmentStatus } from "../../models/Type/enum";
 
 const { Option } = Select;
 
@@ -111,7 +112,7 @@ const ChildVaccineSchedule: React.FC = () => {
       // Lọc các cuộc hẹn có appointmentStatus = 4 (Hoàn thành) và là tiêm lẻ (vaccineId không null, vaccinePackageId = null)
       const completedSingleVaccinations = data.filter(
         (app) =>
-          app.appointmentStatus === 4 &&
+          app.appointmentStatus === AppointmentStatus.Completed &&
           app.vaccineId !== null &&
           app.vaccinePackageId === null
       );
