@@ -312,25 +312,35 @@ const VaccinationRecordPage: React.FC = () => {
   const handleConfirmAndCompleteDose = async (
     appointment: AppointmentResponseDTO
   ) => {
-    if (appointment.appointmentStatus !== 2) {
-      message.error("Chỉ có thể xác nhận khi trạng thái là 'Đang chờ tiêm'!");
+    if (
+      appointment.appointmentStatus === 1 ||
+      appointment.appointmentStatus === 5
+    ) {
+      message.error("Không thể xác nhận trạng thái này!");
       return;
     }
 
     try {
-      const updateAppointmentData: UpdateAppointmentDTO = {
-        appointmentStatus: 3,
-      };
-      await appointmentService.updateAppointment(
-        appointment.appointmentId,
-        updateAppointmentData
-      );
+      if (appointment.appointmentStatus === 2) {
+        // Chuyển từ trạng thái 2 (Chờ tiêm) sang 3 (Chờ phản ứng)
+        const updateAppointmentData: UpdateAppointmentDTO = {
+          appointmentStatus: 3,
+        };
+        await appointmentService.updateAppointment(
+          appointment.appointmentId,
+          updateAppointmentData
+        );
+        message.success(
+          "Đã chuyển sang 'Đang chờ phản hồi'. Vui lòng nhập phản ứng!"
+        );
+        setSelectedAppointment({ ...appointment, appointmentStatus: 3 });
+        setIsReactionModalVisible(true);
+      } else if (appointment.appointmentStatus === 3) {
+        // Chuyển từ trạng thái 3 (Chờ phản ứng) sang 4 (Hoàn thành)
+        setSelectedAppointment({ ...appointment, appointmentStatus: 3 }); // Cập nhật tạm thời để mở modal
+        setIsReactionModalVisible(true);
+      }
 
-      message.success(
-        "Đã chuyển sang 'Đang chờ phản hồi'. Vui lòng nhập phản ứng!"
-      );
-      setSelectedAppointment({ ...appointment, appointmentStatus: 3 });
-      setIsReactionModalVisible(true);
       fetchAppointments(pagination.current, pagination.pageSize, searchKeyword);
     } catch (error) {
       console.error("Lỗi khi xác nhận hoàn thành liều tiêm:", error);
@@ -345,7 +355,7 @@ const VaccinationRecordPage: React.FC = () => {
       const reaction = values.reaction;
 
       const updateData: UpdateAppointmentDTO = {
-        appointmentStatus: 4,
+        appointmentStatus: selectedAppointment.appointmentStatus === 2 ? 3 : 4, // 2 -> 3 hoặc 3 -> 4
         reaction: reaction,
       };
       await appointmentService.updateAppointment(
@@ -354,7 +364,9 @@ const VaccinationRecordPage: React.FC = () => {
       );
 
       message.success(
-        "Đã cập nhật trạng thái sang 'Đã hoàn tất' và lưu phản ứng",
+        `Đã cập nhật trạng thái sang '${
+          updateData.appointmentStatus === 3 ? "Đang chờ phản hồi" : "Hoàn tất"
+        }' và lưu phản ứng`,
         1.5,
         () => {
           fetchAppointments(
@@ -508,9 +520,16 @@ const VaccinationRecordPage: React.FC = () => {
           <CheckOutlined
             onClick={() => handleConfirmAndCompleteDose(appointment)}
             style={{
-              color: appointment.appointmentStatus === 2 ? "green" : "gray",
+              color:
+                appointment.appointmentStatus === 2 ||
+                appointment.appointmentStatus === 3
+                  ? "green"
+                  : "gray",
               cursor:
-                appointment.appointmentStatus === 2 ? "pointer" : "not-allowed",
+                appointment.appointmentStatus === 2 ||
+                appointment.appointmentStatus === 3
+                  ? "pointer"
+                  : "not-allowed",
               fontSize: "18px",
             }}
             title="Hoàn thành lịch tiêm"
