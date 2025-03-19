@@ -16,6 +16,8 @@ import moment from "moment";
 import { useAuth } from "../../context/AuthContext";
 import appointmentService from "../../service/appointmentService";
 import { AppointmentStatus } from "../../models/Type/enum";
+import { VaccineResponseDTO } from "../../models/Vaccine";
+import vaccineService from "../../service/vaccineService";
 
 const { Option } = Select;
 
@@ -25,6 +27,7 @@ const ChildVaccineSchedule: React.FC = () => {
   );
   const [children, setChildren] = useState<ChildProfileResponseDTO[]>([]);
   const [diseases, setDiseases] = useState<DiseaseResponseDTO[]>([]);
+  const [vaccines, setVaccines] = useState<VaccineResponseDTO[]>([]);
   const [selectedChild, setSelectedChild] = useState<number | undefined>(
     undefined
   );
@@ -45,6 +48,7 @@ const ChildVaccineSchedule: React.FC = () => {
   useEffect(() => {
     fetchChildren();
     fetchDiseases();
+    fetchVaccines();
   }, [user]);
 
   useEffect(() => {
@@ -55,6 +59,16 @@ const ChildVaccineSchedule: React.FC = () => {
       setChildBirthDate(null);
     }
   }, [selectedChild]);
+
+  const fetchVaccines = async () => {
+    try {
+      const data = await vaccineService.getAllVaccines();
+      setVaccines(data);
+    } catch (error) {
+      console.error("Lỗi tải danh sách vaccine:", error);
+      message.error("Không thể tải danh sách vaccine");
+    }
+  };
 
   const fetchScheduleData = async (childId: number) => {
     try {
@@ -109,20 +123,34 @@ const ChildVaccineSchedule: React.FC = () => {
   const fetchAppointments = async (childId: number) => {
     try {
       const data = await appointmentService.getAppointmentsByChildId(childId);
-      // Lọc các cuộc hẹn có appointmentStatus = 4 (Hoàn thành) và là tiêm lẻ (vaccineId không null, vaccinePackageId = null)
-      const completedSingleVaccinations = data.filter(
-        (app) =>
-          app.appointmentStatus === AppointmentStatus.Completed &&
+
+      // Log dữ liệu gốc để kiểm tra
+      console.log("All appointments for childId", childId, ":", data);
+
+      // Lọc các cuộc hẹn có appointmentStatus = 4 (Hoàn thành) và là tiêm lẻ (vaccineId không null, vaccinePackageId = null hoặc 0)
+      const completedSingleVaccinations = data.filter((app) => {
+        const isCompleted =
+          app.appointmentStatus === AppointmentStatus.Completed; // Hoặc AppointmentStatus.Completed nếu dùng enum
+        const isSingleVaccination =
           app.vaccineId !== null &&
-          app.vaccinePackageId === null
+          app.vaccineId !== undefined &&
+          (app.vaccinePackageId === null || app.vaccinePackageId === 0); // Chấp nhận cả null và 0
+        return isCompleted && isSingleVaccination;
+      });
+
+      // Log dữ liệu sau khi lọc để kiểm tra
+      console.log(
+        "Filtered completed single vaccinations:",
+        completedSingleVaccinations
       );
+
       setAppointments(completedSingleVaccinations);
       if (completedSingleVaccinations.length > 0) {
         setSelectedAppointmentId(completedSingleVaccinations[0].appointmentId); // Chọn mặc định cuộc hẹn đầu tiên
       } else {
         setSelectedAppointmentId(null);
         message.warning(
-          "Không có cuộc hẹn tiêm lẻ nào đã hoàn thành! (Chỉ các cuộc hẹn tiêm lẻ được hiển thị)"
+          "Không có cuộc hẹn tiêm lẻ nào đã hoàn thành cho trẻ này! (Chỉ các cuộc hẹn tiêm lẻ được hiển thị)"
         );
       }
     } catch (error) {
@@ -221,6 +249,11 @@ const ChildVaccineSchedule: React.FC = () => {
       setIsUpdating(false);
     }
   };
+
+  const vaccineMap = vaccines.reduce((acc, vaccine) => {
+    acc[vaccine.vaccineId] = vaccine.name;
+    return acc;
+  }, {} as Record<number, string>);
 
   const diseaseMap = diseases.reduce((acc, disease) => {
     acc[disease.diseaseId] = disease.name;
@@ -491,7 +524,12 @@ const ChildVaccineSchedule: React.FC = () => {
                       {`Cuộc hẹn ${appointment.appointmentId} - ${moment(
                         appointment.appointmentDate,
                         "DD/MM/YYYY"
-                      ).format("DD/MM/YYYY")}`}
+                      ).format("DD/MM/YYYY")} - Vaccine: ${
+                        appointment.vaccineId !== null
+                          ? vaccineMap[appointment.vaccineId] ||
+                            "Không xác định"
+                          : "Không xác định"
+                      }`}
                     </Option>
                   ))}
                 </Select>
