@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from "react";
+import React, { useState } from "react";
 import {
   Modal,
   Form,
@@ -12,6 +12,7 @@ import {
 import { UploadOutlined } from "@ant-design/icons";
 import vaccineService from "../../service/vaccineService";
 import { CreateVaccineDTO } from "../../models/Vaccine";
+import { Dayjs } from "dayjs"; // Thay moment bằng dayjs
 
 interface AddVaccineModalProps {
   visible: boolean;
@@ -25,21 +26,23 @@ const AddVaccineModal: React.FC<AddVaccineModalProps> = ({
   refreshVaccines,
 }) => {
   const [form] = Form.useForm();
+  const [dateOfManufacture, setDateOfManufacture] = useState<Dayjs | null>(null);
 
   const handleSubmit = async (values: any) => {
     try {
       const vaccineData: CreateVaccineDTO = {
         name: values.name,
-        image: values.image?.file || null, // Lấy file từ Upload
+        image: values.image?.file || null,
         description: values.description,
         origin: values.origin,
         manufacturer: values.manufacturer,
         price: parseFloat(values.price),
+        quantity: parseFloat(values.quantity),
         dateOfManufacture: values.dateOfManufacture.toISOString(),
         expiryDate: values.expiryDate.toISOString(),
       };
 
-      console.log("Vaccine Data to Send:", vaccineData); // Debug dữ liệu gửi lên
+      console.log("Vaccine Data to Send:", vaccineData);
       await vaccineService.createVaccine(vaccineData);
       notification.success({
         message: "Success",
@@ -47,6 +50,7 @@ const AddVaccineModal: React.FC<AddVaccineModalProps> = ({
       });
 
       form.resetFields();
+      setDateOfManufacture(null);
       refreshVaccines();
       onClose();
     } catch (error: any) {
@@ -61,7 +65,13 @@ const AddVaccineModal: React.FC<AddVaccineModalProps> = ({
 
   const handleCancel = () => {
     form.resetFields();
+    setDateOfManufacture(null);
     onClose();
+  };
+
+  // Hàm vô hiệu hóa ngày trước dateOfManufacture trong expiryDate
+  const disabledExpiryDate = (current: Dayjs) => {
+    return dateOfManufacture ? current.isBefore(dateOfManufacture, "day") : false;
   };
 
   return (
@@ -88,7 +98,7 @@ const AddVaccineModal: React.FC<AddVaccineModalProps> = ({
           ]}
         >
           <Upload
-            beforeUpload={() => false} // Ngăn upload tự động
+            beforeUpload={() => false}
             maxCount={1}
             accept="image/*"
           >
@@ -131,11 +141,22 @@ const AddVaccineModal: React.FC<AddVaccineModalProps> = ({
         </Form.Item>
 
         <Form.Item
+          label="Số lượng"
+          name="quantity"
+          rules={[{ required: true, message: "Hãy nhập số lượng!" }]}
+        >
+          <Input type="number" />
+        </Form.Item>
+
+        <Form.Item
           label="Ngày sản xuất"
           name="dateOfManufacture"
           rules={[{ required: true, message: "Hãy nhập vào ngày sản xuất!" }]}
         >
-          <DatePicker style={{ width: "100%" }} />
+          <DatePicker
+            style={{ width: "100%" }}
+            onChange={(date) => setDateOfManufacture(date)}
+          />
         </Form.Item>
 
         <Form.Item
@@ -143,7 +164,10 @@ const AddVaccineModal: React.FC<AddVaccineModalProps> = ({
           name="expiryDate"
           rules={[{ required: true, message: "Hãy nhập vào hạn sử dụng!" }]}
         >
-          <DatePicker style={{ width: "100%" }} />
+          <DatePicker
+            style={{ width: "100%" }}
+            disabledDate={disabledExpiryDate}
+          />
         </Form.Item>
 
         <Form.Item>

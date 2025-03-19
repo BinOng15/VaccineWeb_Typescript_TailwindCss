@@ -1,10 +1,10 @@
 import React from "react";
 import { Menu } from "antd";
 import {
-  SettingOutlined,
   FileTextOutlined,
   FileAddOutlined,
   CalendarOutlined,
+  DashOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -13,7 +13,7 @@ const CustomerSidebar: React.FC = () => {
   const location = useLocation();
 
   const menuItems = [
-    { key: "/my-profile", icon: <SettingOutlined />, label: "Hồ sơ cá nhân" },
+    { key: "/my-profile", icon: <DashOutlined />, label: "Hồ sơ cá nhân" },
     {
       key: "/child-profile-page",
       icon: <FileTextOutlined />,

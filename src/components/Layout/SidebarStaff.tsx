@@ -1,7 +1,6 @@
 import React from "react";
 import { Menu } from "antd";
 import {
-  SettingOutlined,
   DollarOutlined,
   ExperimentOutlined,
   GoldOutlined,
@@ -9,6 +8,10 @@ import {
   AppstoreOutlined,
   IdcardOutlined,
   HddOutlined,
+  CheckSquareOutlined,
+  CalendarOutlined,
+  MinusCircleOutlined,
+  DashOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -17,22 +20,42 @@ const StaffSidebar: React.FC = () => {
   const location = useLocation();
 
   const menuItems = [
-    { key: "/staff/dashboard", icon: <SettingOutlined />, label: "Bảng chính" },
+    { key: "/staff/dashboard", icon: <DashOutlined />, label: "Bảng chính" },
     {
       key: "/staff/manage-vaccine",
       icon: <ExperimentOutlined />,
       label: "Vắc xin lẻ",
     },
-
+    {
+      key: "/staff/manage-disease",
+      icon: <AppstoreOutlined />,
+      label: "Các loại bệnh",
+    },
+    {
+      key: "/staff/manage-vaccine-disease",
+      icon: <MinusCircleOutlined />,
+      label: "Bệnh - Vắc xin",
+    },
     {
       key: "/staff/manage-vaccine-package",
       icon: <GoldOutlined />,
       label: "Gói vắc xin",
     },
+
     {
       key: "/staff/manage-vaccine-package-detail",
       icon: <HddOutlined />,
       label: "Chi tiết gói vaccine",
+    },
+    {
+      key: "/staff/check-in",
+      icon: <CheckSquareOutlined />,
+      label: "Check in",
+    },
+    {
+      key: "/staff/payment",
+      icon: <DollarOutlined />,
+      label: "Thanh toán",
     },
     {
       key: "/staff/manage-appointment",
@@ -44,14 +67,10 @@ const StaffSidebar: React.FC = () => {
       icon: <IdcardOutlined />,
       label: "Hồ sơ của trẻ",
     },
-    {
-      key: "/staff/manage-disease",
-      icon: <AppstoreOutlined />,
-      label: "Các loại bệnh",
-    },
+
     {
       key: "/staff/manage-vaccine-schedule",
-      icon: <DollarOutlined />,
+      icon: <CalendarOutlined />,
       label: "Lịch tiêm chủng",
     },
   ];

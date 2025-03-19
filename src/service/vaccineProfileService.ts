@@ -40,7 +40,7 @@ const vaccineProfileService = {
 
   getVaccineProfileByChildId: async (
     childId: number
-  ): Promise<VaccineProfileResponseDTO> => {
+  ): Promise<VaccineProfileResponseDTO[]> => {
     try {
       const response: AxiosResponse = await axiosInstance.get(
         `/api/VaccineProfile/get-by-child-id/${childId}`
