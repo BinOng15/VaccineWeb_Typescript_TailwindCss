@@ -1,12 +1,6 @@
 import React from "react";
 import { Menu } from "antd";
-import {
-  SettingOutlined,
-  UserOutlined,
-  AppstoreOutlined,
-  DollarOutlined,
-  MonitorOutlined,
-} from "@ant-design/icons";
+import { SettingOutlined, UserOutlined } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const AdminSidebar: React.FC = () => {
@@ -16,21 +10,6 @@ const AdminSidebar: React.FC = () => {
   const menuItems = [
     { key: "/admin/dashboard", icon: <SettingOutlined />, label: "Bảng chính" },
     { key: "/admin/manage-user", icon: <UserOutlined />, label: "Tài khoản" },
-    {
-      key: "/admin/revenue",
-      icon: <DollarOutlined />,
-      label: "Doanh thu",
-    },
-    {
-      key: "/admin-manager-package",
-      icon: <MonitorOutlined />,
-      label: "Dữ liệu vắc xin",
-    },
-    {
-      key: "/admin/manage-disease",
-      icon: <AppstoreOutlined />,
-      label: "Dữ liệu tiêm chủng",
-    },
   ];
 
   return (

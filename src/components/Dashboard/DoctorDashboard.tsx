@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+
 import { Row, Col, Card, message } from "antd";
 import { Pie } from "@ant-design/charts";
 import appointmentService from "../../service/appointmentService";
@@ -8,7 +9,6 @@ interface DoctorDashboardStats {
   injectedAppointments: number; // Số lượng lịch tiêm đã tiêm (Injected = 4)
   waitingForResponseAppointments: number; // Số lượng lịch tiêm chờ phản ứng (WaitingForResponse = 5)
   completedAppointments: number; // Số lượng lịch tiêm đã hoàn thành (Completed = 6)
-  totalAppointments: number; // Tổng số lịch hẹn
 }
 
 const CardWidget: React.FC<{
@@ -31,7 +31,6 @@ const DoctorDashboard = () => {
     injectedAppointments: 0,
     waitingForResponseAppointments: 0,
     completedAppointments: 0,
-    totalAppointments: 0,
   });
   const [loading, setLoading] = useState(false);
 
@@ -45,9 +44,6 @@ const DoctorDashboard = () => {
       let injectedAppointments = 0;
       let waitingForResponseAppointments = 0;
       let completedAppointments = 0;
-      const totalAppointments = Array.isArray(allAppointments)
-        ? allAppointments.length
-        : 0;
 
       // Tính toán dựa trên dữ liệu trả về
       if (Array.isArray(allAppointments)) {
@@ -73,7 +69,6 @@ const DoctorDashboard = () => {
         injectedAppointments,
         waitingForResponseAppointments,
         completedAppointments,
-        totalAppointments,
       });
     } catch (error) {
       console.error("Lỗi khi lấy dữ liệu Doctor Dashboard:", error);
@@ -89,39 +84,23 @@ const DoctorDashboard = () => {
     fetchData();
   }, []);
 
-  // Dữ liệu cho 3 biểu đồ Pie
-  const injectedPieData = [
+  // Dữ liệu cho biểu đồ Pie với 3 trạng thái
+  const pieData = [
     { type: "Đã tiêm", value: stats.injectedAppointments },
-    {
-      type: "Khác",
-      value: stats.totalAppointments - stats.injectedAppointments,
-    },
-  ];
-
-  const waitingForResponsePieData = [
     {
       type: "Đang chờ phản hồi",
       value: stats.waitingForResponseAppointments,
     },
-    {
-      type: "Khác",
-      value: stats.totalAppointments - stats.waitingForResponseAppointments,
-    },
-  ];
-
-  const completedPieData = [
     { type: "Hoàn tất", value: stats.completedAppointments },
-    {
-      type: "Khác",
-      value: stats.totalAppointments - stats.completedAppointments,
-    },
   ];
 
-  // Cấu hình cho các biểu đồ Pie
+  // Cấu hình cho biểu đồ Pie
   const pieConfig = {
+    data: pieData,
     angleField: "value",
     colorField: "type",
-    height: 200, // Giảm chiều cao để vừa với 3 biểu đồ
+    color: ["#FF6384", "#36A2EB", "#4CAF50"], // Đỏ, Xanh dương, Xanh lá cho 3 trạng thái
+    height: 300,
     label: {
       type: "inner",
       offset: "-50%",
@@ -131,24 +110,6 @@ const DoctorDashboard = () => {
         fontSize: 14,
       },
     },
-  };
-
-  const injectedPieConfig = {
-    ...pieConfig,
-    data: injectedPieData,
-    color: ["#FF6384", "#E0E0E0"], // Đỏ cho "Đã tiêm", xám cho "Khác"
-  };
-
-  const waitingForResponsePieConfig = {
-    ...pieConfig,
-    data: waitingForResponsePieData,
-    color: ["#36A2EB", "#E0E0E0"], // Xanh dương cho "Đang chờ phản hồi", xám cho "Khác"
-  };
-
-  const completedPieConfig = {
-    ...pieConfig,
-    data: completedPieData,
-    color: ["#4CAF50", "#E0E0E0"], // Xanh lá cho "Hoàn tất", xám cho "Khác"
   };
 
   return (
@@ -182,21 +143,11 @@ const DoctorDashboard = () => {
             />
           </Col>
         </Row>
-        {/* Hàng 2: 3 biểu đồ Pie */}
-        <Row gutter={[16, 16]} justify="space-between">
-          <Col xs={24} sm={12} md={8} lg={8}>
-            <Card title="Trạng thái: Đã tiêm">
-              <Pie {...injectedPieConfig} />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={8} lg={8}>
-            <Card title="Trạng thái: Đang chờ phản hồi">
-              <Pie {...waitingForResponsePieConfig} />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={8} lg={8}>
-            <Card title="Trạng thái: Hoàn tất">
-              <Pie {...completedPieConfig} />
+        {/* Hàng 2: 1 biểu đồ Pie */}
+        <Row gutter={[16, 16]} justify="center">
+          <Col xs={24} lg={12}>
+            <Card title="Phân bố trạng thái lịch hẹn">
+              <Pie {...pieConfig} />
             </Card>
           </Col>
         </Row>
