@@ -5,10 +5,9 @@ export interface CreateVaccineProfileDTO {
 }
 
 export interface UpdateVaccineProfileDTO {
-  childId?: number | null;
   appointmentId?: number | null;
   vaccinationDate?: Date | string;
-  diseaseId: number;
+  isCompleted: number;
 }
 
 export interface VaccineProfileResponseDTO {

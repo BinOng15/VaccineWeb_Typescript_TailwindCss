@@ -163,9 +163,6 @@ const StaffDashboard: React.FC = () => {
 
   return (
     <section className="space-y-4 p-2 sm:space-y-6 sm:p-4">
-      <h1 className="text-lg font-bold sm:text-xl md:text-2xl flex justify-center">
-        Staff Dashboard
-      </h1>
       <div className="p-6 bg-gray-100 rounded-lg">
         {loading && <div className="text-center">Đang tải dữ liệu...</div>}
         {/* Hàng 1: 3 cột */}

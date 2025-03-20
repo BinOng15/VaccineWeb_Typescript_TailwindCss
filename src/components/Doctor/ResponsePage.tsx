@@ -382,13 +382,13 @@ const ResponsePage: React.FC = () => {
             // Bước 2: Lấy danh sách diseaseIds dựa trên vaccineId
             let diseaseIds: number[] = [];
             let vaccineId: number | null = null;
+            let doseSequence: number | null = null;
 
             if (appointment.vaccineId) {
-                // Trường hợp vaccine lẻ
                 vaccineId = appointment.vaccineId;
                 console.log(`Xử lý vaccine lẻ với vaccineId: ${vaccineId}`);
+                doseSequence = 1; // Giả sử vaccine lẻ chỉ có 1 liều
             } else if (appointment.paymentDetailId) {
-                // Trường hợp vaccine gói
                 const paymentDetail = allPaymentDetails.find(
                     (detail) => detail.paymentDetailId === appointment.paymentDetailId
                 );
@@ -397,13 +397,20 @@ const ResponsePage: React.FC = () => {
                         paymentDetail.vaccinePackageDetailId
                     );
                     vaccineId = packageDetail.vaccineId;
-                    console.log(`Xử lý vaccine gói với vaccineId: ${vaccineId}, từ paymentDetailId: ${paymentDetail.paymentDetailId}`);
+                    doseSequence = paymentDetail.doseSequence;
+                    console.log(`Xử lý vaccine gói với vaccineId: ${vaccineId}, từ paymentDetailId: ${paymentDetail.paymentDetailId}, doseSequence: ${doseSequence}`);
                 }
             }
 
             if (!vaccineId) {
                 console.log("Không tìm thấy vaccineId để lấy danh sách bệnh.");
                 message.error("Không tìm thấy vaccineId để cập nhật vaccine profile!");
+                return;
+            }
+
+            if (doseSequence === null) {
+                console.log("Không tìm thấy doseSequence để xác định liều cần cập nhật.");
+                message.error("Không tìm thấy doseSequence để cập nhật vaccine profile!");
                 return;
             }
 
@@ -422,36 +429,41 @@ const ResponsePage: React.FC = () => {
             // Bước 3: Lấy danh sách vaccineProfile của childId
             const childProfiles = await vaccineProfileService.getVaccineProfileByChildId(appointment.childId);
 
-            // Bước 4: Cập nhật liều tiếp theo chưa hoàn thành cho từng bệnh
+            // Bước 4: Cập nhật liều tương ứng với doseSequence cho từng bệnh
             for (const diseaseId of diseaseIds) {
-                // Lọc các vaccineProfile theo diseaseId và sắp xếp theo doseNumber
                 const profilesForDisease = childProfiles
                     .filter((vp: any) => vp.diseaseId === diseaseId)
                     .sort((a: any, b: any) => a.doseNumber - b.doseNumber);
 
-                // Tìm liều tiếp theo chưa hoàn thành (isCompleted = 0)
-                const nextProfileToUpdate = profilesForDisease.find(
-                    (vp: any) => vp.isCompleted === 0
-                );
-
-                if (!nextProfileToUpdate) {
-                    console.log(`Không còn liều nào chưa hoàn thành cho bệnh ${diseaseId}.`);
-                    continue; // Bỏ qua bệnh này nếu không còn liều nào để cập nhật
+                // Kiểm tra số lượng bản ghi VaccineProfile cho bệnh này
+                const expectedDoses = 3; // Giả sử mỗi bệnh cần 3 liều (có thể lấy từ dữ liệu khác)
+                if (profilesForDisease.length !== expectedDoses) {
+                    console.warn(`Số lượng liều cho bệnh ${diseaseId} không đúng. Dự kiến: ${expectedDoses}, Thực tế: ${profilesForDisease.length}`);
+                    message.warning(`Số lượng liều cho bệnh ${diseaseId} không đúng! Vui lòng kiểm tra dữ liệu.`);
+                    continue;
                 }
 
-                // Cập nhật liều tiếp theo
+                const profileToUpdate = profilesForDisease.find(
+                    (vp: any) => vp.doseNumber === doseSequence && vp.isCompleted === 0
+                );
+
+                if (!profileToUpdate) {
+                    console.log(`Không tìm thấy liều ${doseSequence} chưa hoàn thành cho bệnh ${diseaseId}.`);
+                    message.warning(`Không tìm thấy liều ${doseSequence} chưa hoàn thành cho bệnh ${diseaseId}.`);
+                    continue;
+                }
+
                 const updateData: UpdateVaccineProfileDTO = {
-                    childId: appointment.childId,
                     appointmentId: appointment.appointmentId,
-                    vaccinationDate: moment(appointment.appointmentDate, "DD/MM/YYYY").format("DD/MM/YYYY"),
-                    diseaseId: nextProfileToUpdate.diseaseId,
+                    vaccinationDate: moment(appointment.appointmentDate, "DD/MM/YYYY").toISOString(),
+                    isCompleted: 1,
                 };
 
                 await vaccineProfileService.updateVaccineProfile(
-                    nextProfileToUpdate.vaccineProfileId,
+                    profileToUpdate.vaccineProfileId,
                     updateData
                 );
-                console.log(`Đã cập nhật vaccineProfile ${nextProfileToUpdate.vaccineProfileId} cho child ${appointment.childId}, bệnh ${diseaseId}, liều ${nextProfileToUpdate.doseNumber}`);
+                console.log(`Đã cập nhật vaccineProfile ${profileToUpdate.vaccineProfileId} cho child ${appointment.childId}, bệnh ${diseaseId}, liều ${profileToUpdate.doseNumber}`);
             }
 
             message.success("Đã cập nhật vaccine profile thành công!");
