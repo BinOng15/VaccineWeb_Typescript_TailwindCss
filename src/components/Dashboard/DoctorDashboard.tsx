@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
-
 import { Row, Col, Card, message } from "antd";
 import { Pie } from "@ant-design/charts";
 import appointmentService from "../../service/appointmentService";
+import vaccineService from "../../service/vaccineService"; // Import vaccineService để lấy dữ liệu vaccine
 import { AppointmentStatus } from "../../models/Type/enum";
 
 interface DoctorDashboardStats {
   injectedAppointments: number; // Số lượng lịch tiêm đã tiêm (Injected = 4)
   waitingForResponseAppointments: number; // Số lượng lịch tiêm chờ phản ứng (WaitingForResponse = 5)
   completedAppointments: number; // Số lượng lịch tiêm đã hoàn thành (Completed = 6)
+  totalVaccineQuantity: number; // Tổng số vaccine (dựa trên quantity)
 }
 
 const CardWidget: React.FC<{
@@ -31,21 +32,22 @@ const DoctorDashboard = () => {
     injectedAppointments: 0,
     waitingForResponseAppointments: 0,
     completedAppointments: 0,
+    totalVaccineQuantity: 0,
   });
   const [loading, setLoading] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Lấy tất cả lịch hẹn từ API
+      // 1. Lấy tất cả lịch hẹn từ API
       const allAppointments = await appointmentService.getAllAppointments();
 
-      // Khởi tạo biến đếm
+      // Khởi tạo biến đếm cho lịch hẹn
       let injectedAppointments = 0;
       let waitingForResponseAppointments = 0;
       let completedAppointments = 0;
 
-      // Tính toán dựa trên dữ liệu trả về
+      // Tính toán dựa trên dữ liệu lịch hẹn
       if (Array.isArray(allAppointments)) {
         allAppointments.forEach((appointment) => {
           switch (appointment.appointmentStatus) {
@@ -64,11 +66,18 @@ const DoctorDashboard = () => {
         });
       }
 
+      // 2. Lấy tổng số vaccine từ API
+      const allVaccines = await vaccineService.getAllVaccines();
+      const totalVaccineQuantity = Array.isArray(allVaccines)
+        ? allVaccines.reduce((sum, vaccine) => sum + (vaccine.quantity || 0), 0)
+        : 0;
+
       // Cập nhật state
       setStats({
         injectedAppointments,
         waitingForResponseAppointments,
         completedAppointments,
+        totalVaccineQuantity,
       });
     } catch (error) {
       console.error("Lỗi khi lấy dữ liệu Doctor Dashboard:", error);
@@ -116,7 +125,7 @@ const DoctorDashboard = () => {
     <section className="space-y-4 p-2 sm:space-y-6 sm:p-4">
       <div className="p-6 bg-gray-100 rounded-lg">
         {loading && <div className="text-center">Đang tải dữ liệu...</div>}
-        {/* Hàng 1: 3 cột cho CardWidget */}
+        {/* Hàng 1: 3 cột */}
         <Row gutter={[16, 16]} className="mb-6">
           <Col xs={24} sm={12} md={8} lg={8}>
             <CardWidget
@@ -140,7 +149,17 @@ const DoctorDashboard = () => {
             />
           </Col>
         </Row>
-        {/* Hàng 2: 1 biểu đồ Pie */}
+        {/* Hàng 2: 1 cột */}
+        <Row gutter={[16, 16]} className="mb-6">
+          <Col xs={24} sm={12} md={8} lg={8}>
+            <CardWidget
+              title="Tổng số vaccine"
+              value={stats.totalVaccineQuantity}
+              color="teal"
+            />
+          </Col>
+        </Row>
+        {/* Hàng 3: Biểu đồ Pie */}
         <Row gutter={[16, 16]} justify="center">
           <Col xs={24} lg={12}>
             <Card title="Phân bố trạng thái lịch hẹn">
