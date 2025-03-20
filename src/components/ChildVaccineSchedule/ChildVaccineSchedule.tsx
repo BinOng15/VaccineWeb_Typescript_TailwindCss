@@ -214,10 +214,9 @@ const ChildVaccineSchedule: React.FC = () => {
       ).format("DD/MM/YYYY");
 
       const updateData: UpdateVaccineProfileDTO = {
-        childId: selectedSchedule.childId,
         appointmentId: selectedAppointmentId,
         vaccinationDate: formattedDate,
-        diseaseId: selectedSchedule.diseaseId,
+        isCompleted: 1,
       };
 
       console.log("Payload gửi đi:", JSON.stringify(updateData, null, 2));
