@@ -6,6 +6,7 @@ import vaccineProfileService from "../../service/vaccineProfileService";
 import childProfileService from "../../service/childProfileService";
 import diseaseService from "../../service/diseaseService";
 import vaccineScheduleService from "../../service/vaccineScheduleService";
+import vaccinePackageDetailService from "../../service/vaccinePackageDetailService"; // Thêm service mới
 import {
   UpdateVaccineProfileDTO,
   VaccineProfileResponseDTO,
@@ -20,6 +21,7 @@ import appointmentService from "../../service/appointmentService";
 import { AppointmentStatus } from "../../models/Type/enum";
 import { VaccineResponseDTO } from "../../models/Vaccine";
 import vaccineService from "../../service/vaccineService";
+import { VaccinePackageDetailResponseDTO } from "../../models/VaccinePackageDetails";
 
 const { Option } = Select;
 
@@ -29,6 +31,7 @@ const ChildVaccineSchedule: React.FC = () => {
   const [diseases, setDiseases] = useState<DiseaseResponseDTO[]>([]);
   const [vaccines, setVaccines] = useState<VaccineResponseDTO[]>([]);
   const [vaccineSchedules, setVaccineSchedules] = useState<VaccineScheduleResponseDTO[]>([]);
+  const [vaccinePackageDetails, setVaccinePackageDetails] = useState<VaccinePackageDetailResponseDTO[]>([]); // Thêm state để lưu VaccinePackageDetail
   const [selectedChild, setSelectedChild] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
@@ -146,9 +149,6 @@ const ChildVaccineSchedule: React.FC = () => {
         setSelectedAppointmentId(completedSingleVaccinations[0].appointmentId);
       } else {
         setSelectedAppointmentId(null);
-        message.warning(
-          "Không có cuộc hẹn tiêm lẻ nào đã hoàn thành cho trẻ này! (Chỉ các cuộc hẹn tiêm lẻ được hiển thị)"
-        );
       }
     } catch (error) {
       console.error("Lỗi tải danh sách cuộc hẹn:", error);
@@ -162,10 +162,19 @@ const ChildVaccineSchedule: React.FC = () => {
     try {
       const appointment = await appointmentService.getAppointmentById(appointmentId);
       setSelectedAppointment(appointment);
+
+      // Nếu là vaccine gói, lấy VaccinePackageDetail
+      if (appointment.vaccinePackageId && appointment.vaccinePackageId !== 0) {
+        const packageDetails = await vaccinePackageDetailService.getPackageDetailByVaccinePackageID(appointment.vaccinePackageId);
+        setVaccinePackageDetails(packageDetails);
+      } else {
+        setVaccinePackageDetails([]);
+      }
     } catch (error) {
       console.error(`Lỗi khi lấy thông tin cuộc hẹn ${appointmentId}:`, error);
       message.error("Không thể tải thông tin cuộc hẹn");
       setSelectedAppointment(null);
+      setVaccinePackageDetails([]);
     }
   };
 
@@ -175,6 +184,7 @@ const ChildVaccineSchedule: React.FC = () => {
     setAppointments([]);
     setSelectedAppointmentId(null);
     setSelectedAppointment(null);
+    setVaccinePackageDetails([]); // Reset vaccine package details
 
     if (schedule.isCompleted === 1 && schedule.appointmentId) {
       fetchAppointmentForVaccineProfile(schedule.appointmentId);
@@ -189,6 +199,7 @@ const ChildVaccineSchedule: React.FC = () => {
     setAppointments([]);
     setSelectedAppointmentId(null);
     setSelectedAppointment(null);
+    setVaccinePackageDetails([]); // Reset vaccine package details
     if (selectedChild) {
       fetchScheduleData(selectedChild);
     }
@@ -217,6 +228,8 @@ const ChildVaccineSchedule: React.FC = () => {
         appointmentId: selectedAppointmentId,
         vaccinationDate: formattedDate,
         isCompleted: 1,
+        childId: selectedAppointment.childId, // Thêm nếu API yêu cầu
+        diseaseId: selectedSchedule.diseaseId,
       };
 
       console.log("Payload gửi đi:", JSON.stringify(updateData, null, 2));
@@ -377,6 +390,46 @@ const ChildVaccineSchedule: React.FC = () => {
     const maxDoses = maxDoseMap[diseaseId] || 0;
     const completedDoses = completedDosesMap[diseaseId] || 0;
     return completedDoses >= maxDoses;
+  };
+
+  // Hàm để lấy trạng thái cuộc hẹn dưới dạng văn bản
+  const getAppointmentStatusText = (status: number) => {
+    switch (status) {
+      case AppointmentStatus.Pending:
+        return "Đã lên lịch";
+      case AppointmentStatus.Checked:
+        return "Đã check in";
+      case AppointmentStatus.Paid:
+        return "Đã thanh toán";
+      case AppointmentStatus.Injected:
+        return "Đã tiêm";
+      case AppointmentStatus.Completed:
+        return "Hoàn thành";
+      case AppointmentStatus.Cancelled:
+        return "Đã hủy";
+      default:
+        return "Không xác định";
+    }
+  };
+
+  // Hàm để lấy tên vaccine từ Appointment
+  const getVaccineNameFromAppointment = (appointment: AppointmentResponseDTO) => {
+    // Trường hợp vaccine lẻ
+    if (appointment.vaccineId && (!appointment.vaccinePackageId || appointment.vaccinePackageId === 0)) {
+      return vaccineMap[appointment.vaccineId] || "Không xác định";
+    }
+
+    // Trường hợp vaccine gói
+    if (appointment.vaccinePackageId && appointment.vaccinePackageId !== 0) {
+      const packageDetail = vaccinePackageDetails.find(
+        (detail) => detail.vaccinePackageId === appointment.vaccinePackageId
+      );
+      if (packageDetail && packageDetail.vaccineId) {
+        return vaccineMap[packageDetail.vaccineId] || "Không xác định";
+      }
+    }
+
+    return "Không xác định";
   };
 
   return (
@@ -584,20 +637,16 @@ const ChildVaccineSchedule: React.FC = () => {
                   <span className="text-gray-900">
                     {selectedSchedule.isCompleted === 0 ? (
                       selectedAppointmentId && appointments.length > 0 ? (
-                        appointments.find(
-                          (app) => app.appointmentId === selectedAppointmentId
-                        )?.vaccineId
-                          ? vaccineMap[
+                        getVaccineNameFromAppointment(
                           appointments.find(
                             (app) => app.appointmentId === selectedAppointmentId
-                          )!.vaccineId!
-                          ] || "Không xác định"
-                          : "Không xác định"
+                          )!
+                        )
                       ) : (
                         "Chưa chọn cuộc hẹn"
                       )
-                    ) : selectedAppointment && selectedAppointment.vaccineId ? (
-                      vaccineMap[selectedAppointment.vaccineId] || "Không xác định"
+                    ) : selectedAppointment ? (
+                      getVaccineNameFromAppointment(selectedAppointment)
                     ) : (
                       "Không xác định"
                     )}
@@ -663,10 +712,7 @@ const ChildVaccineSchedule: React.FC = () => {
                               {`${moment(
                                 appointment.appointmentDate,
                                 "DD/MM/YYYY"
-                              ).format("DD/MM/YYYY")} - Vắc xin: ${appointment.vaccineId !== null
-                                ? vaccineMap[appointment.vaccineId] || "Không xác định"
-                                : "Không xác định"
-                                } - Bệnh: ${diseaseName}`}
+                              ).format("DD/MM/YYYY")} - Vắc xin: ${getVaccineNameFromAppointment(appointment)} - Bệnh: ${diseaseName}`}
                             </Option>
                           );
                         })}
@@ -680,6 +726,43 @@ const ChildVaccineSchedule: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Phần 4: Thông tin chi tiết cuộc hẹn (chỉ hiển thị nếu đã hoàn thành và có appointmentId) */}
+            {selectedSchedule.isCompleted === 1 && selectedSchedule.appointmentId && selectedAppointment && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-300 pb-2 mb-4">
+                  Thông Tin Chi Tiết Cuộc Hẹn
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <span className="font-medium text-gray-700 w-40">Ngày hẹn:</span>
+                    <span className="text-gray-900">
+                      {selectedAppointment.appointmentDate
+                        ? moment(selectedAppointment.appointmentDate, "DD/MM/YYYY").format("DD/MM/YYYY")
+                        : "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="font-medium text-gray-700 w-40">Trạng thái:</span>
+                    <span className="text-gray-900">
+                      {getAppointmentStatusText(selectedAppointment.appointmentStatus)}
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="font-medium text-gray-700 w-40">Vắc xin:</span>
+                    <span className="text-gray-900">
+                      {getVaccineNameFromAppointment(selectedAppointment)}
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="font-medium text-gray-700 w-40">Phản ứng sau tiêm:</span>
+                    <span className="text-gray-900">
+                      {selectedAppointment.reaction || "Không có"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>

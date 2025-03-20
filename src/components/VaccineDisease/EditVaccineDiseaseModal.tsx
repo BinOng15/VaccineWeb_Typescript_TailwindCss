@@ -73,11 +73,11 @@ const EditVaccineDiseaseModal: React.FC<EditVaccineDiseaseModalProps> = ({
                 vaccineDiseaseData
             );
             if (success) {
-                message.success("Vaccine-Disease relationship updated successfully");
+                message.success("Cập nhật mối quan hệ thành công!");
                 refreshVaccineDiseases();
                 onClose();
             } else {
-                message.error("Failed to update vaccine-disease relationship");
+                message.error("Cập nhật mối quan hệ thất bại!");
             }
         } catch (error) {
             console.error("Error updating vaccine-disease:", error);

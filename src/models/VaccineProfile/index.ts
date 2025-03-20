@@ -8,6 +8,8 @@ export interface UpdateVaccineProfileDTO {
   appointmentId?: number | null;
   vaccinationDate?: Date | string;
   isCompleted: number;
+  childId: number; // Thêm nếu API yêu cầu
+  diseaseId: number;
 }
 
 export interface VaccineProfileResponseDTO {

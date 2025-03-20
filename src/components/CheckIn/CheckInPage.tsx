@@ -21,6 +21,7 @@ import paymentDetailService from "../../service/paymentDetailService";
 import vaccinePackageDetailService from "../../service/vaccinePackageDetailService";
 import { ColumnType } from "antd/es/table";
 import { AppointmentStatus, PaymentStatus } from "../../models/Type/enum";
+import { VaccinePackageDetailResponseDTO } from "../../models/VaccinePackageDetails";
 
 const { Option } = Select;
 const { Search } = Input;
@@ -54,6 +55,7 @@ const CheckInPage: React.FC = () => {
     const [selectedVaccinePackageId, setSelectedVaccinePackageId] = useState<number | null>(null);
     const [searchChildName, setSearchChildName] = useState<string>("");
     const [searchDate, setSearchDate] = useState<string | null>(null);
+    const [vaccinePackageDetails, setVaccinePackageDetails] = useState<VaccinePackageDetailResponseDTO[]>([]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -66,6 +68,7 @@ const CheckInPage: React.FC = () => {
             const allAppointments = await appointmentService.getAllAppointments();
             const allPayments = await paymentService.getAllPayments();
             const allPaymentDetailsResponse = await paymentDetailService.getAllPaymentDetails();
+            const allVaccinePackageDetails = await vaccinePackageDetailService.getAllPackagesDetail(); // Thêm API để lấy tất cả VaccinePackageDetail
 
             const pendingAppointments = allAppointments.filter(
                 (appointment) => appointment.appointmentStatus === AppointmentStatus.Pending && appointment.isActive === 1
@@ -80,6 +83,7 @@ const CheckInPage: React.FC = () => {
             setFilteredAppointments(pendingAppointments);
             setPayments(allPayments);
             setAllPaymentDetails(allPaymentDetailsResponse);
+            setVaccinePackageDetails(allVaccinePackageDetails); // Lưu vào state
 
             const uniqueVaccinePackageDetailIds = new Set(
                 allPaymentDetailsResponse
@@ -88,15 +92,14 @@ const CheckInPage: React.FC = () => {
             );
             const newVaccineNameMap = new Map<number, string>();
             for (const packageDetailId of uniqueVaccinePackageDetailIds) {
-                try {
-                    const packageDetail = await vaccinePackageDetailService.getPackageDetailById(packageDetailId);
+                const packageDetail = allVaccinePackageDetails.find((detail: any) => detail.vaccinePackageDetailId === packageDetailId);
+                if (packageDetail) {
                     const vaccine = allVaccines.find((v) => v.vaccineId === packageDetail.vaccineId);
                     const vaccineDisease = allVaccineDiseases.find((vd) => vd.vaccineId === packageDetail.vaccineId);
                     const disease = vaccineDisease ? allDiseases.find((d) => d.diseaseId === vaccineDisease.diseaseId) : null;
                     const displayName = `${vaccine ? vaccine.name : "Không xác định"} - ${disease ? disease.name : "Không xác định"}`;
                     newVaccineNameMap.set(packageDetailId, displayName);
-                } catch (error) {
-                    console.error(`Lỗi khi lấy vaccine cho packageDetailId ${packageDetailId}:`, error);
+                } else {
                     newVaccineNameMap.set(packageDetailId, "Không xác định - Không xác định");
                 }
             }
@@ -120,7 +123,6 @@ const CheckInPage: React.FC = () => {
     }, []);
 
     const getPaymentStatus = (appointment: AppointmentResponseDTO) => {
-        // Kiểm tra nếu lịch hẹn có paymentDetailId
         if (appointment.paymentDetailId) {
             const paymentDetail = allPaymentDetails.find(
                 (detail) => detail.paymentDetailId === appointment.paymentDetailId
@@ -133,7 +135,6 @@ const CheckInPage: React.FC = () => {
             }
         }
 
-        // Nếu không có paymentDetailId, kiểm tra trực tiếp Payment liên quan đến appointment
         const payment = payments.find((p) => p.appointmentId === appointment.appointmentId);
         if (payment) {
             return payment.paymentStatus === PaymentStatus.Paid ? "Đã thanh toán" : "Chưa thanh toán";
@@ -183,10 +184,8 @@ const CheckInPage: React.FC = () => {
     };
 
     const handleEdit = (appointment: AppointmentResponseDTO) => {
-        // Kiểm tra trạng thái thanh toán
         let paymentStatus: number | undefined;
 
-        // Nếu có paymentDetailId, truy vấn qua PaymentDetail
         if (appointment.paymentDetailId) {
             const paymentDetail = allPaymentDetails.find(
                 (detail) => detail.paymentDetailId === appointment.paymentDetailId
@@ -196,7 +195,6 @@ const CheckInPage: React.FC = () => {
                 paymentStatus = payment?.paymentStatus;
             }
         } else {
-            // Nếu không có paymentDetailId, kiểm tra trực tiếp Payment
             const payment = payments.find((p) => p.appointmentId === appointment.appointmentId);
             paymentStatus = payment?.paymentStatus;
         }
@@ -299,7 +297,6 @@ const CheckInPage: React.FC = () => {
                 return;
             }
 
-            // Kiểm tra số lượng vaccine lẻ
             const vaccineId = latestAppointment.vaccineId;
             if (vaccineId) {
                 const vaccine = vaccines.find((v) => v.vaccineId === vaccineId);
@@ -434,6 +431,20 @@ const CheckInPage: React.FC = () => {
         }
     };
 
+    // Hàm để lấy tên vaccine và các bệnh liên quan từ vaccineId
+    const getVaccineAndDiseases = (vaccineId: number) => {
+        const vaccine = vaccines.find((v) => v.vaccineId === vaccineId);
+        const relatedDiseases = vaccineDiseases
+            .filter((vd) => vd.vaccineId === vaccineId)
+            .map((vd) => diseases.find((d) => d.diseaseId === vd.diseaseId)?.name)
+            .filter((name): name is string => !!name);
+
+        return {
+            vaccineName: vaccine ? vaccine.name : "Không xác định",
+            diseases: relatedDiseases.length > 0 ? relatedDiseases.join(", ") : "Không xác định",
+        };
+    };
+
     const columns: ColumnType<AppointmentResponseDTO>[] = [
         {
             title: "STT",
@@ -491,20 +502,48 @@ const CheckInPage: React.FC = () => {
         {
             title: "Mũi Tiêm",
             key: "doseSequence",
-            width: 200,
-            render: (record: AppointmentResponseDTO) => {
+            width: 300,
+            render: (_: any, record: AppointmentResponseDTO) => {
                 if (!record.paymentDetailId) return <span style={{ color: "gray" }}>-</span>;
+
                 const selectedPaymentDetail = allPaymentDetails.find(
                     (detail) => detail.paymentDetailId === record.paymentDetailId
                 );
                 if (!selectedPaymentDetail) return <span style={{ color: "gray" }}>-</span>;
 
-                const vaccineName = vaccineNameMap.get(selectedPaymentDetail.vaccinePackageDetailId) || "Không xác định - Không xác định";
+                let vaccineId: number | undefined;
+                let vaccineName: string = "Không xác định";
+                let relatedDiseases: string = "Không xác định";
+
+                // Trường hợp vaccine gói
+                if (selectedPaymentDetail.vaccinePackageDetailId) {
+                    const packageDetail = vaccinePackageDetails.find(
+                        (detail) => detail.vaccinePackageDetailId === selectedPaymentDetail.vaccinePackageDetailId
+                    );
+                    if (packageDetail) {
+                        vaccineId = packageDetail.vaccineId;
+                    }
+                } else if (record.vaccineId) {
+                    // Trường hợp vaccine lẻ
+                    vaccineId = record.vaccineId;
+                }
+
+                if (vaccineId) {
+                    const vaccineInfo = getVaccineAndDiseases(vaccineId);
+                    vaccineName = vaccineInfo.vaccineName;
+                    relatedDiseases = vaccineInfo.diseases;
+                }
+
                 const statusText = selectedPaymentDetail.isCompleted === 1 ? " (Hoàn thành)" : "";
                 return (
-                    <span style={{ color: "red" }}>
-                        Mũi {selectedPaymentDetail.doseSequence} - {vaccineName}{statusText}
-                    </span>
+                    <div>
+                        <span style={{ color: "red" }}>
+                            Mũi {selectedPaymentDetail.doseSequence} - {vaccineName}{statusText}
+                        </span>
+                        <div style={{ color: "gray", fontSize: "12px" }}>
+                            Bệnh: {relatedDiseases}
+                        </div>
+                    </div>
                 );
             },
         },

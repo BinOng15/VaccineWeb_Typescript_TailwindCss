@@ -277,10 +277,14 @@ const AppointmentManagePage: React.FC = () => {
           return;
         }
 
+        // Lọc các mũi tiêm chưa được sử dụng hoặc đã được chọn bởi lịch hẹn hiện tại
         const unusedPaymentDetails = activePaymentDetails.filter(
           (detail) =>
             (!appointments.some(
-              (appt) => appt.paymentDetailId === detail.paymentDetailId && appt.appointmentId !== latestAppointment.appointmentId
+              (appt) =>
+                appt.paymentDetailId === detail.paymentDetailId &&
+                appt.appointmentId !== latestAppointment.appointmentId &&
+                appt.appointmentStatus !== AppointmentStatus.Cancelled
             ) && detail.isCompleted !== 1) ||
             detail.paymentDetailId === latestAppointment.paymentDetailId
         );
@@ -340,6 +344,24 @@ const AppointmentManagePage: React.FC = () => {
         return;
       }
 
+      // Nếu lịch hẹn đã có paymentDetailId (tức là đã chọn một mũi tiêm trước đó), đặt lại appointmentId của PaymentDetail cũ
+      if (latestAppointment.paymentDetailId) {
+        const oldPaymentDetail = allPaymentDetails.find(
+          (detail) => detail.paymentDetailId === latestAppointment.paymentDetailId
+        );
+        if (oldPaymentDetail && oldPaymentDetail.paymentDetailId !== paymentDetailId) {
+          const resetPaymentDetailData: UpdatePaymentDetailDTO = {
+            isCompleted: 0,
+            notes: "Đã bỏ chọn mũi tiêm",
+          };
+          await paymentDetailService.updatePaymentDetail(
+            oldPaymentDetail.paymentDetailId,
+            resetPaymentDetailData
+          );
+        }
+      }
+
+      // Cập nhật PaymentDetail mới với appointmentId
       const updatePaymentDetailData: UpdatePaymentDetailDTO = {
         isCompleted: 0,
         notes: "Đã chọn mũi tiêm",
@@ -347,6 +369,7 @@ const AppointmentManagePage: React.FC = () => {
       };
       await paymentDetailService.updatePaymentDetail(paymentDetailId, updatePaymentDetailData);
 
+      // Cập nhật Appointment với paymentDetailId mới
       const updateAppointmentData: UpdateAppointmentDTO = {
         paymentDetailId: paymentDetailId,
         appointmentStatus: AppointmentStatus.Paid,
@@ -356,6 +379,7 @@ const AppointmentManagePage: React.FC = () => {
         updateAppointmentData
       );
 
+      // Cập nhật danh sách appointments
       const updatedAppointments = appointments.map((appointment) =>
         appointment.appointmentId === latestAppointment.appointmentId
           ? {
@@ -368,6 +392,7 @@ const AppointmentManagePage: React.FC = () => {
       setAppointments(updatedAppointments);
       setOriginalAppointments(updatedAppointments);
 
+      // Làm mới danh sách PaymentDetails
       const refreshedPaymentDetails = await paymentDetailService.getAllPaymentDetails();
       setAllPaymentDetails(refreshedPaymentDetails);
 
@@ -797,10 +822,10 @@ const AppointmentManagePage: React.FC = () => {
                     type="primary"
                     icon={<PlusOutlined />}
                     onClick={() => handleConfirmDoseSelection(record.paymentDetailId)}
-                    disabled={isAlreadySelected || !isVaccineAvailable}
-                    title={isVaccineAvailable ? (isAlreadySelected ? "Mũi tiêm đã được chọn" : "Chọn mũi tiêm") : "Vaccine đã hết"}
+                    disabled={!isVaccineAvailable}
+                    title={isVaccineAvailable ? (isAlreadySelected ? "Mũi tiêm đang được chọn" : "Chọn mũi tiêm") : "Vaccine đã hết"}
                   >
-                    Chọn
+                    {isAlreadySelected ? "Đang chọn" : "Chọn"}
                   </Button>
                 );
               },

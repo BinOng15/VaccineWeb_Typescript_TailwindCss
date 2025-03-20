@@ -61,7 +61,7 @@ const AddVaccineDiseaseModal: React.FC<AddVaccineDiseaseModalProps> = ({
             await vaccineDiseaseService.createVaccineDisease(vaccineDiseaseData);
             notification.success({
                 message: "Success",
-                description: "Vaccine-Disease relationship created successfully!",
+                description: "Mối quan hệ giữa đã được tạo thành công!",
             });
 
             form.resetFields();
@@ -71,7 +71,7 @@ const AddVaccineDiseaseModal: React.FC<AddVaccineDiseaseModalProps> = ({
             console.error("Error creating vaccine-disease:", error.response?.data);
             notification.error({
                 message: "Error",
-                description: error?.response?.data?.message || "Failed to create vaccine-disease relationship!",
+                description: error?.response?.data?.message || "Có lỗi khi tạo mối quan hệ!",
             });
         }
     };
