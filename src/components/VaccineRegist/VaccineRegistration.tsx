@@ -90,20 +90,39 @@ const VaccineRegistration: React.FC = () => {
         const userChildProfiles = allChildProfiles.filter((profile) => profile.userId === userId);
         setChildProfiles(userChildProfiles);
 
+        // Lấy danh sách vaccine và lọc theo isActive
         const allVaccines = await vaccineService.getAllVaccines();
-        setVaccines(allVaccines);
+        const activeVaccines = allVaccines.filter(
+          (vaccine) => vaccine.isActive === 1
+        );
+        setVaccines(activeVaccines);
 
+        // Lấy danh sách vaccine diseases và lọc theo vaccine active
         const allVaccineDiseases = await vaccineDiseaseService.getAllVaccineDiseases();
-        setVaccineDiseases(allVaccineDiseases);
+        const activeVaccineDiseases = allVaccineDiseases.filter((vd) =>
+          activeVaccines.some((vaccine) => vaccine.vaccineId === vd.vaccineId)
+        );
+        setVaccineDiseases(activeVaccineDiseases);
 
+        // Lấy danh sách bệnh và lọc theo isActive
         const allDiseases = await diseaseService.getAllDiseases();
-        setDiseases(allDiseases);
+        const activeDiseases = allDiseases.filter(
+          (disease) => disease.isActive === "Active"
+        );
+        setDiseases(activeDiseases);
 
+        // Lấy danh sách gói vaccine và lọc theo isActive
         const allPackages = await vaccinePackageService.getAllPackages();
-        setPackages(allPackages);
+        const activePackages = allPackages.filter(
+          (pkg) => pkg.isActive === 1
+        );
+        setPackages(activePackages);
 
+        // Lấy danh sách payment của user
         const allPaymentsData = await paymentService.getAllPayments();
-        const userPayments = allPaymentsData.filter((payment) => payment.userId === userId && payment.paymentStatus === 2);
+        const userPayments = allPaymentsData.filter(
+          (payment) => payment.userId === userId && payment.paymentStatus === 2
+        );
         setAllPayments(allPaymentsData);
 
         const paymentIds = userPayments.map((payment) => payment.paymentId);

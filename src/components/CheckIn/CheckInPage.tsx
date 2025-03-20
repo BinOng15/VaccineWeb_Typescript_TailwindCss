@@ -60,6 +60,7 @@ const CheckInPage: React.FC = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
+            // Lấy tất cả dữ liệu từ API
             const allVaccines = await vaccineService.getAllVaccines();
             const allVaccineDiseases = await vaccineDiseaseService.getAllVaccineDiseases();
             const allDiseases = await diseaseService.getAllDiseases();
@@ -68,23 +69,49 @@ const CheckInPage: React.FC = () => {
             const allAppointments = await appointmentService.getAllAppointments();
             const allPayments = await paymentService.getAllPayments();
             const allPaymentDetailsResponse = await paymentDetailService.getAllPaymentDetails();
-            const allVaccinePackageDetails = await vaccinePackageDetailService.getAllPackagesDetail(); // Thêm API để lấy tất cả VaccinePackageDetail
+            const allVaccinePackageDetails = await vaccinePackageDetailService.getAllPackagesDetail();
 
-            const pendingAppointments = allAppointments.filter(
-                (appointment) => appointment.appointmentStatus === AppointmentStatus.Pending && appointment.isActive === 1
+            // Lọc dữ liệu theo isActive
+            const activeVaccines = allVaccines.filter(
+                (vaccine) => vaccine.isActive === 1
+            );
+            const activeDiseases = allDiseases.filter(
+                (disease) => disease.isActive === "Active"
+            );
+            const activeVaccinePackages = allVaccinePackages.filter(
+                (pkg) => pkg.isActive === 1
+            );
+            const activeVaccinePackageDetails = allVaccinePackageDetails.filter(
+                (detail) => detail.isActive === "Active"
             );
 
-            setVaccines(allVaccines);
-            setVaccineDiseases(allVaccineDiseases);
-            setDiseases(allDiseases);
-            setVaccinePackages(allVaccinePackages);
-            setChildProfiles(allChildProfiles);
+            // Lọc vaccineDiseases dựa trên vaccine và disease active
+            const activeVaccineDiseases = allVaccineDiseases.filter(
+                (vd) =>
+                    activeVaccines.some((vaccine) => vaccine.vaccineId === vd.vaccineId) &&
+                    activeDiseases.some((disease) => disease.diseaseId === vd.diseaseId)
+            );
+
+            // Lọc appointments theo appointmentStatus và isActive (đã có sẵn)
+            const pendingAppointments = allAppointments.filter(
+                (appointment) =>
+                    appointment.appointmentStatus === AppointmentStatus.Pending &&
+                    appointment.isActive === 1
+            );
+
+            // Cập nhật state với dữ liệu đã lọc
+            setVaccines(activeVaccines);
+            setVaccineDiseases(activeVaccineDiseases);
+            setDiseases(activeDiseases);
+            setVaccinePackages(activeVaccinePackages);
+            setChildProfiles(allChildProfiles); // Child profiles không cần lọc isActive
             setAppointments(pendingAppointments);
             setFilteredAppointments(pendingAppointments);
-            setPayments(allPayments);
-            setAllPaymentDetails(allPaymentDetailsResponse);
-            setVaccinePackageDetails(allVaccinePackageDetails); // Lưu vào state
+            setPayments(allPayments); // Payments không cần lọc isActive
+            setAllPaymentDetails(allPaymentDetailsResponse); // Payment details không cần lọc isActive
+            setVaccinePackageDetails(activeVaccinePackageDetails);
 
+            // Tạo vaccineNameMap dựa trên dữ liệu đã lọc
             const uniqueVaccinePackageDetailIds = new Set(
                 allPaymentDetailsResponse
                     .map((detail) => detail.vaccinePackageDetailId || 0)
@@ -92,12 +119,19 @@ const CheckInPage: React.FC = () => {
             );
             const newVaccineNameMap = new Map<number, string>();
             for (const packageDetailId of uniqueVaccinePackageDetailIds) {
-                const packageDetail = allVaccinePackageDetails.find((detail: any) => detail.vaccinePackageDetailId === packageDetailId);
+                const packageDetail = activeVaccinePackageDetails.find(
+                    (detail: any) => detail.vaccinePackageDetailId === packageDetailId
+                );
                 if (packageDetail) {
-                    const vaccine = allVaccines.find((v) => v.vaccineId === packageDetail.vaccineId);
-                    const vaccineDisease = allVaccineDiseases.find((vd) => vd.vaccineId === packageDetail.vaccineId);
-                    const disease = vaccineDisease ? allDiseases.find((d) => d.diseaseId === vaccineDisease.diseaseId) : null;
-                    const displayName = `${vaccine ? vaccine.name : "Không xác định"} - ${disease ? disease.name : "Không xác định"}`;
+                    const vaccine = activeVaccines.find((v) => v.vaccineId === packageDetail.vaccineId);
+                    const vaccineDisease = activeVaccineDiseases.find(
+                        (vd) => vd.vaccineId === packageDetail.vaccineId
+                    );
+                    const disease = vaccineDisease
+                        ? activeDiseases.find((d) => d.diseaseId === vaccineDisease.diseaseId)
+                        : null;
+                    const displayName = `${vaccine ? vaccine.name : "Không xác định"} - ${disease ? disease.name : "Không xác định"
+                        }`;
                     newVaccineNameMap.set(packageDetailId, displayName);
                 } else {
                     newVaccineNameMap.set(packageDetailId, "Không xác định - Không xác định");
@@ -105,6 +139,7 @@ const CheckInPage: React.FC = () => {
             }
             setVaccineNameMap(newVaccineNameMap);
 
+            // Cập nhật pagination
             setPagination({
                 current: 1,
                 pageSize: pagination.pageSize,

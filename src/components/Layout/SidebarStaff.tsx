@@ -27,14 +27,14 @@ const StaffSidebar: React.FC = () => {
       label: "Vắc xin lẻ",
     },
     {
+      key: "/staff/manage-vaccine-disease",
+      icon: <MinusCircleOutlined />,
+      label: "Chi tiết vắc xin",
+    },
+    {
       key: "/staff/manage-disease",
       icon: <AppstoreOutlined />,
       label: "Các loại bệnh",
-    },
-    {
-      key: "/staff/manage-vaccine-disease",
-      icon: <MinusCircleOutlined />,
-      label: "Bệnh - Vắc xin",
     },
     {
       key: "/staff/manage-vaccine-package",

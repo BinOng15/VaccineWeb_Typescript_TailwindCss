@@ -174,91 +174,88 @@ function DiseaseManagePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
-      <div className="w-full max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
-        <h1 className="text-3xl font-bold text-[#0e0e0e] mb-6 text-center">
-          Quản lý bệnh
-        </h1>
+    <div className="p-4 max-w-7xl mx-auto">
+      <h2 className="text-2xl font-bold text-center p-2 rounded-t-lg">
+        QUẢN LÝ BỆNH
+      </h2>
+      {/* Thanh tìm kiếm và nút Tạo mới */}
+      <Row
+        gutter={16}
+        justify="space-between"
+        align="middle"
+        className="mb-4"
+      >
+        <Col>
+          <Space className="custom-search">
+            <Search
+              placeholder="Tìm kiếm theo tên hoặc mô tả"
+              onSearch={handleSearch}
+              enterButton
+              allowClear
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              style={{ width: 300 }} // Điều chỉnh độ rộng theo ý muốn
+            />
+            <ReloadOutlined
+              onClick={handleReset}
+              style={{ fontSize: "24px", cursor: "pointer" }}
+            />
+          </Space>
+        </Col>
+        <Col>
+          <Button
+            type="primary"
+            className="custom-button"
+            onClick={handleAddPackage}
+          >
+            Tạo mới bệnh
+          </Button>
+        </Col>
+      </Row>
 
-        {/* Thanh tìm kiếm và nút Tạo mới */}
-        <Row
-          gutter={16}
-          justify="space-between"
-          align="middle"
-          className="mb-4"
-        >
-          <Col>
-            <Space className="custom-search">
-              <Search
-                placeholder="Tìm kiếm theo tên hoặc mô tả"
-                onSearch={handleSearch}
-                enterButton
-                allowClear
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                style={{ width: 300 }} // Điều chỉnh độ rộng theo ý muốn
-              />
-              <ReloadOutlined
-                onClick={handleReset}
-                style={{ fontSize: "24px", cursor: "pointer" }}
-              />
-            </Space>
-          </Col>
-          <Col>
-            <Button
-              type="primary"
-              className="custom-button"
-              onClick={handleAddPackage}
-            >
-              Tạo mới bệnh
-            </Button>
-          </Col>
-        </Row>
+      {/* Bảng danh sách bệnh */}
+      <Table
+        columns={columns}
+        dataSource={filteredDiseases}
+        rowKey="diseaseId"
+        loading={loading}
+        pagination={pagination}
+        onChange={handleTableChange}
+        bordered
+        locale={{ emptyText: "Không có dữ liệu" }}
+      />
 
-        {/* Bảng danh sách bệnh */}
-        <Table
-          columns={columns}
-          dataSource={filteredDiseases}
-          rowKey="diseaseId"
-          loading={loading}
-          pagination={pagination}
-          onChange={handleTableChange}
-          bordered
-          locale={{ emptyText: "Không có dữ liệu" }}
-        />
+      {/* Modal Thêm mới */}
+      <AddDiseaseButton
+        visible={addModalVisible}
+        onClose={() => setAddModalVisible(false)}
+        refreshDiseases={fetchDiseases}
+      />
 
-        {/* Modal Thêm mới */}
-        <AddDiseaseButton
-          visible={addModalVisible}
-          onClose={() => setAddModalVisible(false)}
+      {/* Modal Chỉnh sửa */}
+      {selectedDisease && (
+        <EditDiseaseModal
+          disease={selectedDisease}
+          visible={editModalVisible}
+          onClose={() => {
+            setEditModalVisible(false);
+            setSelectedDisease(null);
+          }}
           refreshDiseases={fetchDiseases}
         />
+      )}
 
-        {/* Modal Chỉnh sửa */}
-        {selectedDisease && (
-          <EditDiseaseModal
-            disease={selectedDisease}
-            visible={editModalVisible}
-            onClose={() => {
-              setEditModalVisible(false);
-              setSelectedDisease(null);
-            }}
-            refreshDiseases={fetchDiseases}
-          />
-        )}
-
-        {/* Modal Xem chi tiết */}
-        {selectedDisease && (
-          <ViewDiseaseModal
-            disease={selectedDisease}
-            visible={viewModalVisible}
-            onClose={() => {
-              setViewModalVisible(false);
-              setSelectedDisease(null);
-            }}
-          />
-        )}
-      </div>
+      {/* Modal Xem chi tiết */}
+      {selectedDisease && (
+        <ViewDiseaseModal
+          disease={selectedDisease}
+          visible={viewModalVisible}
+          onClose={() => {
+            setViewModalVisible(false);
+            setSelectedDisease(null);
+          }}
+        />
+      )}
     </div>
   );
 }

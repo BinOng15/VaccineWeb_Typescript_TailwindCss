@@ -7,7 +7,6 @@ import {
   Space,
   Row,
   Col,
-  Tabs,
   message,
   Modal,
 } from "antd";
@@ -28,9 +27,8 @@ import AddVaccinePackageDetailButton from "./AddVaccinePackageDetailButton";
 import EditVaccinePackageDetailModal from "./EditVaccinePackageDetailModal";
 
 const { Search } = Input;
-const { TabPane } = Tabs;
 
-interface VaccinePackageDetail extends VaccinePackageDetailResponseDTO {}
+interface VaccinePackageDetail extends VaccinePackageDetailResponseDTO { }
 
 const VaccinePackageDetailManagement: React.FC = () => {
   const [details, setDetails] = useState<VaccinePackageDetail[]>([]);
@@ -44,7 +42,6 @@ const VaccinePackageDetailManagement: React.FC = () => {
     total: 0,
   });
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [activeTab, setActiveTab] = useState("activeDetails");
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editedDetail, setEditedDetail] = useState<VaccinePackageDetail | null>(
@@ -67,15 +64,24 @@ const VaccinePackageDetailManagement: React.FC = () => {
       const allDetails =
         await vaccinePackageDetailService.getAllPackagesDetail();
 
-      setVaccines(allVaccines);
-      setVaccinePackages(allVaccinePackages);
-      const filteredDetails = allDetails;
+      // Lọc dữ liệu theo isActive
+      const activeVaccines = allVaccines.filter(
+        (vaccine) => vaccine.isActive === 1
+      );
+      const activeVaccinePackages = allVaccinePackages.filter(
+        (pkg) => pkg.isActive === 1
+      );
+      const activeDetails = allDetails.filter(
+        (detail) => detail.isActive === "Active"
+      );
 
-      setDetails(filteredDetails);
-      setOriginalDetails(filteredDetails); // Lưu dữ liệu gốc để reset
+      setVaccines(activeVaccines);
+      setVaccinePackages(activeVaccinePackages);
+      setDetails(activeDetails);
+      setOriginalDetails(activeDetails); // Lưu dữ liệu gốc để reset
       setPagination((prev) => ({
         ...prev,
-        total: filteredDetails.length,
+        total: activeDetails.length,
       }));
     } catch (error) {
       console.error("Lỗi khi lấy dữ liệu:", error);
@@ -87,7 +93,7 @@ const VaccinePackageDetailManagement: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [activeTab]);
+  }, []); // Xóa activeTab khỏi dependencies
 
   const handleTableChange = (pagination: any) => {
     setPagination((prev) => ({
@@ -102,39 +108,27 @@ const VaccinePackageDetailManagement: React.FC = () => {
     setSearchKeyword(trimmedValue);
 
     if (!trimmedValue) {
-      const filteredDetails = originalDetails.filter((detail) =>
-        activeTab === "inActive"
-          ? detail.isActive === "Active"
-          : detail.isActive === "inActive"
-      );
-      setDetails(filteredDetails);
+      setDetails(originalDetails);
       setPagination({
         ...pagination,
         current: 1,
-        total: filteredDetails.length,
+        total: originalDetails.length,
       });
       return;
     }
 
-    const filteredDetails = originalDetails
-      .filter((detail) => {
-        const vaccine = vaccines.find((v) => v.vaccineId === detail.vaccineId);
-        const vaccinePackage = vaccinePackages.find(
-          (vp) => vp.vaccinePackageId === detail.vaccinePackageId
-        );
-        const vaccineName = vaccine?.name.toLowerCase() || "";
-        const packageName = vaccinePackage?.name.toLowerCase() || "";
-
-        return (
-          vaccineName.includes(trimmedValue) ||
-          packageName.includes(trimmedValue)
-        );
-      })
-      .filter((detail) =>
-        activeTab === "inActive"
-          ? detail.isActive === "Active"
-          : detail.isActive === "inActive"
+    const filteredDetails = originalDetails.filter((detail) => {
+      const vaccine = vaccines.find((v) => v.vaccineId === detail.vaccineId);
+      const vaccinePackage = vaccinePackages.find(
+        (vp) => vp.vaccinePackageId === detail.vaccinePackageId
       );
+      const vaccineName = vaccine?.name.toLowerCase() || "";
+      const packageName = vaccinePackage?.name.toLowerCase() || "";
+
+      return (
+        vaccineName.includes(trimmedValue) || packageName.includes(trimmedValue)
+      );
+    });
 
     setDetails(filteredDetails);
     setPagination({
@@ -187,10 +181,6 @@ const VaccinePackageDetailManagement: React.FC = () => {
   const handleViewDetail = (detail: VaccinePackageDetail) => {
     setSelectedDetail(detail);
     setIsDetailModalVisible(true);
-  };
-
-  const handleTabChange = (key: string) => {
-    setActiveTab(key);
   };
 
   const columns: ColumnType<VaccinePackageDetailResponseDTO>[] = [
@@ -252,82 +242,41 @@ const VaccinePackageDetailManagement: React.FC = () => {
       <h2 className="text-2xl font-bold text-center p-2">
         QUẢN LÝ CHI TIẾT GÓI VẮC XIN
       </h2>
-      <Tabs defaultActiveKey="activeDetails" onChange={handleTabChange}>
-        <TabPane tab="Chi tiết đang hoạt động" key="activeDetails">
-          <Row justify="space-between" style={{ marginBottom: 16 }}>
-            <Col>
-              <Space>
-                <Search
-                  placeholder="Tìm kiếm theo tên gói hoặc vắc xin"
-                  onSearch={onSearch}
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                  enterButton
-                  allowClear
-                  style={{ width: 300 }}
-                />
-                <ReloadOutlined
-                  onClick={handleReset}
-                  style={{ fontSize: "24px", cursor: "pointer" }}
-                />
-              </Space>
-            </Col>
-            <Col>
-              <Button type="primary" onClick={handleAddDetail}>
-                Thêm chi tiết gói vắc xin
-              </Button>
-            </Col>
-          </Row>
-          <Table
-            columns={columns}
-            dataSource={details.slice(
-              (pagination.current - 1) * pagination.pageSize,
-              pagination.current * pagination.pageSize
-            )}
-            rowKey="vaccinePackageDetailId"
-            pagination={pagination}
-            loading={loading}
-            onChange={handleTableChange}
-          />
-        </TabPane>
-        <TabPane tab="Chi tiết không hoạt động" key="inactiveDetails">
-          <Row justify="space-between" style={{ marginBottom: 16 }}>
-            <Col>
-              <Space>
-                <Search
-                  placeholder="Tìm kiếm theo tên gói hoặc vắc xin"
-                  onSearch={onSearch}
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                  enterButton
-                  allowClear
-                  style={{ width: 300 }}
-                />
-                <ReloadOutlined
-                  onClick={handleReset}
-                  style={{ fontSize: "24px", cursor: "pointer" }}
-                />
-              </Space>
-            </Col>
-            <Col>
-              <Button type="primary" onClick={handleAddDetail}>
-                Thêm chi tiết gói vắc xin
-              </Button>
-            </Col>
-          </Row>
-          <Table
-            columns={columns}
-            dataSource={details.slice(
-              (pagination.current - 1) * pagination.pageSize,
-              pagination.current * pagination.pageSize
-            )}
-            rowKey="vaccinePackageDetailId"
-            pagination={pagination}
-            loading={loading}
-            onChange={handleTableChange}
-          />
-        </TabPane>
-      </Tabs>
+      <Row justify="space-between" style={{ marginBottom: 16 }}>
+        <Col>
+          <Space>
+            <Search
+              placeholder="Tìm kiếm theo tên gói hoặc vắc xin"
+              onSearch={onSearch}
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              enterButton
+              allowClear
+              style={{ width: 300 }}
+            />
+            <ReloadOutlined
+              onClick={handleReset}
+              style={{ fontSize: "24px", cursor: "pointer" }}
+            />
+          </Space>
+        </Col>
+        <Col>
+          <Button type="primary" onClick={handleAddDetail}>
+            Thêm chi tiết gói vắc xin
+          </Button>
+        </Col>
+      </Row>
+      <Table
+        columns={columns}
+        dataSource={details.slice(
+          (pagination.current - 1) * pagination.pageSize,
+          pagination.current * pagination.pageSize
+        )}
+        rowKey="vaccinePackageDetailId"
+        pagination={pagination}
+        loading={loading}
+        onChange={handleTableChange}
+      />
 
       <AddVaccinePackageDetailButton
         visible={isAddModalVisible}

@@ -235,7 +235,7 @@ const AppointmentManagePage: React.FC = () => {
             (p) => p.paymentId === paymentDetail.paymentId
           );
           if (relatedPayment && relatedPayment.paymentStatus === 2) {
-            message.info("Lịch hẹn này đã hoàn thành hết các mũi tiêm trước!");
+            message.info("Lịch tiêm của mũi tiêm này đã có sẵn trong hệ thống, không thể thay đổi mũi tiêm!");
             return;
           }
         }
@@ -428,7 +428,7 @@ const AppointmentManagePage: React.FC = () => {
               appointmentStatus: AppointmentStatus.Paid,
             };
             const updatedAppointment = await appointmentService.updateAppointment(appointmentId, updateData);
-            message.success("Check In thành công!");
+            message.success("Xác nhận thành công!");
             const updatedAppointments = appointments.map((appointment) =>
               appointment.appointmentId === appointmentId
                 ? { ...appointment, appointmentStatus: updatedAppointment.appointmentStatus }
@@ -438,7 +438,7 @@ const AppointmentManagePage: React.FC = () => {
             setAppointments(updatedAppointments);
             setOriginalAppointments(updatedAppointments);
           } catch (error) {
-            message.error("Check In thất bại: " + (error as Error).message);
+            message.error("Xác nhận thất bại: " + (error as Error).message);
           }
         },
       });
@@ -669,7 +669,7 @@ const AppointmentManagePage: React.FC = () => {
   return (
     <div className="p-4 max-w-7xl mx-auto">
       <h2 className="text-2xl font-bold text-center p-2 rounded-t-lg">
-        DANH SÁCH LỊCH ĐÃ THANH TOÁN
+        QUẢN LÝ XÁC NHẬN MŨI TIÊM
       </h2>
       <Row justify="space-between" style={{ marginBottom: 16, marginTop: 24 }}>
         <Col>

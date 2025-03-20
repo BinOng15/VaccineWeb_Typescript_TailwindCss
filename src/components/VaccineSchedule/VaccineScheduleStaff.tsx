@@ -374,7 +374,7 @@ const VaccineScheduleStaff: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <h1 className="text-3xl font-bold mb-6 text-center">
-        Lịch Tiêm Chủng Của Hệ Thống
+        LỊCH TIÊM CHỦNG CỦA HỆ THỐNG PEDIVAX
       </h1>
 
       {/* Các nút chức năng */}

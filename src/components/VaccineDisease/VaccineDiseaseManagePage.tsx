@@ -220,7 +220,7 @@ const VaccineDiseaseManagePage: React.FC = () => {
     return (
         <div className="p-4 max-w-7xl mx-auto">
             <h2 className="text-2xl font-bold text-center p-2 rounded-t-lg">
-                QUẢN LÝ MỐI QUAN HỆ BỆNH - VẮC XIN
+                QUẢN LÝ CHI TIẾT VẮC XIN
             </h2>
             <Row justify="space-between" style={{ marginBottom: 16 }}>
                 <Col>

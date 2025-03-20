@@ -1,19 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
-import { Table, Input, Space, Row, Col, Modal, Descriptions } from "antd";
-import { ReloadOutlined, EyeOutlined } from "@ant-design/icons";
+import { Table, Input, Space, Row, Col, Modal, Descriptions, message } from "antd";
+import { ReloadOutlined, EyeOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { axiosInstance } from "../../../service/axiosInstance";
 import { ColumnType } from "antd/es/table";
 import { ChildProfileResponseDTO } from "../../../models/ChildProfile";
 import { UserResponseDTO } from "../../../models/User";
+import childProfileService from "../../../service/childProfileService";
+//import AddChildProfileModal from "./AddChildProfileModal"; // Import modal thêm
+import EditChildProfileModal from "./EditChildProfileModal"; // Import modal sửa
 
 const { Search } = Input;
 
 const ChildProfileManagePage: React.FC = () => {
-  const [childProfiles, setChildProfiles] = useState<ChildProfileResponseDTO[]>(
-    []
-  );
+  const [childProfiles, setChildProfiles] = useState<ChildProfileResponseDTO[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -22,8 +23,9 @@ const ChildProfileManagePage: React.FC = () => {
   });
   const [searchKeyword, setSearchKeyword] = useState("");
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
-  const [selectedProfile, setSelectedProfile] =
-    useState<ChildProfileResponseDTO | null>(null);
+  // const [isAddModalVisible, setIsAddModalVisible] = useState(false); // State cho modal thêm
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false); // State cho modal sửa
+  const [selectedProfile, setSelectedProfile] = useState<ChildProfileResponseDTO | null>(null);
   const [users, setUsers] = useState<UserResponseDTO[]>([]);
 
   const fetchChildProfiles = async (
@@ -41,11 +43,15 @@ const ChildProfileManagePage: React.FC = () => {
         },
       });
       const data = response.data;
-      setChildProfiles(data || []);
+      // Lọc các hồ sơ có isActive = 1
+      const activeProfiles = data.filter(
+        (profile: ChildProfileResponseDTO) => profile.isActive === 1
+      );
+      setChildProfiles(activeProfiles || []);
 
       const uniqueUserIds = [
         ...new Set(
-          data.map((profile: ChildProfileResponseDTO) => profile.userId)
+          activeProfiles.map((profile: ChildProfileResponseDTO) => profile.userId)
         ),
       ];
       const userPromises = uniqueUserIds.map((userId) =>
@@ -58,7 +64,7 @@ const ChildProfileManagePage: React.FC = () => {
       setPagination({
         current: page,
         pageSize: pageSize,
-        total: data.length || 0,
+        total: activeProfiles.length || 0,
       });
     } catch (error) {
       console.error("Lỗi khi lấy danh sách hồ sơ trẻ em:", error);
@@ -96,8 +102,34 @@ const ChildProfileManagePage: React.FC = () => {
     setIsDetailModalVisible(true);
   };
 
+  const handleEdit = (profile: ChildProfileResponseDTO) => {
+    setSelectedProfile(profile);
+    setIsEditModalVisible(true);
+  };
+
+  const handleDelete = async (childId: number) => {
+    Modal.confirm({
+      title: "Xác nhận xóa",
+      content: "Bạn có chắc chắn muốn xóa hồ sơ trẻ em này?",
+      okText: "Xóa",
+      okType: "danger",
+      cancelText: "Hủy",
+      onOk: async () => {
+        try {
+          await childProfileService.deleteChildProfile(childId);
+          message.success("Xóa hồ sơ trẻ em thành công!");
+          fetchChildProfiles(); // Làm mới danh sách
+        } catch (error) {
+          console.error("Lỗi khi xóa hồ sơ trẻ em:", error);
+          message.error("Xóa hồ sơ trẻ em thất bại!");
+        }
+      },
+    });
+  };
+
   const handleCloseModal = () => {
     setIsDetailModalVisible(false);
+    setIsEditModalVisible(false);
     setSelectedProfile(null);
   };
 
@@ -196,6 +228,14 @@ const ChildProfileManagePage: React.FC = () => {
             onClick={() => handleViewDetail(record)}
             style={{ color: "blue", cursor: "pointer" }}
           />
+          <EditOutlined
+            onClick={() => handleEdit(record)}
+            style={{ color: "green", cursor: "pointer" }}
+          />
+          <DeleteOutlined
+            onClick={() => handleDelete(record.childId)}
+            style={{ color: "red", cursor: "pointer" }}
+          />
         </Space>
       ),
     },
@@ -223,6 +263,11 @@ const ChildProfileManagePage: React.FC = () => {
             />
           </Space>
         </Col>
+        {/* <Col>
+          <Button type="primary" onClick={() => setIsAddModalVisible(true)}>
+            Thêm hồ sơ trẻ em
+          </Button>
+        </Col> */}
       </Row>
       <Table
         columns={columns}
@@ -252,8 +297,8 @@ const ChildProfileManagePage: React.FC = () => {
         {selectedProfile && (
           <Descriptions bordered column={1}>
             <Descriptions.Item label="Tên Phụ huynh">
-              {users.find((u) => u.userId === selectedProfile.userId)
-                ?.fullName || "Không tìm thấy tên"}
+              {users.find((u) => u.userId === selectedProfile.userId)?.fullName ||
+                "Không tìm thấy tên"}
             </Descriptions.Item>
             <Descriptions.Item label="Tên đầy đủ">
               {selectedProfile.fullName || "N/A"}
@@ -271,10 +316,9 @@ const ChildProfileManagePage: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày sinh">
               {selectedProfile.dateOfBirth
-                ? moment(
-                    selectedProfile.dateOfBirth,
-                    "DD/MM/YYYY HH:mm:ss"
-                  ).format("DD/MM/YYYY")
+                ? moment(selectedProfile.dateOfBirth, "DD/MM/YYYY HH:mm:ss").format(
+                  "DD/MM/YYYY"
+                )
                 : "N/A"}
             </Descriptions.Item>
             <Descriptions.Item label="Giới tính">
@@ -288,10 +332,9 @@ const ChildProfileManagePage: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày tạo">
               {selectedProfile.createdDate
-                ? moment(
-                    selectedProfile.createdDate,
-                    "HH:mm:ss - DD/MM/YYYY"
-                  ).format("HH:mm - DD/MM/YYYY")
+                ? moment(selectedProfile.createdDate, "HH:mm:ss - DD/MM/YYYY").format(
+                  "HH:mm - DD/MM/YYYY"
+                )
                 : "N/A"}
             </Descriptions.Item>
             <Descriptions.Item label="Người tạo">
@@ -299,10 +342,9 @@ const ChildProfileManagePage: React.FC = () => {
             </Descriptions.Item>
             <Descriptions.Item label="Ngày sửa đổi">
               {selectedProfile.modifiedDate
-                ? moment(
-                    selectedProfile.modifiedDate,
-                    "HH:mm:ss - DD/MM/YYYY"
-                  ).format("HH:mm - DD/MM/YYYY")
+                ? moment(selectedProfile.modifiedDate, "HH:mm:ss - DD/MM/YYYY").format(
+                  "HH:mm - DD/MM/YYYY"
+                )
                 : "N/A"}
             </Descriptions.Item>
             <Descriptions.Item label="Người sửa đổi">
@@ -311,6 +353,22 @@ const ChildProfileManagePage: React.FC = () => {
           </Descriptions>
         )}
       </Modal>
+
+      {/* Modal thêm hồ sơ trẻ em */}
+      {/* <AddChildProfileModal
+        visible={isAddModalVisible}
+        onClose={() => setIsAddModalVisible(false)}
+        onSuccess={fetchChildProfiles}
+        userId={1} // Thay bằng userId thực tế, có thể lấy từ context hoặc state
+      /> */}
+
+      {/* Modal chỉnh sửa hồ sơ trẻ em */}
+      <EditChildProfileModal
+        visible={isEditModalVisible}
+        onClose={handleCloseModal}
+        onSuccess={fetchChildProfiles}
+        profile={selectedProfile}
+      />
     </div>
   );
 };

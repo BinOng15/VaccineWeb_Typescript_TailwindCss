@@ -348,13 +348,11 @@ const ResponsePage: React.FC = () => {
 
             if (!vaccineId) {
                 console.log("No vaccineId found to fetch associated diseases.");
-                message.error("No vaccineId found to update vaccine profile!");
                 return;
             }
 
             if (doseSequence === null) {
                 console.log("No doseSequence found to determine the dose to update.");
-                message.error("No doseSequence found to update vaccine profile!");
                 return;
             }
 
@@ -366,7 +364,6 @@ const ResponsePage: React.FC = () => {
 
             if (diseaseIds.length === 0) {
                 console.log(`No diseases found associated with vaccine ${vaccineId}.`);
-                message.warning(`No diseases found associated with vaccine ${vaccineId}.`);
                 return;
             }
 
@@ -379,7 +376,6 @@ const ResponsePage: React.FC = () => {
             // Validate appointment date format
             if (!moment(appointment.appointmentDate, "DD/MM/YYYY", true).isValid()) {
                 console.error(`Ngày hẹn không hợp lệ: ${appointment.appointmentDate}`);
-                message.error("Ngày hẹn không hợp lệ. Vui lòng kiểm tra dữ liệu.");
                 return;
             }
 
@@ -393,7 +389,6 @@ const ResponsePage: React.FC = () => {
 
                 if (expectedDoses === 0) {
                     console.warn(`No vaccine schedule found for disease ${diseaseId}.`);
-                    message.warning(`No vaccine schedule found for disease ${diseaseId}!`);
                     continue;
                 }
 
@@ -404,7 +399,6 @@ const ResponsePage: React.FC = () => {
 
                 if (profilesForDisease.length !== expectedDoses) {
                     console.warn(`Number of doses for disease ${diseaseId} is incorrect. Expected: ${expectedDoses}, Actual: ${profilesForDisease.length}`);
-                    message.warning(`Number of doses for disease ${diseaseId} is incorrect! Please check the data.`);
                     continue;
                 }
 
@@ -414,7 +408,6 @@ const ResponsePage: React.FC = () => {
 
                 if (nextDoseNumber > expectedDoses) {
                     console.log(`All required doses for disease ${diseaseId} have already been completed.`);
-                    message.info(`All required doses for disease ${diseaseId} have already been completed.`);
                     continue;
                 }
 
@@ -425,7 +418,6 @@ const ResponsePage: React.FC = () => {
 
                 if (!profileToUpdate) {
                     console.log(`No uncompleted dose ${nextDoseNumber} found for disease ${diseaseId}.`);
-                    message.warning(`No uncompleted dose ${nextDoseNumber} found for disease ${diseaseId}.`);
                     continue;
                 }
 
@@ -446,7 +438,6 @@ const ResponsePage: React.FC = () => {
                     console.log(`Updated vaccineProfile ${profileToUpdate.vaccineProfileId} for child ${appointment.childId}, disease ${diseaseId}, dose ${nextDoseNumber}`);
                 } catch (error) {
                     console.error(`Lỗi khi cập nhật vaccineProfile ${profileToUpdate.vaccineProfileId}:`, error);
-                    message.error(`Không thể cập nhật vaccineProfile ${profileToUpdate.vaccineProfileId}. Vui lòng kiểm tra dữ liệu.`);
                     continue;
                 }
 
@@ -454,25 +445,22 @@ const ResponsePage: React.FC = () => {
                 const updatedCompletedDoses = profilesForDisease.filter((vp: any) => vp.doseNumber <= nextDoseNumber && vp.isCompleted === 1).length;
                 if (updatedCompletedDoses === expectedDoses) {
                     console.log(`All required doses for disease ${diseaseId} have been completed.`);
-                    message.info(`All required doses for disease ${diseaseId} have been completed.`);
                 }
             }
 
-            message.success("Updated vaccine profiles successfully!");
         } catch (error) {
             console.error("Error updating vaccine profiles:", error);
-            message.error("Error updating vaccine profiles!");
         }
     };
 
     const handleConfirmComplete = async (appointment: AppointmentResponseDTO) => {
         if (appointment.appointmentStatus !== AppointmentStatus.Injected) {
-            message.error("Only appointments in 'Đã tiêm' status can be marked as completed!");
+            message.error("Chỉ lịch hẹn đã tiêm thì mới cho phép ghi nhận phản ứng!");
             return;
         }
 
         if (processedAppointments.has(appointment.appointmentId)) {
-            message.warning("This appointment has already been processed!");
+            message.warning("Lịch tiêm đã hoàn thành từ trước!");
             return;
         }
 
@@ -489,12 +477,12 @@ const ResponsePage: React.FC = () => {
 
             setProcessedAppointments((prev) => new Set(prev).add(appointment.appointmentId));
 
-            message.success("Successfully confirmed appointment completion!", 1.5, () => {
+            message.success("Lịch tiêm đã hoàn thành!", 1.5, () => {
                 fetchAppointments(pagination.current, pagination.pageSize, searchKeyword);
             });
         } catch (error) {
             console.error("Error confirming completion:", error);
-            message.error("Failed to confirm completion.");
+            message.error("Có lỗi khi hoàn thành lịch tiêm.");
         }
     };
 
