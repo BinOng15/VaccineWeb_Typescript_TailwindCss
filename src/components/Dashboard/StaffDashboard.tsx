@@ -8,7 +8,8 @@ import vaccineScheduleService from "../../service/vaccineScheduleService";
 import vaccineService from "../../service/vaccineService";
 
 interface StaffDashboardStats {
-  totalVaccines: number; // Số lượng vaccine lẻ
+  totalVaccines: number; // Số lượng vaccine lẻ (số loại vaccine)
+  totalVaccineQuantity: number; // Tổng số vaccine (dựa trên quantity)
   totalVaccinePackages: number; // Số lượng gói vaccine
   totalRegisteredChildren: number; // Số lượng trẻ đăng ký tiêm
   totalChildProfiles: number; // Số lượng hồ sơ của trẻ
@@ -34,6 +35,7 @@ const CardWidget: React.FC<{
 const StaffDashboard: React.FC = () => {
   const [stats, setStats] = useState<StaffDashboardStats>({
     totalVaccines: 0,
+    totalVaccineQuantity: 0,
     totalVaccinePackages: 0,
     totalRegisteredChildren: 0,
     totalChildProfiles: 0,
@@ -51,9 +53,12 @@ const StaffDashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // 1. Số lượng vaccine lẻ
+      // 1. Số lượng vaccine lẻ và tổng số vaccine
       const allVaccines = await vaccineService.getAllVaccines();
       const totalVaccines = Array.isArray(allVaccines) ? allVaccines.length : 0;
+      const totalVaccineQuantity = Array.isArray(allVaccines)
+        ? allVaccines.reduce((sum, vaccine) => sum + (vaccine.quantity || 0), 0)
+        : 0;
 
       // 2. Số lượng gói vaccine
       const allVaccinePackages = await vaccinePackageService.getAllPackages();
@@ -115,6 +120,7 @@ const StaffDashboard: React.FC = () => {
       // Cập nhật state
       setStats({
         totalVaccines,
+        totalVaccineQuantity,
         totalVaccinePackages,
         totalRegisteredChildren,
         totalChildProfiles,
@@ -179,11 +185,21 @@ const StaffDashboard: React.FC = () => {
           </Col>
           <Col xs={24} sm={12} md={8} lg={8}>
             <CardWidget
+              title="Tổng số vaccine"
+              value={stats.totalVaccineQuantity}
+              color="teal"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={8}>
+            <CardWidget
               title="Số lượng gói vaccine"
               value={stats.totalVaccinePackages}
               color="green"
             />
           </Col>
+        </Row>
+        {/* Hàng 2: 3 cột */}
+        <Row gutter={[16, 16]} className="mb-6">
           <Col xs={24} sm={12} md={8} lg={8}>
             <CardWidget
               title="Số lượng trẻ đăng ký tiêm"
@@ -191,9 +207,6 @@ const StaffDashboard: React.FC = () => {
               color="orange"
             />
           </Col>
-        </Row>
-        {/* Hàng 2: 2 cột */}
-        <Row gutter={[16, 16]} className="mb-6">
           <Col xs={24} sm={12} md={8} lg={8}>
             <CardWidget
               title="Số lượng hồ sơ của trẻ"

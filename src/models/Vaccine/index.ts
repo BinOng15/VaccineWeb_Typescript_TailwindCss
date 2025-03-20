@@ -1,4 +1,3 @@
-
 export interface CreateVaccineDTO {
   name: string;
   image: File | null; // Hoặc File nếu dùng trong frontend
@@ -35,5 +34,6 @@ export interface VaccineResponseDTO {
   createdBy: string;
   modifiedDate: Date | string;
   modifiedBy: string;
-  isActive: number; 
+  isActive: number;
+  quantity: number;
 }
