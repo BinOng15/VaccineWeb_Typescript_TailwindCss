@@ -35,12 +35,36 @@ const VaccinePackageDetailManagerment = React.lazy(
       "../pages/Staff/VaccinePackageDetailvManagerment/VaccinePackageDetailManagerment"
     )
 );
+const VaccineDiseaseManagement = React.lazy(
+  () =>
+    import(
+      "../pages/Staff/VaccineDisese/VaccineDiseaseManagement"
+    )
+);
+const CheckInManagement = React.lazy(
+  () =>
+    import(
+      "../pages/Staff/CheckIn/CheckInManagement"
+    )
+);
+const PaymentManagement = React.lazy(
+  () =>
+    import(
+      "../pages/Staff/Payment/PaymentManagement"
+    )
+);
 //-------------------------------------------------Doctor-----------------------------------------------
 const DashboardDoctor = React.lazy(
   () => import("../pages/Doctor/DashboardDoctor")
 );
 const VaccinationRecordManagerment = React.lazy(
   () => import("../pages/Doctor/VaccinationRecord/VaccinationRecordManagerment")
+);
+const ConfirmInjectionManagement = React.lazy(
+  () => import("../pages/Doctor/VaccinationRecord/ConfirmInjectionManagement")
+);
+const ResponseManagement = React.lazy(
+  () => import("../pages/Doctor/VaccinationRecord/ResponseManagement")
 );
 //-------------------------------------------------Customer----------------------------------------------
 const VaccineRegistationPage = React.lazy(
@@ -255,6 +279,33 @@ const AppRouter = () => {
                 />
               }
             />
+            <Route
+              path="/staff/manage-vaccine-disease"
+              element={
+                <ProtectedRouter
+                  element={<VaccineDiseaseManagement />}
+                  allowedRoles={["Staff"]}
+                />
+              }
+            />
+            <Route
+              path="/staff/check-in"
+              element={
+                <ProtectedRouter
+                  element={<CheckInManagement />}
+                  allowedRoles={["Staff"]}
+                />
+              }
+            />
+            <Route
+              path="/staff/payment"
+              element={
+                <ProtectedRouter
+                  element={<PaymentManagement />}
+                  allowedRoles={["Staff"]}
+                />
+              }
+            />
             {/*----------------------------DOCTOR--------------------------------*/}
             <Route
               path="/doctor/dashboard"
@@ -270,6 +321,24 @@ const AppRouter = () => {
               element={
                 <ProtectedRouter
                   element={<VaccinationRecordManagerment />}
+                  allowedRoles={["Doctor"]}
+                />
+              }
+            />
+            <Route
+              path="/doctor/confirm-injection"
+              element={
+                <ProtectedRouter
+                  element={<ConfirmInjectionManagement />}
+                  allowedRoles={["Doctor"]}
+                />
+              }
+            />
+            <Route
+              path="/doctor/response"
+              element={
+                <ProtectedRouter
+                  element={<ResponseManagement />}
                   allowedRoles={["Doctor"]}
                 />
               }

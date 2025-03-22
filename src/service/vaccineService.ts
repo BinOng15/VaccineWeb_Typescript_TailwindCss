@@ -1,13 +1,19 @@
 import { AxiosResponse } from "axios";
 import { axiosInstance } from "./axiosInstance"; // Giả sử bạn có file axiosInstance.ts để cấu hình axios
-import { CreateVaccineDTO, UpdateVaccineDTO, VaccineResponseDTO } from "../models/Vaccine";
+import {
+  CreateVaccineDTO,
+  UpdateVaccineDTO,
+  VaccineResponseDTO,
+} from "../models/Vaccine";
 
 // Các hàm gọi API cho Vaccine
 const vaccineService = {
   // Lấy tất cả vaccine
   getAllVaccines: async (): Promise<VaccineResponseDTO[]> => {
     try {
-      const response: AxiosResponse = await axiosInstance.get("api/Vaccine/get-all");
+      const response: AxiosResponse = await axiosInstance.get(
+        "api/Vaccine/get-all"
+      );
       return response.data;
     } catch (error) {
       console.error("Error fetching all vaccines:", error);
@@ -18,7 +24,9 @@ const vaccineService = {
   // Lấy vaccine theo ID
   getVaccineById: async (vaccineId: number): Promise<VaccineResponseDTO> => {
     try {
-      const response: AxiosResponse = await axiosInstance.get(`api/Vaccine/get-by-id/${vaccineId}`);
+      const response: AxiosResponse = await axiosInstance.get(
+        `api/Vaccine/get-by-id/${vaccineId}`
+      );
       return response.data;
     } catch (error) {
       console.error(`Error fetching vaccine by ID ${vaccineId}:`, error);
@@ -27,9 +35,14 @@ const vaccineService = {
   },
 
   // Lấy danh sách vaccine phân trang
-  getVaccinesPaged: async (pageNumber: number, pageSize: number): Promise<{ Data: VaccineResponseDTO[]; TotalCount: number }> => {
+  getVaccinesPaged: async (
+    pageNumber: number,
+    pageSize: number
+  ): Promise<{ Data: VaccineResponseDTO[]; TotalCount: number }> => {
     try {
-      const response: AxiosResponse = await axiosInstance.get(`api/Vaccine/get-vaccine-paged/${pageNumber}/${pageSize}`);
+      const response: AxiosResponse = await axiosInstance.get(
+        `api/Vaccine/get-vaccine-paged/${pageNumber}/${pageSize}`
+      );
       return response.data;
     } catch (error) {
       console.error("Error fetching paged vaccines:", error);
@@ -40,7 +53,9 @@ const vaccineService = {
   // Tìm kiếm vaccine theo tên
   getVaccineByName: async (keyword: string): Promise<VaccineResponseDTO[]> => {
     try {
-      const response: AxiosResponse = await axiosInstance.get(`api/Vaccine/get-by-name/${keyword}`);
+      const response: AxiosResponse = await axiosInstance.get(
+        `api/Vaccine/get-by-name/${keyword}`
+      );
       return response.data;
     } catch (error) {
       console.error(`Error searching vaccines by name ${keyword}:`, error);
@@ -49,13 +64,19 @@ const vaccineService = {
   },
 
   // Tạo vaccine mới
-  createVaccine: async (vaccineData: CreateVaccineDTO): Promise<VaccineResponseDTO> => {
+  createVaccine: async (
+    vaccineData: CreateVaccineDTO
+  ): Promise<VaccineResponseDTO> => {
     try {
-      const response: AxiosResponse = await axiosInstance.post("api/Vaccine/create-vaccine", vaccineData, {
-        headers: {
-          "Content-Type": "multipart/form-data", // Để hỗ trợ IFormFile (image)
-        },
-      });
+      const response: AxiosResponse = await axiosInstance.post(
+        "api/Vaccine/create-vaccine",
+        vaccineData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data", // Để hỗ trợ IFormFile (image)
+          },
+        }
+      );
       return response.data;
     } catch (error) {
       console.error("Error creating vaccine:", error);
@@ -64,13 +85,20 @@ const vaccineService = {
   },
 
   // Cập nhật vaccine
-  updateVaccine: async (id: number, vaccineData: UpdateVaccineDTO): Promise<boolean> => {
+  updateVaccine: async (
+    id: number,
+    vaccineData: UpdateVaccineDTO
+  ): Promise<boolean> => {
     try {
-      const response: AxiosResponse = await axiosInstance.put(`api/Vaccine/update-vaccine/${id}`, vaccineData, {
-        headers: {
-          "Content-Type": "multipart/form-data", // Để hỗ trợ IFormFile (image)
-        },
-      });
+      const response: AxiosResponse = await axiosInstance.put(
+        `api/Vaccine/update-vaccine/${id}`,
+        vaccineData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data", // Để hỗ trợ IFormFile (image)
+          },
+        }
+      );
       return response.data.success; // Trả về boolean từ backend
     } catch (error) {
       console.error(`Error updating vaccine ${id}:`, error);
@@ -81,7 +109,9 @@ const vaccineService = {
   // Xóa vaccine
   deleteVaccine: async (vaccineId: number): Promise<boolean> => {
     try {
-      const response: AxiosResponse = await axiosInstance.delete(`api/Vaccine/delete-vaccine/${vaccineId}`);
+      const response: AxiosResponse = await axiosInstance.delete(
+        `api/Vaccine/delete-vaccine/${vaccineId}`
+      );
       return response.data.success; // Giả sử backend trả về boolean
     } catch (error) {
       console.error(`Error deleting vaccine ${vaccineId}:`, error);

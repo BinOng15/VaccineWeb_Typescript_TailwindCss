@@ -236,6 +236,12 @@ const VaccineManagePage: React.FC = () => {
       key: "Manufacturer",
     },
     {
+      title: "Số lượng",
+      dataIndex: "quantity",
+      width: 100,
+      key: "quantity",
+    },
+    {
       title: "Hành động",
       key: "action",
       width: 120,
@@ -367,22 +373,27 @@ const VaccineManagePage: React.FC = () => {
                 "N/A"
               )}
             </Descriptions.Item>
+            <Descriptions.Item label="Số lượng">
+              {selectedVaccine.quantity !== undefined
+                ? selectedVaccine.quantity.toString()
+                : "N/A"}
+            </Descriptions.Item>
             <Descriptions.Item label="Trạng thái">
               {selectedVaccine.isActive === 1 ? "Có" : "Không"}
             </Descriptions.Item>
             <Descriptions.Item label="Ngày sản xuất">
               {selectedVaccine.dateOfManufacture
                 ? moment(
-                    selectedVaccine.dateOfManufacture,
-                    "DD/MM/YYYY"
-                  ).format("DD/MM/YYYY")
+                  selectedVaccine.dateOfManufacture,
+                  "DD/MM/YYYY"
+                ).format("DD/MM/YYYY")
                 : "N/A"}
             </Descriptions.Item>
             <Descriptions.Item label="Ngày hết hạn">
               {selectedVaccine.expiryDate
                 ? moment(selectedVaccine.expiryDate, "DD/MM/YYYY").format(
-                    "DD/MM/YYYY"
-                  )
+                  "DD/MM/YYYY"
+                )
                 : "N/A"}
             </Descriptions.Item>
           </Descriptions>

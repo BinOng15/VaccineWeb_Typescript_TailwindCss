@@ -1,7 +1,9 @@
 import React from "react";
 import { Menu } from "antd";
 import {
-  SettingOutlined,
+  DashOutlined,
+  ExceptionOutlined,
+  FileUnknownOutlined,
   SolutionOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -11,12 +13,23 @@ const DoctorSidebar: React.FC = () => {
   const location = useLocation();
 
   const menuItems = [
-    { key: "/doctor/dashboard", icon: <SettingOutlined />, label: "Bảng chính" },
+    { key: "/doctor/dashboard", icon: <DashOutlined />, label: "Bảng chính" },
     {
       key: "/doctor/vaccination-record",
-      icon: <SolutionOutlined/>,
+      icon: <SolutionOutlined />,
       label: "Quản lý tiêm chủng",
     },
+    {
+      key: "/doctor/confirm-injection",
+      icon: <ExceptionOutlined />,
+      label: "Xác nhận tiêm chủng",
+    },
+    {
+      key: "/doctor/response",
+      icon: <FileUnknownOutlined />,
+      label: "Ghi nhận phản ứng",
+    },
+
   ];
 
   return (

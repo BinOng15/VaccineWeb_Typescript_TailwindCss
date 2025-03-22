@@ -33,9 +33,9 @@ const vaccinePackageDetailService = {
       throw error;
     }
   },
-  getPackageByVaccinePackageDetailID: async (
+  getPackageDetailByVaccinePackageID: async (
     vaccinePackageID: number
-  ): Promise<VaccinePackageDetailResponseDTO> => {
+  ): Promise<VaccinePackageDetailResponseDTO[]> => {
     try {
       const response: AxiosResponse = await axiosInstance.get(
         `api/VaccinePackageDetail/get-by-vaccine-package-id/${vaccinePackageID}`

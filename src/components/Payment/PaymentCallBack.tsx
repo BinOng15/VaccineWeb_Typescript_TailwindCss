@@ -46,9 +46,9 @@ const Payment = () => {
           throw new Error("Payment ID không hợp lệ");
         }
 
-        // Cập nhật trạng thái thanh toán thành 2 (thành công)
+        // Cập nhật trạng thái thanh toán thành 3 (Paid)
         const updatedPayment = await paymentService.updatePayment(paymentId, {
-          paymentStatus: 2,
+          paymentStatus: 3,
         });
         console.log(
           `Payment status updated to 2 for paymentId: ${paymentId}`,
@@ -134,16 +134,16 @@ const Payment = () => {
     if (!payDate) return "N/A";
     const date = new Date(
       payDate.slice(0, 4) +
-        "-" +
-        payDate.slice(4, 6) +
-        "-" +
-        payDate.slice(6, 8) +
-        "T" +
-        payDate.slice(8, 10) +
-        ":" +
-        payDate.slice(10, 12) +
-        ":" +
-        payDate.slice(12, 14)
+      "-" +
+      payDate.slice(4, 6) +
+      "-" +
+      payDate.slice(6, 8) +
+      "T" +
+      payDate.slice(8, 10) +
+      ":" +
+      payDate.slice(10, 12) +
+      ":" +
+      payDate.slice(12, 14)
     );
     return date.toLocaleString("vi-VN", {
       dateStyle: "medium",
@@ -206,10 +206,10 @@ const Payment = () => {
                 subTitle={
                   paymentDetails.responseCode === "00"
                     ? `Bạn đã thanh toán thành công với số tiền ${formatAmount(
-                        paymentDetails.amount
-                      )} vào thời gian ${formatPayDate(
-                        paymentDetails.payDate
-                      )}.`
+                      paymentDetails.amount
+                    )} vào thời gian ${formatPayDate(
+                      paymentDetails.payDate
+                    )}.`
                     : "Đã có lỗi khi bạn thanh toán. Hãy thử lại!"
                 }
                 extra={[
