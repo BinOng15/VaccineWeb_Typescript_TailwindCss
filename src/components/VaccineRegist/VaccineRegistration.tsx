@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import { Select, Input, DatePicker, Button, notification, Table } from "antd";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { CreateAppointmentDTO } from "../../models/Appointment";
 import { Gender } from "../../models/Type/enum";
 import { VaccineResponseDTO } from "../../models/Vaccine";
@@ -11,6 +11,7 @@ import { PaymentDetailResponseDTO } from "../../models/PaymentDetail";
 import { VaccineDiseaseResponseDTO } from "../../models/VaccineDisease";
 import { PaymentResponseDTO } from "../../models/Payment";
 import { AppointmentResponseDTO } from "../../models/Appointment";
+import { VaccineScheduleResponseDTO } from "../../models/VaccineSchedule";
 import appointmentService from "../../service/appointmentService";
 import vaccinePackageService from "../../service/vaccinePackageService";
 import vaccineService from "../../service/vaccineService";
@@ -20,9 +21,11 @@ import childProfileService from "../../service/childProfileService";
 import paymentService from "../../service/paymentService";
 import paymentDetailService from "../../service/paymentDetailService";
 import vaccinePackageDetailService from "../../service/vaccinePackageDetailService";
+import vaccineScheduleService from "../../service/vaccineScheduleService";
 import userService from "../../service/userService";
 import { useAuth } from "../../context/AuthContext";
 import { DiseaseResponseDTO } from "../../models/Disease";
+import { VaccinePackageDetailResponseDTO } from "../../models/VaccinePackageDetails";
 
 const { Option } = Select;
 const { Column } = Table;
@@ -37,6 +40,7 @@ const VaccineRegistration: React.FC = () => {
   const [selectedDiseaseId, setSelectedDiseaseId] = useState<number | null>(null);
   const [vaccines, setVaccines] = useState<VaccineResponseDTO[]>([]);
   const [vaccineDiseases, setVaccineDiseases] = useState<VaccineDiseaseResponseDTO[]>([]);
+  const [vaccineSchedules, setVaccineSchedules] = useState<VaccineScheduleResponseDTO[]>([]);
   const [diseases, setDiseases] = useState<DiseaseResponseDTO[]>([]);
   const [packages, setPackages] = useState<VaccinePackageResponseDTO[]>([]);
   const [childProfiles, setChildProfiles] = useState<ChildProfileResponseDTO[]>([]);
@@ -48,6 +52,7 @@ const VaccineRegistration: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [userId, setUserId] = useState<number | null>(null);
   const [userInfo, setUserInfo] = useState<any>(null);
+  const [minDateBasedOnAge, setMinDateBasedOnAge] = useState<Dayjs | null>(null); // Thêm state mới
 
   const getRelationshipLabel = (relationship: string | number | undefined): string => {
     switch (relationship?.toString()) {
@@ -90,35 +95,36 @@ const VaccineRegistration: React.FC = () => {
         const userChildProfiles = allChildProfiles.filter((profile) => profile.userId === userId);
         setChildProfiles(userChildProfiles);
 
-        // Lấy danh sách vaccine và lọc theo isActive
         const allVaccines = await vaccineService.getAllVaccines();
         const activeVaccines = allVaccines.filter(
           (vaccine) => vaccine.isActive === 1
         );
         setVaccines(activeVaccines);
 
-        // Lấy danh sách vaccine diseases và lọc theo vaccine active
         const allVaccineDiseases = await vaccineDiseaseService.getAllVaccineDiseases();
         const activeVaccineDiseases = allVaccineDiseases.filter((vd) =>
           activeVaccines.some((vaccine) => vaccine.vaccineId === vd.vaccineId)
         );
         setVaccineDiseases(activeVaccineDiseases);
 
-        // Lấy danh sách bệnh và lọc theo isActive
         const allDiseases = await diseaseService.getAllDiseases();
         const activeDiseases = allDiseases.filter(
           (disease) => disease.isActive === "Active"
         );
         setDiseases(activeDiseases);
 
-        // Lấy danh sách gói vaccine và lọc theo isActive
         const allPackages = await vaccinePackageService.getAllPackages();
         const activePackages = allPackages.filter(
           (pkg) => pkg.isActive === 1
         );
         setPackages(activePackages);
 
-        // Lấy danh sách payment của user
+        const allVaccineSchedules = await vaccineScheduleService.getAllVaccineSchedules();
+        const activeVaccineSchedules = allVaccineSchedules.filter(
+          (schedule) => schedule.isActive === 1
+        );
+        setVaccineSchedules(activeVaccineSchedules);
+
         const allPaymentsData = await paymentService.getAllPayments();
         const userPayments = allPaymentsData.filter(
           (payment) => payment.userId === userId && payment.paymentStatus === 2
@@ -161,56 +167,44 @@ const VaccineRegistration: React.FC = () => {
     const childId = parseInt(selectedChildId, 10);
     const fetchUncompletedDoses = async () => {
       try {
-        // Lấy danh sách Payment của user đã thanh toán (paymentStatus === 2)
         const userPayments = allPayments.filter((payment) => payment.userId === userId && payment.paymentStatus === 2);
         const paymentIds = userPayments.map((payment) => payment.paymentId);
 
-        // Lấy danh sách PaymentDetail liên quan đến các Payment của user
         const relevantPaymentDetails = allPaymentDetails.filter((detail) => paymentIds.includes(detail.paymentId));
-
-        // Lọc các PaymentDetail chưa hoàn thành (isCompleted === 0)
         const uncompletedPaymentDetails = relevantPaymentDetails.filter((detail) => detail.isCompleted === 0);
 
-        // Lấy danh sách appointment của child đã chọn
         const appointments = await appointmentService.getAppointmentsByChildId(childId);
         const appointmentPaymentDetailIds = appointments
           .map((appointment) => appointment.paymentDetailId)
           .filter((id): id is number => id !== null);
 
-        // Lọc các PaymentDetail chưa có trong appointment
         const childUncompletedDoses = uncompletedPaymentDetails.filter(
           (detail) => !appointmentPaymentDetailIds.includes(detail.paymentDetailId)
         );
 
-        // Lọc các PaymentDetail liên quan đến child đã chọn thông qua Payment và Appointment
         const filteredUncompletedDoses: PaymentDetailResponseDTO[] = [];
         const vaccineNamesMap = new Map<number, string>();
 
         for (const dose of childUncompletedDoses) {
-          // Lấy Payment tương ứng với PaymentDetail
           const payment = allPayments.find((p) => p.paymentId === dose.paymentId);
           if (!payment) continue;
 
-          // Lấy Appointment tương ứng với Payment
           const appointment = allAppointments.find((a) => a.appointmentId === payment.appointmentId);
           if (!appointment) continue;
 
-          // Kiểm tra childId từ Appointment
           if (appointment.childId === childId) {
-            // Kiểm tra vaccinePackageDetail có active không
             try {
               const vaccinePackageDetail = await vaccinePackageDetailService.getPackageDetailById(dose.vaccinePackageDetailId);
               if (vaccinePackageDetail.isActive === "Active") {
                 filteredUncompletedDoses.push(dose);
                 const vaccine = vaccines.find((v) => v.vaccineId === vaccinePackageDetail.vaccineId);
-                // Lấy tất cả các bệnh liên quan đến vaccine
                 const relatedVaccineDiseases = vaccineDiseases.filter((vd) => vd.vaccineId === vaccinePackageDetail.vaccineId);
                 const diseaseNames = relatedVaccineDiseases
                   .map((vd) => {
                     const disease = diseases.find((d) => d.diseaseId === vd.diseaseId);
                     return disease ? disease.name : "Không xác định";
                   })
-                  .filter((name) => name !== "Không xác định"); // Loại bỏ các bệnh không xác định
+                  .filter((name) => name !== "Không xác định");
                 const displayName = `${vaccine ? vaccine.name : "Không xác định"} - ${diseaseNames.length > 0 ? diseaseNames.join(", ") : "Không xác định"}`;
                 vaccineNamesMap.set(dose.paymentDetailId, displayName);
               }
@@ -243,6 +237,73 @@ const VaccineRegistration: React.FC = () => {
     return childBirthDate.add(selectedPackage.ageInMonths, "month");
   };
 
+  const calculateMinDateBasedOnAge = async () => {
+    if (!selectedChildProfile || (!selectedVaccineId && !selectedUncompletedDose && !selectedPackageId)) return null;
+
+    let vaccineIdsToCheck: number[] = [];
+
+    if (selectedVaccineId) {
+      vaccineIdsToCheck = [selectedVaccineId];
+    } else if (selectedUncompletedDose) {
+      const paymentDetail = allPaymentDetails.find(
+        (detail) => detail.paymentDetailId === selectedUncompletedDose.paymentDetailId
+      );
+      if (paymentDetail) {
+        const vaccinePackageDetail = await vaccinePackageDetailService.getPackageDetailById(paymentDetail.vaccinePackageDetailId);
+        if (vaccinePackageDetail) {
+          vaccineIdsToCheck = [vaccinePackageDetail.vaccineId];
+        }
+      }
+    } else if (selectedPackageId) {
+      const packageDetails = await vaccinePackageDetailService.getPackageDetailByVaccinePackageID(selectedPackageId);
+      vaccineIdsToCheck = packageDetails.map((detail: VaccinePackageDetailResponseDTO) => detail.vaccineId);
+    }
+
+    if (vaccineIdsToCheck.length === 0) return null;
+
+    let minAgeInMonths: number | null = null;
+
+    for (const vaccineId of vaccineIdsToCheck) {
+      const relatedVaccineDiseases = vaccineDiseases.filter(
+        (vd) => vd.vaccineId === vaccineId
+      );
+      const diseaseIds = relatedVaccineDiseases.map((vd) => vd.diseaseId);
+
+      if (diseaseIds.length === 0) continue;
+
+      for (const diseaseId of diseaseIds) {
+        const schedulesForDisease = vaccineSchedules.filter(
+          (schedule) => schedule.diseaseId === diseaseId
+        );
+        if (schedulesForDisease.length === 0) continue;
+
+        const firstDoseSchedule = schedulesForDisease.sort(
+          (a, b) => a.doseNumber - b.doseNumber
+        )[0];
+        const requiredAgeInMonths = firstDoseSchedule.ageInMonths;
+
+        if (minAgeInMonths === null || requiredAgeInMonths < minAgeInMonths) {
+          minAgeInMonths = requiredAgeInMonths;
+        }
+      }
+    }
+
+    if (minAgeInMonths === null) return null;
+
+    const childBirthDate = dayjs(selectedChildProfile.dateOfBirth, "DD/MM/YYYY");
+    return childBirthDate.add(minAgeInMonths, "month");
+  };
+
+  // Tính toán minDateBasedOnAge bất đồng bộ và lưu vào state
+  useEffect(() => {
+    const fetchMinDate = async () => {
+      const minDate = await calculateMinDateBasedOnAge();
+      setMinDateBasedOnAge(minDate);
+    };
+
+    fetchMinDate();
+  }, [selectedVaccineId, selectedUncompletedDose, selectedPackageId, selectedChildId, vaccineDiseases, vaccineSchedules]);
+
   const filteredVaccines = selectedDiseaseId
     ? vaccines.filter((vaccine) =>
       vaccineDiseases.some((vd) => vd.vaccineId === vaccine.vaccineId && vd.diseaseId === selectedDiseaseId)
@@ -267,11 +328,13 @@ const VaccineRegistration: React.FC = () => {
     try {
       const childId = parseInt(selectedChildId, 10);
       let vaccinePackageId: number | null = null;
-      let vaccineIdToCheck: number | null = null;
+      let vaccineIdsToCheck: number[] = [];
 
-      // Kiểm tra số lượng vaccine nếu chọn vaccine lẻ hoặc liều chưa hoàn thành
+      const childBirthDate = dayjs(selectedChildProfile?.dateOfBirth, "DD/MM/YYYY");
+      const childAgeInMonthsAtAppointment = appointmentDate.diff(childBirthDate, "month");
+
       if (selectedVaccineId) {
-        vaccineIdToCheck = selectedVaccineId;
+        vaccineIdsToCheck = [selectedVaccineId];
       } else if (selectedUncompletedDose) {
         const paymentDetail = allPaymentDetails.find(
           (detail) => detail.paymentDetailId === selectedUncompletedDose.paymentDetailId
@@ -295,12 +358,60 @@ const VaccineRegistration: React.FC = () => {
 
         const vaccinePackageDetail = await vaccinePackageDetailService.getPackageDetailById(selectedUncompletedDose.vaccinePackageDetailId);
         vaccinePackageId = vaccinePackageDetail.vaccinePackageId;
-        vaccineIdToCheck = vaccinePackageDetail.vaccineId; // Lấy vaccineId từ vaccinePackageDetail để kiểm tra số lượng
+        vaccineIdsToCheck = [vaccinePackageDetail.vaccineId];
+      } else if (selectedPackageId) {
+        vaccinePackageId = selectedPackageId;
+        const selectedPackage = packages.find((pkg) => pkg.vaccinePackageId === selectedPackageId);
+        if (!selectedPackage) {
+          notification.error({
+            message: "Error",
+            description: "Không tìm thấy thông tin gói vaccine!",
+          });
+          return;
+        }
+
+        const packageDetails = await vaccinePackageDetailService.getPackageDetailByVaccinePackageID(selectedPackageId);
+        vaccineIdsToCheck = packageDetails.map((detail: VaccinePackageDetailResponseDTO) => detail.vaccineId);
       }
 
-      // Kiểm tra số lượng vaccine nếu có vaccineIdToCheck
-      if (vaccineIdToCheck) {
-        const vaccine = vaccines.find((v) => v.vaccineId === vaccineIdToCheck);
+      for (const vaccineId of vaccineIdsToCheck) {
+        const relatedVaccineDiseases = vaccineDiseases.filter(
+          (vd) => vd.vaccineId === vaccineId
+        );
+        const diseaseIds = relatedVaccineDiseases.map((vd) => vd.diseaseId);
+
+        if (diseaseIds.length === 0) {
+          notification.error({
+            message: "Error",
+            description: "Không tìm thấy bệnh liên quan đến vaccine này!",
+          });
+          return;
+        }
+
+        for (const diseaseId of diseaseIds) {
+          const schedulesForDisease = vaccineSchedules.filter(
+            (schedule) => schedule.diseaseId === diseaseId
+          );
+          if (schedulesForDisease.length === 0) {
+            console.warn(`Không tìm thấy lịch tiêm chủng cho bệnh ${diseaseId}.`);
+            continue;
+          }
+
+          const firstDoseSchedule = schedulesForDisease.sort(
+            (a, b) => a.doseNumber - b.doseNumber
+          )[0];
+          const requiredAgeInMonths = firstDoseSchedule.ageInMonths;
+
+          if (childAgeInMonthsAtAppointment < requiredAgeInMonths) {
+            notification.error({
+              message: "Error",
+              description: `Trẻ phải đủ tuổi ${requiredAgeInMonths} tháng mới được tiêm vắc xin này!`,
+            });
+            return;
+          }
+        }
+
+        const vaccine = vaccines.find((v) => v.vaccineId === vaccineId);
         if (!vaccine) {
           notification.error({
             message: "Error",
@@ -318,9 +429,7 @@ const VaccineRegistration: React.FC = () => {
         }
       }
 
-      // Nếu chọn gói vaccine, kiểm tra số lượng của tất cả vaccine trong gói
       if (selectedPackageId) {
-        vaccinePackageId = selectedPackageId;
         const selectedPackage = packages.find((pkg) => pkg.vaccinePackageId === selectedPackageId);
         if (!selectedPackage) {
           notification.error({
@@ -330,7 +439,6 @@ const VaccineRegistration: React.FC = () => {
           return;
         }
 
-        // Lấy danh sách vaccinePackageDetail của gói vaccine
         const packageDetails = await vaccinePackageDetailService.getPackageDetailByVaccinePackageID(selectedPackageId);
         for (const detail of packageDetails) {
           const vaccine = vaccines.find((v) => v.vaccineId === detail.vaccineId);
@@ -628,12 +736,30 @@ const VaccineRegistration: React.FC = () => {
               onChange={(date) => setAppointmentDate(date)}
               placeholder="Chọn ngày hẹn"
               disabledDate={(current) => {
-                if (selectedVaccineId && !selectedPackageId && !selectedUncompletedDose) {
-                  return current && current < dayjs().startOf("day");
+                if (!current) return false;
+
+                // Vô hiệu hóa các ngày trước ngày hiện tại
+                const today = dayjs().startOf("day");
+                if (current.isBefore(today, "day")) return true;
+
+                // Nếu chọn liều chưa hoàn thành, chỉ cho phép chọn đúng ngày dự kiến
+                if (selectedUncompletedDose && selectedUncompletedDose.scheduledDate) {
+                  const scheduledDate = dayjs(selectedUncompletedDose.scheduledDate, "DD/MM/YYYY");
+                  return !current.isSame(scheduledDate, "day");
                 }
-                const minDate = calculateMinAppointmentDate();
-                if (!minDate || !current) return false;
-                return current && current.isBefore(minDate, "day");
+
+                // Kiểm tra độ tuổi tối thiểu dựa trên VaccineSchedule
+                if (minDateBasedOnAge && current.isBefore(minDateBasedOnAge, "day")) {
+                  return true;
+                }
+
+                // Kiểm tra độ tuổi tối thiểu dựa trên gói vaccine (nếu có)
+                const minDateBasedOnPackage = calculateMinAppointmentDate();
+                if (minDateBasedOnPackage && current.isBefore(minDateBasedOnPackage, "day")) {
+                  return true;
+                }
+
+                return false;
               }}
             />
           </div>

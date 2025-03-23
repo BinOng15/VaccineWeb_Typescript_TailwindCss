@@ -4,6 +4,8 @@ import { CheckCircleOutlined } from "@ant-design/icons";
 import StaffLayout from "../Layout/StaffLayout";
 import paymentService from "../../service/paymentService";
 import paymentDetailService from "../../service/paymentDetailService";
+import appointmentService from "../../service/appointmentService";
+import { AppointmentStatus } from "../../models/Type/enum";
 
 const Payment = () => {
   interface PaymentDetails {
@@ -39,31 +41,51 @@ const Payment = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const updatePaymentStatusAndGenerateDetails = async (paymentId: number) => {
+    const updatePaymentAndAppointment = async (paymentId: number) => {
       try {
         // Kiểm tra xem paymentId có hợp lệ không
         if (!Number.isInteger(paymentId) || paymentId <= 0) {
           throw new Error("Payment ID không hợp lệ");
         }
 
-        // Cập nhật trạng thái thanh toán thành 3 (Paid)
+        // Cập nhật trạng thái thanh toán thành 2 (Đang xử lý)
         const updatedPayment = await paymentService.updatePayment(paymentId, {
-          paymentStatus: 3,
+          paymentStatus: 2, // Đang xử lý
         });
         console.log(
-          `Payment status updated to 2 for paymentId: ${paymentId}`,
+          `Trạng thái thanh toán đã được cập nhật thành 2 cho paymentId: ${paymentId}`,
           updatedPayment
         );
 
-        // Gọi API generatePaymentDetail để tạo chi tiết thanh toán
-        const generatedDetails =
-          await paymentDetailService.generatePaymentDetail(paymentId);
-        console.log("Generated Payment Details:", generatedDetails);
-        message.success("Tạo chi tiết thanh toán thành công!");
+        // Tạo chi tiết thanh toán
+        const generatedDetails = await paymentDetailService.generatePaymentDetail(paymentId);
+        console.log("Chi tiết thanh toán đã được tạo:", generatedDetails);
+
+        // Lấy tất cả thông tin thanh toán để tìm payment tương ứng
+        const allPayments = await paymentService.getAllPayments();
+        const payment = allPayments.find((p) => p.paymentId === paymentId);
+        if (!payment || !payment.appointmentId) {
+          throw new Error("Không tìm thấy thông tin thanh toán hoặc appointmentId!");
+        }
+
+        // Lấy thông tin lịch hẹn bằng appointmentId
+        const appointment = await appointmentService.getAppointmentById(payment.appointmentId);
+        if (appointment) {
+          // Cập nhật trạng thái lịch hẹn thành Paid (3)
+          const updateAppointmentData = {
+            appointmentStatus: AppointmentStatus.Paid, // Cập nhật thành Paid (3)
+          };
+          await appointmentService.updateAppointment(appointment.appointmentId, updateAppointmentData);
+          console.log(`Trạng thái lịch hẹn đã được cập nhật thành Paid cho appointmentId: ${appointment.appointmentId}`);
+          message.success("Thanh toán và cập nhật lịch hẹn thành công!");
+        } else {
+          throw new Error("Không tìm thấy lịch hẹn liên quan đến paymentId này!");
+        }
       } catch (error) {
         message.error(
           "Không thể xử lý thanh toán: " + (error as Error).message
         );
+        console.error("Lỗi khi xử lý thanh toán:", error);
       }
     };
 
@@ -107,7 +129,7 @@ const Payment = () => {
           );
           paymentId = paymentId % 2147483647; // Cắt bớt nếu cần
         }
-        updatePaymentStatusAndGenerateDetails(paymentId); // Cập nhật trạng thái và tạo chi tiết thanh toán
+        updatePaymentAndAppointment(paymentId); // Cập nhật trạng thái thanh toán và lịch hẹn
       } else {
         message.error("Không tìm thấy paymentId để xử lý!");
         console.log("OrderInfo:", newPaymentDetails.orderInfo);
@@ -118,6 +140,7 @@ const Payment = () => {
         "Thanh toán không thành công, responseCode:",
         newPaymentDetails.responseCode
       );
+      message.error("Thanh toán không thành công! Vui lòng thử lại.");
     }
   }, []);
 

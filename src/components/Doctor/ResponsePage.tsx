@@ -10,9 +10,6 @@ import vaccineService from "../../service/vaccineService";
 import vaccinePackageService from "../../service/vaccinePackageService";
 import paymentDetailService from "../../service/paymentDetailService";
 import vaccinePackageDetailService from "../../service/vaccinePackageDetailService";
-import vaccineDiseaseService from "../../service/vaccineDiseaseService";
-import vaccineProfileService from "../../service/vaccineProfileService";
-import vaccineScheduleService from "../../service/vaccineScheduleService"; // New service for VaccineSchedule
 import {
     AppointmentResponseDTO,
     UpdateAppointmentDTO,
@@ -22,9 +19,6 @@ import { UserResponseDTO } from "../../models/User";
 import { VaccineResponseDTO } from "../../models/Vaccine";
 import { VaccinePackageResponseDTO } from "../../models/VaccinePackage";
 import { PaymentDetailResponseDTO } from "../../models/PaymentDetail";
-import { UpdateVaccineProfileDTO } from "../../models/VaccineProfile";
-import { VaccineDiseaseResponseDTO } from "../../models/VaccineDisease"; // Updated import
-import { VaccineScheduleResponseDTO } from "../../models/VaccineSchedule"; // Updated import
 import { ColumnType } from "antd/es/table";
 import { AppointmentStatus } from "../Appointment/CustomerAppointment";
 
@@ -50,8 +44,6 @@ const ResponsePage: React.FC = () => {
     const [vaccinePackages, setVaccinePackages] = useState<VaccinePackageResponseDTO[]>([]);
     const [allPaymentDetails, setAllPaymentDetails] = useState<PaymentDetailResponseDTO[]>([]);
     const [vaccineNameMap, setVaccineNameMap] = useState<Map<number, string>>(new Map());
-    const [vaccineDiseases, setVaccineDiseases] = useState<VaccineDiseaseResponseDTO[]>([]); // Properly typed
-    const [vaccineSchedules, setVaccineSchedules] = useState<VaccineScheduleResponseDTO[]>([]); // Store VaccineSchedule data
     const [reactionForm] = Form.useForm();
     const [processedAppointments, setProcessedAppointments] = useState<Set<number>>(new Set());
 
@@ -154,13 +146,9 @@ const ResponsePage: React.FC = () => {
         try {
             const allVaccines = await vaccineService.getAllVaccines();
             const allVaccinePackages = await vaccinePackageService.getAllPackages();
-            const allVaccineDiseases = await vaccineDiseaseService.getAllVaccineDiseases();
-            const allVaccineSchedules = await vaccineScheduleService.getAllVaccineSchedules(); // Fetch VaccineSchedule data
 
             setVaccines(allVaccines);
             setVaccinePackages(allVaccinePackages);
-            setVaccineDiseases(allVaccineDiseases);
-            setVaccineSchedules(allVaccineSchedules);
 
             const allAppointments = await appointmentService.getAllAppointments();
 
@@ -322,137 +310,6 @@ const ResponsePage: React.FC = () => {
         }
     };
 
-    const updateVaccineProfilesForCompletedAppointment = async (appointment: AppointmentResponseDTO) => {
-        try {
-            // Step 1: Get the vaccineId from the appointment
-            let vaccineId: number | null = null;
-            let doseSequence: number | null = null;
-
-            if (appointment.vaccineId) {
-                vaccineId = appointment.vaccineId;
-                console.log(`Processing standalone vaccine with vaccineId: ${vaccineId}`);
-                doseSequence = 1; // Standalone vaccines are assumed to have 1 dose
-            } else if (appointment.paymentDetailId) {
-                const paymentDetail = allPaymentDetails.find(
-                    (detail) => detail.paymentDetailId === appointment.paymentDetailId
-                );
-                if (paymentDetail && paymentDetail.vaccinePackageDetailId) {
-                    const packageDetail = await vaccinePackageDetailService.getPackageDetailById(
-                        paymentDetail.vaccinePackageDetailId
-                    );
-                    vaccineId = packageDetail.vaccineId;
-                    doseSequence = paymentDetail.doseSequence;
-                    console.log(`Processing vaccine package with vaccineId: ${vaccineId}, from paymentDetailId: ${paymentDetail.paymentDetailId}, doseSequence: ${doseSequence}`);
-                }
-            }
-
-            if (!vaccineId) {
-                console.log("No vaccineId found to fetch associated diseases.");
-                return;
-            }
-
-            if (doseSequence === null) {
-                console.log("No doseSequence found to determine the dose to update.");
-                return;
-            }
-
-            // Step 2: Get the list of diseaseIds associated with the vaccineId using vaccineDiseases state
-            const associatedDiseases = vaccineDiseases.filter(
-                (vd: VaccineDiseaseResponseDTO) => vd.vaccineId === vaccineId
-            );
-            const diseaseIds = associatedDiseases.map((vd: VaccineDiseaseResponseDTO) => vd.diseaseId);
-
-            if (diseaseIds.length === 0) {
-                console.log(`No diseases found associated with vaccine ${vaccineId}.`);
-                return;
-            }
-
-            console.log(`Diseases associated with vaccine ${vaccineId}: ${diseaseIds.join(", ")}`);
-
-            // Step 3: Get the vaccine profiles for the child
-            const childProfiles = await vaccineProfileService.getVaccineProfileByChildId(appointment.childId);
-            console.log(`Total vaccine profiles for child ${appointment.childId}: ${childProfiles.length}`);
-
-            // Validate appointment date format
-            if (!moment(appointment.appointmentDate, "DD/MM/YYYY", true).isValid()) {
-                console.error(`Ngày hẹn không hợp lệ: ${appointment.appointmentDate}`);
-                return;
-            }
-
-            // Step 4: Update the vaccine profile for each disease
-            for (const diseaseId of diseaseIds) {
-                // Get the total required doses for the disease from VaccineSchedule
-                const schedulesForDisease = vaccineSchedules.filter(
-                    (schedule: VaccineScheduleResponseDTO) => schedule.diseaseId === diseaseId
-                );
-                const expectedDoses = schedulesForDisease.length > 0 ? Math.max(...schedulesForDisease.map(s => s.doseNumber)) : 0;
-
-                if (expectedDoses === 0) {
-                    console.warn(`No vaccine schedule found for disease ${diseaseId}.`);
-                    continue;
-                }
-
-                // Get the vaccine profiles for this disease
-                const profilesForDisease = childProfiles
-                    .filter((vp: any) => vp.diseaseId === diseaseId)
-                    .sort((a: any, b: any) => a.doseNumber - b.doseNumber);
-
-                if (profilesForDisease.length !== expectedDoses) {
-                    console.warn(`Number of doses for disease ${diseaseId} is incorrect. Expected: ${expectedDoses}, Actual: ${profilesForDisease.length}`);
-                    continue;
-                }
-
-                // Step 5: Determine the next dose to update based on completed doses
-                const completedDoses = profilesForDisease.filter((vp: any) => vp.isCompleted === 1).length;
-                const nextDoseNumber = completedDoses + 1;
-
-                if (nextDoseNumber > expectedDoses) {
-                    console.log(`All required doses for disease ${diseaseId} have already been completed.`);
-                    continue;
-                }
-
-                // Find the profile for the next dose
-                const profileToUpdate = profilesForDisease.find(
-                    (vp: any) => vp.doseNumber === nextDoseNumber && vp.isCompleted === 0
-                );
-
-                if (!profileToUpdate) {
-                    console.log(`No uncompleted dose ${nextDoseNumber} found for disease ${diseaseId}.`);
-                    continue;
-                }
-
-                // Step 6: Update the vaccine profile for the next dose
-                const updateData: UpdateVaccineProfileDTO = {
-                    appointmentId: appointment.appointmentId,
-                    vaccinationDate: moment(appointment.appointmentDate, "DD/MM/YYYY").format("DD/MM/YYYY"),
-                    isCompleted: 1,
-                    childId: appointment.childId, // Thêm nếu API yêu cầu
-                    diseaseId: diseaseId, // Thêm nếu API yêu cầu
-                };
-
-                try {
-                    await vaccineProfileService.updateVaccineProfile(
-                        profileToUpdate.vaccineProfileId,
-                        updateData
-                    );
-                    console.log(`Updated vaccineProfile ${profileToUpdate.vaccineProfileId} for child ${appointment.childId}, disease ${diseaseId}, dose ${nextDoseNumber}`);
-                } catch (error) {
-                    console.error(`Lỗi khi cập nhật vaccineProfile ${profileToUpdate.vaccineProfileId}:`, error);
-                    continue;
-                }
-
-                // Step 7: Check if all required doses for the disease are completed
-                const updatedCompletedDoses = profilesForDisease.filter((vp: any) => vp.doseNumber <= nextDoseNumber && vp.isCompleted === 1).length;
-                if (updatedCompletedDoses === expectedDoses) {
-                    console.log(`All required doses for disease ${diseaseId} have been completed.`);
-                }
-            }
-
-        } catch (error) {
-            console.error("Error updating vaccine profiles:", error);
-        }
-    };
-
     const handleConfirmComplete = async (appointment: AppointmentResponseDTO) => {
         if (appointment.appointmentStatus !== AppointmentStatus.Injected) {
             message.error("Chỉ lịch hẹn đã tiêm thì mới cho phép ghi nhận phản ứng!");
@@ -472,8 +329,6 @@ const ResponsePage: React.FC = () => {
                 appointment.appointmentId,
                 updateData
             );
-
-            await updateVaccineProfilesForCompletedAppointment(appointment);
 
             setProcessedAppointments((prev) => new Set(prev).add(appointment.appointmentId));
 
