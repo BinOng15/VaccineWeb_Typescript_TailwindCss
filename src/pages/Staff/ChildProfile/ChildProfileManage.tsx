@@ -1,11 +1,11 @@
 import ChilProfileManagePage from "../../../components/Admin/ManageChildProfile/ChilProfileManagePage";
-import StaffLayout from "../../../components/Layout/StaffLayout";
+import AdminLayout from "../../../components/Layout/AdminLayout";
 
 const ChildProfileManage = () => {
   return (
-    <StaffLayout>
+    <AdminLayout>
       <ChilProfileManagePage />
-    </StaffLayout>
+    </AdminLayout>
   );
 };
 

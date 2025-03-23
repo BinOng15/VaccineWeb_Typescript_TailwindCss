@@ -292,6 +292,7 @@ const VaccinationRecordPage: React.FC = () => {
     {
       title: "Tên Phụ huynh",
       key: "userFullName",
+      width: 150,
       render: (appointment: AppointmentResponseDTO) =>
         appointment.childId !== null && childMap[appointment.childId]?.userFullName
           ? childMap[appointment.childId].userFullName
@@ -300,6 +301,7 @@ const VaccinationRecordPage: React.FC = () => {
     {
       title: "Tên Trẻ em",
       key: "childFullName",
+      width: 150,
       render: (appointment: AppointmentResponseDTO) =>
         appointment.childId !== null && childMap[appointment.childId]?.childFullName
           ? childMap[appointment.childId].childFullName
@@ -308,12 +310,12 @@ const VaccinationRecordPage: React.FC = () => {
     {
       title: "Tên Vaccine/Gói Vaccine",
       key: "vaccineOrPackageName",
+      width: 250,
       render: (appointment: AppointmentResponseDTO) => getVaccineOrPackageName(appointment),
     },
     {
       title: "Mũi Tiêm",
       key: "doseSequence",
-      width: 200,
       render: (appointment: AppointmentResponseDTO) => {
         if (!appointment.paymentDetailId)
           return <span style={{ color: "gray" }}>-</span>;
@@ -344,13 +346,11 @@ const VaccinationRecordPage: React.FC = () => {
     {
       title: "Phản ứng",
       dataIndex: "reaction",
-      width: 100,
       render: (reaction: string) => reaction || "N/A",
     },
     {
       title: "Hành động",
       key: "action",
-      width: 80,
       align: "center",
       render: (_: any, appointment: AppointmentResponseDTO) => (
         <Space size="middle">

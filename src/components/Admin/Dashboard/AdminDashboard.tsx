@@ -140,8 +140,8 @@ const AdminDashboard: React.FC = () => {
         await vaccinePackageDetailService.getAllPackagesDetail();
       const vaccinatedCount = Array.isArray(allVaccinePackageDetails)
         ? allVaccinePackageDetails.filter(
-            (d) => d.isActive === "true" || d.isActive === "1"
-          ).length
+          (d) => d.isActive === "true" || d.isActive === "1"
+        ).length
         : 0;
       const unvaccinatedCount = Array.isArray(allVaccinePackageDetails)
         ? allVaccinePackageDetails.length - vaccinatedCount
@@ -157,9 +157,9 @@ const AdminDashboard: React.FC = () => {
         const allPayments = await paymentService.getAllPayments();
         totalRevenue = Array.isArray(allPayments)
           ? allPayments.reduce(
-              (sum, payment) => sum + (payment.totalAmount || 0),
-              0
-            )
+            (sum, payment) => sum + (payment.totalAmount || 0),
+            0
+          )
           : 0;
 
         if (Array.isArray(allPayments)) {
@@ -311,8 +311,8 @@ const AdminDashboard: React.FC = () => {
   return (
     <AdminLayout>
       <section className="space-y-4 p-2 sm:space-y-6 sm:p-4">
-        <h1 className="text-lg font-bold sm:text-xl md:text-2xl">
-          Admin Dashboard
+        <h1 className="text-lg font-bold sm:text-xl md:text-2xl text-center">
+          TRANG CHÍNH CỦA ADMIN
         </h1>
         <div className="p-6 bg-gray-100 rounded-lg">
           {loading && <div className="text-center">Đang tải dữ liệu...</div>}

@@ -1,11 +1,11 @@
-import StaffLayout from "../../../components/Layout/StaffLayout";
 import VaccinePackageDetailManagermentPage from "../../../components/Admin/ManageVaccinePackageDetail/VaccinePackageDetailManagermentPage";
+import AdminLayout from "../../../components/Layout/AdminLayout";
 
 const VaccinePackageDetailManagerment = () => {
   return (
-    <StaffLayout>
+    <AdminLayout>
       <VaccinePackageDetailManagermentPage />
-    </StaffLayout>
+    </AdminLayout>
   );
 };
 

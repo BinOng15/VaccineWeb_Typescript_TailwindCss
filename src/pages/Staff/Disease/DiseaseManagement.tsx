@@ -1,12 +1,12 @@
 // import DiseaseManagePage from "../../../components/Disease/Disease";
 import DiseaseManagePage from "../../../components/Disease/Disease";
-import StaffLayout from "../../../components/Layout/StaffLayout";
+import AdminLayout from "../../../components/Layout/AdminLayout";
 
 const DiseaseManagement = () => {
   return (
-    <StaffLayout>
+    <AdminLayout>
       <DiseaseManagePage />
-    </StaffLayout>
+    </AdminLayout>
   );
 };
 

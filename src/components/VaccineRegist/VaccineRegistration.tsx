@@ -47,12 +47,13 @@ const VaccineRegistration: React.FC = () => {
   const [allPaymentDetails, setAllPaymentDetails] = useState<PaymentDetailResponseDTO[]>([]);
   const [uncompletedDoses, setUncompletedDoses] = useState<PaymentDetailResponseDTO[]>([]);
   const [vaccineNames, setVaccineNames] = useState<Map<number, string>>(new Map());
+  const [packageNames, setPackageNames] = useState<Map<number, string>>(new Map()); // Thêm state mới để lưu tên gói
   const [allPayments, setAllPayments] = useState<PaymentResponseDTO[]>([]);
   const [allAppointments, setAllAppointments] = useState<AppointmentResponseDTO[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [userId, setUserId] = useState<number | null>(null);
   const [userInfo, setUserInfo] = useState<any>(null);
-  const [minDateBasedOnAge, setMinDateBasedOnAge] = useState<Dayjs | null>(null); // Thêm state mới
+  const [minDateBasedOnAge, setMinDateBasedOnAge] = useState<Dayjs | null>(null);
 
   const getRelationshipLabel = (relationship: string | number | undefined): string => {
     switch (relationship?.toString()) {
@@ -161,6 +162,7 @@ const VaccineRegistration: React.FC = () => {
     if (!selectedChildId || !allPaymentDetails.length || !userId || !allPayments.length || !allAppointments.length) {
       setUncompletedDoses([]);
       setVaccineNames(new Map());
+      setPackageNames(new Map()); // Reset packageNames
       return;
     }
 
@@ -184,6 +186,7 @@ const VaccineRegistration: React.FC = () => {
 
         const filteredUncompletedDoses: PaymentDetailResponseDTO[] = [];
         const vaccineNamesMap = new Map<number, string>();
+        const packageNamesMap = new Map<number, string>(); // Map để lưu tên gói
 
         for (const dose of childUncompletedDoses) {
           const payment = allPayments.find((p) => p.paymentId === dose.paymentId);
@@ -207,25 +210,34 @@ const VaccineRegistration: React.FC = () => {
                   .filter((name) => name !== "Không xác định");
                 const displayName = `${vaccine ? vaccine.name : "Không xác định"} - ${diseaseNames.length > 0 ? diseaseNames.join(", ") : "Không xác định"}`;
                 vaccineNamesMap.set(dose.paymentDetailId, displayName);
+
+                // Lấy tên gói vaccine từ vaccinePackageId
+                const packageId = vaccinePackageDetail.vaccinePackageId;
+                const pkg = packages.find((p) => p.vaccinePackageId === packageId);
+                const packageName = pkg ? pkg.name : "Không xác định";
+                packageNamesMap.set(dose.paymentDetailId, packageName);
               }
             } catch (error) {
               console.error(`Lỗi khi lấy vaccine cho paymentDetailId ${dose.paymentDetailId}:`, error);
               vaccineNamesMap.set(dose.paymentDetailId, "Không xác định - Không xác định");
+              packageNamesMap.set(dose.paymentDetailId, "Không xác định");
             }
           }
         }
 
         setVaccineNames(vaccineNamesMap);
+        setPackageNames(packageNamesMap); // Lưu packageNames vào state
         setUncompletedDoses(filteredUncompletedDoses);
       } catch (error) {
         console.error("Failed to fetch uncompleted doses for child:", error);
         setUncompletedDoses([]);
         setVaccineNames(new Map());
+        setPackageNames(new Map());
       }
     };
 
     fetchUncompletedDoses();
-  }, [selectedChildId, allPaymentDetails, userId, allPayments, allAppointments, vaccines, vaccineDiseases, diseases]);
+  }, [selectedChildId, allPaymentDetails, userId, allPayments, allAppointments, vaccines, vaccineDiseases, diseases, packages]);
 
   const selectedChildProfile = childProfiles.find((profile) => profile.childId.toString() === selectedChildId);
 
@@ -294,7 +306,6 @@ const VaccineRegistration: React.FC = () => {
     return childBirthDate.add(minAgeInMonths, "month");
   };
 
-  // Tính toán minDateBasedOnAge bất đồng bộ và lưu vào state
   useEffect(() => {
     const fetchMinDate = async () => {
       const minDate = await calculateMinDateBasedOnAge();
@@ -608,11 +619,19 @@ const VaccineRegistration: React.FC = () => {
                   Dưới đây là danh sách các mũi tiêm mà bạn đã đăng ký cho bé nhưng chưa tiêm
                 </label>
                 <Table dataSource={uncompletedDoses} rowKey="paymentDetailId" pagination={false} className="mt-2">
+                  {/* Thêm cột "Tên gói" */}
+                  <Column
+                    title="Tên gói"
+                    key="packageName"
+                    render={(record) => packageNames.get(record.paymentDetailId) || "Không xác định"}
+                    width={120}
+                  />
                   <Column
                     title="Mũi tiêm"
                     dataIndex="doseSequence"
                     key="doseSequence"
                     render={(doseSequence) => `Mũi ${doseSequence}`}
+                    width={90}
                   />
                   <Column
                     title="Vaccine - Bệnh"
@@ -620,7 +639,7 @@ const VaccineRegistration: React.FC = () => {
                     render={(record) => vaccineNames.get(record.paymentDetailId) || "Không xác định - Không xác định"}
                   />
                   <Column
-                    title="Giới tính trẻ"
+                    title="Giới tính"
                     key="childGender"
                     render={(record) => {
                       const payment = allPayments.find((p) => p.paymentId === record.paymentId);
@@ -630,6 +649,7 @@ const VaccineRegistration: React.FC = () => {
                       const child = childProfiles.find((profile) => profile.childId === appointment.childId);
                       return child ? getGenderLabel(child.gender) : "Không xác định";
                     }}
+                    width={90}
                   />
                   <Column
                     title="Dự kiến"
@@ -728,7 +748,7 @@ const VaccineRegistration: React.FC = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              <span className="text-red-500">*</span> Ngày hẹn
+              <span className="text-red-500">*</span> Chọn ngày mong muốn tiêm
             </label>
             <DatePicker
               className="w-full"

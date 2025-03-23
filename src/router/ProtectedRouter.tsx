@@ -8,18 +8,12 @@ import VaccinePackageManagement from "../pages/Staff/VaccinePackage/VaccinePacka
 const DashboardAdmin = React.lazy(
   () => import("../pages/Admin/DashboardAdmin")
 );
-const AdminPage = React.lazy(() => import("../pages/Admin/AdminPage"));
 const UserManagement = React.lazy(
   () => import("../pages/Admin/UserManagement")
 );
 // const AdminRevenuePage = React.lazy(
 //   () => import("../pages/Admin/AdminRevenuePage")
 // );
-
-//-------------------------------------------------Staff------------------------------------------------
-const DashboardStaff = React.lazy(
-  () => import("../pages/Staff/DashboardStaff")
-);
 const VaccineManagement = React.lazy(
   () => import("../pages/Staff/Vaccine/VaccineManagement")
 );
@@ -41,6 +35,14 @@ const VaccineDiseaseManagement = React.lazy(
       "../pages/Staff/VaccineDisese/VaccineDiseaseManagement"
     )
 );
+const ChildProfileManage = React.lazy(
+  () => import("../pages/Staff/ChildProfile/ChildProfileManage")
+);
+//-------------------------------------------------Staff------------------------------------------------
+const DashboardStaff = React.lazy(
+  () => import("../pages/Staff/DashboardStaff")
+);
+
 const CheckInManagement = React.lazy(
   () =>
     import(
@@ -52,6 +54,9 @@ const PaymentManagement = React.lazy(
     import(
       "../pages/Staff/Payment/PaymentManagement"
     )
+);
+const AppointmentManagerment = React.lazy(
+  () => import("../pages/Staff/Appointment/AppointmentManagerment")
 );
 //-------------------------------------------------Doctor-----------------------------------------------
 const DashboardDoctor = React.lazy(
@@ -73,18 +78,8 @@ const VaccineRegistationPage = React.lazy(
 const ChildProfilePage = React.lazy(
   () => import("../pages/Customer/ChildProfilePage")
 );
-
-const ChildProfileManage = React.lazy(
-  () => import("../pages/Staff/ChildProfile/ChildProfileManage")
-);
-const AppointmentManagerment = React.lazy(
-  () => import("../pages/Staff/Appointment/AppointmentManagerment")
-);
 const MyProfilePage = React.lazy(
   () => import("../pages/Customer/MyProfilePage")
-);
-const VaccineProfilePage = React.lazy(
-  () => import("../pages/Customer/VaccineProfilePage")
 );
 const CustomerAppointment = React.lazy(
   () => import("../pages/Customer/AppointmentPage")
@@ -165,8 +160,6 @@ const AppRouter = () => {
             />
             <Route path="/vaccine-price" element={<VaccinePrice />} />
             <Route path="/Introduction" element={<Introductionpage />} />
-
-            <Route path="/child-profile" element={<VaccineProfilePage />} />
             <Route path="/payment-callback" element={<PaymentCallback />} />
             {/*----------------------------ADMIN---------------------------------*/}
             <Route
@@ -178,7 +171,7 @@ const AppRouter = () => {
                 />
               }
             />
-            <Route
+            {/* <Route
               path="/admin/page"
               element={
                 <ProtectedRouter
@@ -186,7 +179,7 @@ const AppRouter = () => {
                   allowedRoles={["Admin"]}
                 />
               }
-            />
+            /> */}
             <Route
               path="/admin/manage-user"
               element={
@@ -205,7 +198,69 @@ const AppRouter = () => {
                 />
               }
             /> */}
-
+            <Route
+              path="/admin/manage-vaccine-schedule"
+              element={
+                <ProtectedRouter
+                  element={<VaccineScheduleManagement />}
+                  allowedRoles={["Admin"]}
+                />
+              }
+            />
+            <Route
+              path="/admin/manage-vaccine-package-detail"
+              element={
+                <ProtectedRouter
+                  element={<VaccinePackageDetailManagerment />}
+                  allowedRoles={["Admin"]}
+                />
+              }
+            />
+            <Route
+              path="/admin/manage-vaccine-disease"
+              element={
+                <ProtectedRouter
+                  element={<VaccineDiseaseManagement />}
+                  allowedRoles={["Admin"]}
+                />
+              }
+            />
+            <Route
+              path="/admin/manage-vaccine"
+              element={
+                <ProtectedRouter
+                  element={<VaccineManagement />}
+                  allowedRoles={["Admin"]}
+                />
+              }
+            />
+            <Route
+              path="admin/manage-vaccine-package"
+              element={
+                <ProtectedRouter
+                  element={<VaccinePackageManagement />}
+                  allowedRoles={["Admin"]}
+                />
+              }
+            />
+            <Route
+              path="/admin/manager-childprofile"
+              element={
+                <ProtectedRouter
+                  element={<ChildProfileManage />}
+                  allowedRoles={["Admin"]}
+                />
+              }
+            />
+            <Route
+              path="/admin/manage-disease"
+              element={
+                <ProtectedRouter
+                  element={<DiseaseManagement />}
+                  allowedRoles={["Admin"]}
+                />
+              }
+            />
             {/*----------------------------STAFF---------------------------------*/}
             <Route
               path="/staff/dashboard"
@@ -217,73 +272,10 @@ const AppRouter = () => {
               }
             />
             <Route
-              path="/staff/manage-vaccine"
-              element={
-                <ProtectedRouter
-                  element={<VaccineManagement />}
-                  allowedRoles={["Staff"]}
-                />
-              }
-            />
-            <Route
-              path="staff/manage-vaccine-package"
-              element={
-                <ProtectedRouter
-                  element={<VaccinePackageManagement />}
-                  allowedRoles={["Staff"]}
-                />
-              }
-            />
-            <Route
-              path="/staff/manager-childprofile"
-              element={
-                <ProtectedRouter
-                  element={<ChildProfileManage />}
-                  allowedRoles={["Staff"]}
-                />
-              }
-            />
-            <Route
-              path="/staff/manage-disease"
-              element={
-                <ProtectedRouter
-                  element={<DiseaseManagement />}
-                  allowedRoles={["Staff"]}
-                />
-              }
-            />
-            <Route
               path="/staff/manage-appointment"
               element={
                 <ProtectedRouter
                   element={<AppointmentManagerment />}
-                  allowedRoles={["Staff"]}
-                />
-              }
-            />
-            <Route
-              path="/staff/manage-vaccine-schedule"
-              element={
-                <ProtectedRouter
-                  element={<VaccineScheduleManagement />}
-                  allowedRoles={["Staff"]}
-                />
-              }
-            />
-            <Route
-              path="/staff/manage-vaccine-package-detail"
-              element={
-                <ProtectedRouter
-                  element={<VaccinePackageDetailManagerment />}
-                  allowedRoles={["Staff"]}
-                />
-              }
-            />
-            <Route
-              path="/staff/manage-vaccine-disease"
-              element={
-                <ProtectedRouter
-                  element={<VaccineDiseaseManagement />}
                   allowedRoles={["Staff"]}
                 />
               }

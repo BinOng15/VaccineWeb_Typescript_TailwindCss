@@ -7,7 +7,6 @@ import {
   Space,
   Row,
   Col,
-  Tabs,
   Modal,
   message,
 } from "antd";
@@ -24,7 +23,6 @@ import userService from "../../service/userService";
 import { ColumnType } from "antd/es/table";
 
 const { Search } = Input;
-const { TabPane } = Tabs;
 
 interface User extends UserResponseDTO {
   userId: number;
@@ -40,26 +38,21 @@ const UserComponent: React.FC = () => {
     total: 0,
   });
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [activeTab, setActiveTab] = useState("activeUsers");
   const [isAddUserModalVisible, setIsAddUserModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editedUser, setEditedUser] = useState<User | null>(null);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  // Lấy danh sách người dùng từ API
+  // Lấy danh sách người dùng từ API (chỉ lấy người dùng hoạt động)
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const response = await userService.getAllUsers();
       console.log("API Response:", response);
-      const filteredByStatus = response.filter((user) =>
-        activeTab === "deletedUsers"
-          ? user.isActive === "Inactive"
-          : user.isActive === "Active"
-      );
-      setUsers(filteredByStatus);
-      applyPaginationAndFilter(filteredByStatus, searchKeyword, pagination);
+      const activeUsers = response.filter((user) => user.isActive === "Active");
+      setUsers(activeUsers);
+      applyPaginationAndFilter(activeUsers, searchKeyword, pagination);
     } catch (error) {
       console.error("Error fetching users:", error);
       message.error("Failed to fetch users: " + (error as Error).message);
@@ -94,7 +87,7 @@ const UserComponent: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [activeTab]);
+  }, []); // Xóa dependency activeTab vì không còn sử dụng
 
   // Xử lý thay đổi phân trang
   const handleTableChange = (pagination: any) => {
@@ -182,11 +175,6 @@ const UserComponent: React.FC = () => {
     });
   };
 
-  const handleTabChange = (key: string) => {
-    setActiveTab(key);
-    setPagination((prev) => ({ ...prev, current: 1 })); // Reset về trang 1 khi đổi tab
-  };
-
   const columns: ColumnType<UserResponseDTO>[] = [
     {
       title: "STT",
@@ -254,95 +242,51 @@ const UserComponent: React.FC = () => {
   ];
 
   return (
-    <div>
-      <Tabs
-        className="custom-tabs mt-20 ml-10 mr-10"
-        defaultActiveKey="activeUsers"
-        onChange={handleTabChange}
-      >
-        <TabPane tab="Người dùng hoạt động" key="activeUsers">
-          <Row justify="space-between" style={{ marginBottom: 16 }}>
-            <Col>
-              <Space className="custom-search">
-                <Search
-                  placeholder="Tìm kiếm theo từ khóa"
-                  onSearch={onSearch}
-                  enterButton
-                  allowClear
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                />
-                <ReloadOutlined
-                  onClick={handleReset}
-                  style={{ fontSize: "24px", cursor: "pointer" }}
-                />
-              </Space>
-            </Col>
-            <Col>
-              <Button
-                type="primary"
-                className="custom-button"
-                onClick={handleAddUser}
-              >
-                Thêm mới người dùng
-              </Button>
-            </Col>
-          </Row>
-          <Table
-            columns={columns}
-            dataSource={filteredUsers} // Sử dụng dữ liệu đã phân trang và lọc
-            rowKey="userId"
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-            }}
-            loading={loading}
-            onChange={handleTableChange}
-          />
-        </TabPane>
-        <TabPane tab="Người dùng vô hiệu hóa" key="deletedUsers">
-          <Row justify="space-between" style={{ marginBottom: 16 }}>
-            <Col>
-              <Space>
-                <Search
-                  placeholder="Tìm kiếm theo từ khóa"
-                  onSearch={onSearch}
-                  enterButton
-                  allowClear
-                  value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
-                />
-                <ReloadOutlined
-                  onClick={handleReset}
-                  style={{ fontSize: "24px", cursor: "pointer" }}
-                />
-              </Space>
-            </Col>
-            <Col>
-              <Button type="primary" onClick={handleAddUser}>
-                Thêm mới người dùng
-              </Button>
-            </Col>
-          </Row>
-          <Table
-            columns={columns}
-            dataSource={filteredUsers} // Sử dụng dữ liệu đã phân trang và lọc
-            rowKey="userId"
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-            }}
-            loading={loading}
-            onChange={handleTableChange}
-          />
-        </TabPane>
-      </Tabs>
+    <div className="p-4 max-w-7xl mx-auto">
+      <h2 className="text-2xl font-bold text-center p-2 rounded-t-lg">
+        QUẢN LÝ NGƯỜI DÙNG
+      </h2>
+      <Row justify="space-between" style={{ marginBottom: 16, marginTop: 24 }}>
+        <Col>
+          <Space className="custom-search">
+            <Search
+              placeholder="Tìm kiếm theo từ khóa"
+              onSearch={onSearch}
+              enterButton
+              allowClear
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+            />
+            <ReloadOutlined
+              onClick={handleReset}
+              style={{ fontSize: "24px", cursor: "pointer" }}
+            />
+          </Space>
+        </Col>
+        <Col>
+          <Button
+            type="primary"
+            className="custom-button"
+            onClick={handleAddUser}
+          >
+            Thêm mới người dùng
+          </Button>
+        </Col>
+      </Row>
+      <Table
+        columns={columns}
+        dataSource={filteredUsers} // Sử dụng dữ liệu đã phân trang và lọc
+        rowKey="userId"
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          showSizeChanger: true,
+          showQuickJumper: true,
+        }}
+        loading={loading}
+        onChange={handleTableChange}
+      />
 
       <AddUserModal
         visible={isAddUserModalVisible}
@@ -388,8 +332,8 @@ const UserComponent: React.FC = () => {
               {selectedUser.role === "Staff"
                 ? "Staff"
                 : selectedUser.role === "Doctor"
-                ? "Doctor"
-                : "N/A"}
+                  ? "Doctor"
+                  : "N/A"}
             </p>
           </div>
         )}

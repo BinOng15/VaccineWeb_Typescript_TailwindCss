@@ -85,13 +85,13 @@ const VaccinePrice: React.FC = () => {
           <div className="text-center">Đang tải dữ liệu...</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full ml-10 mr-5 border bg-white border-gray-300">
+            <table className="w-full border bg-white border-gray-300">
               <thead>
                 <tr className="bg-gray-200">
                   <th className="border px-4 py-2">STT</th>
                   <th className="border px-4 py-2">Tên Vắc-Xin</th>
                   <th className="border px-4 py-2">Phòng Bệnh</th>
-                  <th className="border px-4 py-2">Phác Đồ</th>
+                  <th className="border px-4 py-2">Mô tả</th>
                   <th className="border px-4 py-2">Đơn Giá (VNĐ)</th>
                   <th className="border px-4 py-2">Tình Trạng</th>
                 </tr>
