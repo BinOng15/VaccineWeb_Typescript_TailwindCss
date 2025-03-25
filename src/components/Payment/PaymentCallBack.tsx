@@ -57,10 +57,6 @@ const Payment = () => {
           updatedPayment
         );
 
-        // Tạo chi tiết thanh toán
-        const generatedDetails = await paymentDetailService.generatePaymentDetail(paymentId);
-        console.log("Chi tiết thanh toán đã được tạo:", generatedDetails);
-
         // Lấy tất cả thông tin thanh toán để tìm payment tương ứng
         const allPayments = await paymentService.getAllPayments();
         const payment = allPayments.find((p) => p.paymentId === paymentId);
@@ -70,16 +66,32 @@ const Payment = () => {
 
         // Lấy thông tin lịch hẹn bằng appointmentId
         const appointment = await appointmentService.getAppointmentById(payment.appointmentId);
-        if (appointment) {
-          // Cập nhật trạng thái lịch hẹn thành Paid (3)
+        if (!appointment) {
+          throw new Error("Không tìm thấy lịch hẹn liên quan đến paymentId này!");
+        }
+
+        // Kiểm tra xem appointment có vaccineId (vaccine lẻ) hay vaccinePackageId (gói vaccine)
+        if (appointment.vaccineId) {
+          // Trường hợp vaccine lẻ: Chỉ cần cập nhật trạng thái appointment thành Paid
           const updateAppointmentData = {
             appointmentStatus: AppointmentStatus.Paid, // Cập nhật thành Paid (3)
           };
           await appointmentService.updateAppointment(appointment.appointmentId, updateAppointmentData);
-          console.log(`Trạng thái lịch hẹn đã được cập nhật thành Paid cho appointmentId: ${appointment.appointmentId}`);
-          message.success("Thanh toán và cập nhật lịch hẹn thành công!");
+          console.log(`Trạng thái lịch hẹn đã được cập nhật thành Paid cho appointmentId: ${appointment.appointmentId} (Vaccine lẻ)`);
+          message.success("Thanh toán vaccine lẻ và cập nhật lịch hẹn thành công!");
+        } else if (appointment.vaccinePackageId) {
+          // Trường hợp gói vaccine: Tạo chi tiết thanh toán và cập nhật trạng thái appointment
+          const generatedDetails = await paymentDetailService.generatePaymentDetail(paymentId);
+          console.log("Chi tiết thanh toán đã được tạo cho gói vaccine:", generatedDetails);
+
+          const updateAppointmentData = {
+            appointmentStatus: AppointmentStatus.Paid, // Cập nhật thành Paid (3)
+          };
+          await appointmentService.updateAppointment(appointment.appointmentId, updateAppointmentData);
+          console.log(`Trạng thái lịch hẹn đã được cập nhật thành Paid cho appointmentId: ${appointment.appointmentId} (Gói vaccine)`);
+          message.success("Thanh toán gói vaccine và cập nhật lịch hẹn thành công!");
         } else {
-          throw new Error("Không tìm thấy lịch hẹn liên quan đến paymentId này!");
+          throw new Error("Lịch hẹn không có vaccineId hoặc vaccinePackageId!");
         }
       } catch (error) {
         message.error(
