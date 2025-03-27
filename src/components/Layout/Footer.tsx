@@ -5,10 +5,17 @@ import {
   PhoneOutlined,
   EnvironmentOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 
 const { Footer } = Layout;
 
 const CustomFooter: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleNavigate = (path: string) => {
+    navigate(path, { replace: true });
+  };
+
   return (
     <Footer className="bg-white text-white py-10">
       <div className="container mx-auto flex flex-col md:flex-row justify-between px-6">
@@ -48,23 +55,18 @@ const CustomFooter: React.FC = () => {
           </h3>
           <ul className="text-black space-y-2">
             <li>
-              <a href="/about" className="hover:text-[#009EE0]">
+              <a href="#" className="hover:text-[#009EE0]">
                 Giới thiệu thương hiệu
               </a>
             </li>
             <li>
-              <a href="/policy" className="hover:text-[#009EE0]">
+              <a href="#" className="hover:text-[#009EE0]">
                 Chính sách bảo mật
               </a>
             </li>
             <li>
-              <a href="/contact" className="hover:text-[#009EE0]">
+              <a href="#" className="hover:text-[#009EE0]">
                 Liên hệ
-              </a>
-            </li>
-            <li>
-              <a href="/shipping" className="hover:text-[#009EE0]">
-                Chính sách vận chuyển
               </a>
             </li>
           </ul>
@@ -88,7 +90,7 @@ const CustomFooter: React.FC = () => {
           </p>
           <Space.Compact style={{ width: "100%" }}>
             <Input placeholder="Nhập email của bạn" prefix={<MailOutlined />} />
-            <Button type="primary">Đăng ký</Button>
+            <Button type="primary" onClick={() => handleNavigate("/register")}>Đăng ký</Button>
           </Space.Compact>
           <div className="flex space-x-4 mt-4">
             {/* Facebook Logo */}
