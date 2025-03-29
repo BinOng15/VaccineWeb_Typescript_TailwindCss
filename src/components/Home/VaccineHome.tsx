@@ -1,29 +1,39 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import vaccineService from "../../service/vaccineService";
 
-const VaccineHome: React.FC = () => {
-  // Danh sách sản phẩm
-  const products = [
-    {
-      name: "Vắc xin sốt xuất huyết",
-      image: "https://vnvc.vn/wp-content/uploads/2024/09/vacxin-qdenga.jpg",
-    },
-    {
-      name: "Vắc xin 6IN1",
-      image: "https://vnvc.vn/wp-content/uploads/2018/06/vaccine-hexaxim.jpg",
-    },
-    {
-      name: "Vắc xin Engerix B (Bỉ)",
-      image: "https://vnvc.vn/wp-content/uploads/2017/04/vac-xin-engerix-b.jpg",
-    },
-    {
-      name: "Vắc xin Rotavin (Việt Nam)",
-      image: "https://vnvc.vn/wp-content/uploads/2020/05/vac-xin-rotavin-1.jpg",
-    },
-    {
-      name: "Vắc xin Imojev (Thái Lan)",
-      image: "https://vnvc.vn/wp-content/uploads/2019/07/vac-xin-imojev.jpg",
-    },
-  ];
+interface VaccineDisplay {
+  vaccineId: number;
+  name: string;
+  image: string;
+}
+
+const VaccineTypes: React.FC = () => {
+  const [vaccines, setVaccines] = useState<VaccineDisplay[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const vaccineData = await vaccineService.getAllVaccines();
+
+        console.log("Vaccines:", vaccineData);
+
+        const mappedVaccines: VaccineDisplay[] = vaccineData.map((vaccine) => ({
+          vaccineId: vaccine.vaccineId,
+          name: vaccine.name,
+          image: vaccine.image,
+        }));
+
+        setVaccines(mappedVaccines);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   return (
     <section className="relative px-10 py-10 h-[62vh] text-center bg-white">
@@ -32,23 +42,27 @@ const VaccineHome: React.FC = () => {
       </h2>
 
       {/* Product Grid */}
-      <div className="flex justify-center gap-4 relative z-10">
-        {products.map((product, index) => (
-          <div
-            key={index}
-            className="bg-white p-4 rounded-lg shadow-md w-1/5 uppercase"
-          >
-            <img
-              src={product.image}
-              alt={product.name}
-              className="w-full h-48 object-cover rounded-lg"
-            />
-            <h3 className="text-md font-semibold mt-2">{product.name}</h3>
-          </div>
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center">Đang tải dữ liệu...</div>
+      ) : (
+        <div className="flex justify-center gap-4 relative z-10">
+          {vaccines.slice(0, 5).map((vaccine) => (
+            <div
+              key={vaccine.vaccineId}
+              className="bg-white p-4 rounded-lg shadow-md w-1/5 uppercase"
+            >
+              <img
+                src={vaccine.image}
+                alt={vaccine.name}
+                className="w-full h-48 object-cover rounded-lg"
+              />
+              <h3 className="text-md font-semibold mt-2">{vaccine.name}</h3>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 };
 
-export default VaccineHome;
+export default VaccineTypes;
