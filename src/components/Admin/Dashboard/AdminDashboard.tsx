@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AdminLayout from "../../Layout/AdminLayout";
 import { Row, Col, Card, message } from "antd";
-import { Line, Pie } from "@ant-design/charts"; // Loại bỏ Bar
+import { Pie } from "@ant-design/charts";
 import userService from "../../../service/userService";
 import appointmentService from "../../../service/appointmentService";
 import childProfileService from "../../../service/childProfileService";
@@ -9,7 +9,15 @@ import vaccinePackageService from "../../../service/vaccinePackageService";
 import vaccinePackageDetailService from "../../../service/vaccinePackageDetailService";
 import paymentService from "../../../service/paymentService";
 import paymentDetailService from "../../../service/paymentDetailService";
+import { AppointmentStatus } from "../../Appointment/CustomerAppointment";
 
+// Define the AppointmentResponseDTO interface based on the service response
+interface AppointmentResponseDTO {
+  appointmentStatus: AppointmentStatus;
+  // Add other properties as needed (e.g., date, userId, etc.)
+}
+
+// Dashboard stats interface
 interface DashboardStats {
   totalUsers: number;
   totalAppointments: number;
@@ -22,9 +30,16 @@ interface DashboardStats {
   dailyRevenue: { [key: string]: number };
   monthlyRevenue: { [key: string]: number };
   yearlyRevenue: { [key: string]: number };
-  appointmentStatusCounts: { [key: string]: number }; // Thêm để lưu số lượng theo trạng thái
+  appointmentStatusCounts: { [key in AppointmentStatus]: number };
 }
 
+// Pie chart data interface
+interface PieData {
+  type: string;
+  value: number;
+}
+
+// CardWidget component for displaying stats
 const CardWidget: React.FC<{
   title: string;
   value: number | string;
@@ -40,6 +55,7 @@ const CardWidget: React.FC<{
   );
 };
 
+// DetailedCardWidget component for additional stats
 const DetailedCardWidget: React.FC<{
   title: string;
   total: number;
@@ -52,6 +68,31 @@ const DetailedCardWidget: React.FC<{
   );
 };
 
+// Function to calculate appointment status counts
+const calculateAppointmentStatusCounts = (
+  appointments: AppointmentResponseDTO[]
+): { [key in AppointmentStatus]: number } => {
+  const counts: { [key in AppointmentStatus]: number } = {
+    [AppointmentStatus.Pending]: 0,
+    [AppointmentStatus.Checked]: 0,
+    [AppointmentStatus.Paid]: 0,
+    [AppointmentStatus.Injected]: 0,
+    [AppointmentStatus.WaitingForResponse]: 0,
+    [AppointmentStatus.Completed]: 0,
+    [AppointmentStatus.Cancelled]: 0,
+  };
+
+  appointments.forEach((appointment) => {
+    const status = appointment.appointmentStatus;
+    if (status in counts) {
+      counts[status] += 1;
+    }
+  });
+
+  return counts;
+};
+
+// Main AdminDashboard component
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
@@ -65,68 +106,32 @@ const AdminDashboard: React.FC = () => {
     dailyRevenue: {},
     monthlyRevenue: {},
     yearlyRevenue: {},
-    appointmentStatusCounts: {
-      "Đang chờ": 0,
-      "Đang chờ tiêm": 0,
-      "Đang chờ phản hồi": 0,
-      "Đã hoàn tất": 0,
-      "Đã hủy": 0,
-    },
+    appointmentStatusCounts: calculateAppointmentStatusCounts([]), // Initialize with empty array
   });
   const [loading, setLoading] = useState(false);
+  const [dataFetched, setDataFetched] = useState(false); // Add a flag to track if data is fetched
 
+  // Fetch data from services
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Lấy dữ liệu người dùng
       const allUsers = await userService.getAllUsers();
       const totalUsers = Array.isArray(allUsers) ? allUsers.length : 0;
 
-      // Lấy dữ liệu lịch hẹn
       const allAppointments = await appointmentService.getAllAppointments();
       const totalAppointments = Array.isArray(allAppointments)
         ? allAppointments.length
         : 0;
 
-      // Tính số lượng theo trạng thái lịch hẹn
-      const appointmentStatusCounts = {
-        "Đang chờ": 0,
-        "Đang chờ tiêm": 0,
-        "Đang chờ phản hồi": 0,
-        "Đã hoàn tất": 0,
-        "Đã hủy": 0,
-      };
-      if (Array.isArray(allAppointments)) {
-        allAppointments.forEach((appointment) => {
-          switch (appointment.appointmentStatus) {
-            case 1:
-              appointmentStatusCounts["Đang chờ"] += 1;
-              break;
-            case 2:
-              appointmentStatusCounts["Đang chờ tiêm"] += 1;
-              break;
-            case 3:
-              appointmentStatusCounts["Đang chờ phản hồi"] += 1;
-              break;
-            case 4:
-              appointmentStatusCounts["Đã hoàn tất"] += 1;
-              break;
-            case 5:
-              appointmentStatusCounts["Đã hủy"] += 1;
-              break;
-            default:
-              break;
-          }
-        });
-      }
+      // Calculate appointment status counts using the service response
+      const appointmentStatusCounts =
+        calculateAppointmentStatusCounts(allAppointments);
 
-      // Lấy dữ liệu hồ sơ trẻ
       const allChildProfiles = await childProfileService.getAllChildProfiles();
       const totalChildProfiles = Array.isArray(allChildProfiles)
         ? allChildProfiles.length
         : 0;
 
-      // Lấy dữ liệu gói vaccine
       const allVaccinePackages = await vaccinePackageService.getAllPackages();
       const vaccinatedPackages = Array.isArray(allVaccinePackages)
         ? allVaccinePackages.filter((p) => p.isActive === 1).length
@@ -135,19 +140,17 @@ const AdminDashboard: React.FC = () => {
         ? allVaccinePackages.length - vaccinatedPackages
         : 0;
 
-      // Lấy dữ liệu chi tiết gói vaccine để tính vaccinatedCount và unvaccinatedCount
       const allVaccinePackageDetails =
         await vaccinePackageDetailService.getAllPackagesDetail();
       const vaccinatedCount = Array.isArray(allVaccinePackageDetails)
         ? allVaccinePackageDetails.filter(
-          (d) => d.isActive === "true" || d.isActive === "1"
-        ).length
+            (d) => d.isActive === "true" || d.isActive === "1"
+          ).length
         : 0;
       const unvaccinatedCount = Array.isArray(allVaccinePackageDetails)
         ? allVaccinePackageDetails.length - vaccinatedCount
         : 0;
 
-      // Lấy dữ liệu thanh toán
       let totalRevenue = 0;
       const dailyRevenue: { [key: string]: number } = {};
       const monthlyRevenue: { [key: string]: number } = {};
@@ -157,9 +160,9 @@ const AdminDashboard: React.FC = () => {
         const allPayments = await paymentService.getAllPayments();
         totalRevenue = Array.isArray(allPayments)
           ? allPayments.reduce(
-            (sum, payment) => sum + (payment.totalAmount || 0),
-            0
-          )
+              (sum, payment) => sum + (payment.totalAmount || 0),
+              0
+            )
           : 0;
 
         if (Array.isArray(allPayments)) {
@@ -183,10 +186,9 @@ const AdminDashboard: React.FC = () => {
           });
         }
       } catch (paymentError) {
-        console.warn("Không thể lấy dữ liệu thanh toán:", paymentError);
+        console.warn("Unable to fetch payment data:", paymentError);
       }
 
-      // Lấy dữ liệu chi tiết thanh toán
       try {
         const allPaymentDetails =
           await paymentDetailService.getAllPaymentDetails();
@@ -212,12 +214,11 @@ const AdminDashboard: React.FC = () => {
         }
       } catch (paymentDetailError) {
         console.warn(
-          "Không thể lấy dữ liệu chi tiết thanh toán:",
+          "Unable to fetch payment detail data:",
           paymentDetailError
         );
       }
 
-      // Cập nhật state với dữ liệu lấy được
       setStats({
         totalUsers,
         totalAppointments,
@@ -232,10 +233,12 @@ const AdminDashboard: React.FC = () => {
         yearlyRevenue,
         appointmentStatusCounts,
       });
+
+      setDataFetched(true); // Mark data as fetched
     } catch (error) {
-      console.error("Lỗi khi lấy dữ liệu dashboard:", error);
+      console.error("Error fetching dashboard data:", error);
       message.error(
-        "Không thể tải dữ liệu dashboard: " + (error as Error).message
+        "Unable to load dashboard data: " + (error as Error).message
       );
     } finally {
       setLoading(false);
@@ -246,6 +249,7 @@ const AdminDashboard: React.FC = () => {
     fetchData();
   }, []);
 
+  // Calculate latest revenue values
   const latestDailyRevenueValue = Object.values(stats.dailyRevenue).reduce(
     (max, value) => (value > max ? value : max),
     0
@@ -259,55 +263,68 @@ const AdminDashboard: React.FC = () => {
     0
   );
 
-  const lineData = [
-    { month: "Jan", value: 12 },
-    { month: "Feb", value: 19 },
-    { month: "Mar", value: 3 },
-    { month: "Apr", value: 5 },
-    { month: "May", value: 2 },
-    { month: "Jun", value: 3 },
-    { month: "Jul", value: 7 },
-    { month: "Aug", value: 15 },
-    { month: "Sep", value: 10 },
-    { month: "Oct", value: 8 },
-    { month: "Nov", value: 12 },
+  // Pie chart data for appointment statuses
+  const pieData: PieData[] = [
+    {
+      type: "Chưa Check-in",
+      value: stats.appointmentStatusCounts[AppointmentStatus.Pending],
+    },
+    {
+      type: "Đã check-in",
+      value: stats.appointmentStatusCounts[AppointmentStatus.Checked],
+    },
+    {
+      type: "Đã thanh toán",
+      value: stats.appointmentStatusCounts[AppointmentStatus.Paid],
+    },
+    {
+      type: "Đã tiêm",
+      value: stats.appointmentStatusCounts[AppointmentStatus.Injected],
+    },
+    {
+      type: "Đang chờ phản ứng",
+      value:
+        stats.appointmentStatusCounts[AppointmentStatus.WaitingForResponse],
+    },
+    {
+      type: "Hoàn tất",
+      value: stats.appointmentStatusCounts[AppointmentStatus.Completed],
+    },
+    {
+      type: "Đã hủy",
+      value: stats.appointmentStatusCounts[AppointmentStatus.Cancelled],
+    },
   ];
 
-  // Dữ liệu cho biểu đồ Pie "Tình trạng đăng ký tiêm"
-  const pieData = [
-    { type: "Đang chờ", value: stats.appointmentStatusCounts["Đang chờ"] },
-    {
-      type: "Đang chờ tiêm",
-      value: stats.appointmentStatusCounts["Đang chờ tiêm"],
-    },
-    {
-      type: "Đang chờ phản hồi",
-      value: stats.appointmentStatusCounts["Đang chờ phản hồi"],
-    },
-    {
-      type: "Đã hoàn tất",
-      value: stats.appointmentStatusCounts["Đã hoàn tất"],
-    },
-    { type: "Đã hủy", value: stats.appointmentStatusCounts["Đã hủy"] },
-  ];
-
-  const lineConfig = {
-    data: lineData,
-    xField: "month",
-    yField: "value",
-    smooth: true,
-    color: "#36A2EB",
-    height: 300,
-  };
-
+  // Pie chart configuration (updated from the second code)
   const pieConfig = {
     data: pieData,
     angleField: "value",
     colorField: "type",
-    color: ["#FFCE56", "#4BC0C0", "#36A2EB", "#FF6384", "#9966FF"], // 5 màu cho 5 trạng thái
+    color: [
+      "#FFCE56",
+      "#4BC0C0",
+      "#36A2EB",
+      "#FF6384",
+      "#9966FF",
+      "#FF9F40",
+      "#E6A0C4",
+    ],
     height: 300,
+    label: {
+      type: "inner",
+      offset: "-50%",
+      content: ({ type, value }: PieData) => `${type}: ${value}`, // Display both status name and count
+      style: {
+        textAlign: "center",
+        fontSize: 14,
+      },
+    },
+    interactions: [], // Disable all interactions (from second code)
+    tooltip: false, // Disable tooltip on hover (from second code)
   };
 
+  // Render the dashboard
   return (
     <AdminLayout>
       <section className="space-y-4 p-2 sm:space-y-6 sm:p-4">
@@ -384,16 +401,13 @@ const AdminDashboard: React.FC = () => {
             </Col>
           </Row>
           <Row gutter={[16, 16]}>
-            <Col xs={24} lg={12}>
-              <Card title="Số lượng đăng ký tiêm theo tháng">
-                <Line {...lineConfig} />
-              </Card>
-            </Col>
-            <Col xs={24} lg={12}>
-              {" "}
-              {/* Tăng width từ lg={6} lên lg={12} để thay thế vị trí của Bar */}
+            <Col xs={24}>
               <Card title="Tình trạng đăng ký tiêm">
-                <Pie {...pieConfig} />
+                {dataFetched ? (
+                  <Pie {...pieConfig} />
+                ) : (
+                  <div className="text-center">Đang tải biểu đồ...</div>
+                )}
               </Card>
             </Col>
           </Row>
