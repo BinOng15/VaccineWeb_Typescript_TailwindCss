@@ -6,6 +6,7 @@ import childProfileService from "../../service/childProfileService";
 import vaccinePackageService from "../../service/vaccinePackageService";
 import vaccineScheduleService from "../../service/vaccineScheduleService";
 import vaccineService from "../../service/vaccineService";
+import { AppointmentStatus } from "../Appointment/CustomerAppointment";
 
 interface StaffDashboardStats {
   totalVaccines: number; // Số lượng vaccine lẻ (số loại vaccine)
@@ -14,7 +15,13 @@ interface StaffDashboardStats {
   totalRegisteredChildren: number; // Số lượng trẻ đăng ký tiêm
   totalChildProfiles: number; // Số lượng hồ sơ của trẻ
   totalVaccineSchedules: number; // Số lượng lịch tiêm chủng (từ VaccineSchedule)
-  appointmentStatusCounts: { [key: string]: number }; // Trạng thái lịch hẹn
+  appointmentStatusCounts: { [key in AppointmentStatus]?: number };
+}
+
+interface PieDatum {
+  type: string;
+  value: number;
+  color: string;
 }
 
 const CardWidget: React.FC<{
@@ -41,11 +48,13 @@ const StaffDashboard: React.FC = () => {
     totalChildProfiles: 0,
     totalVaccineSchedules: 0,
     appointmentStatusCounts: {
-      "Đang chờ": 0,
-      "Đang chờ tiêm": 0,
-      "Đang chờ phản hồi": 0,
-      "Đã hoàn tất": 0,
-      "Đã hủy": 0,
+      [AppointmentStatus.Pending]: 0,
+      [AppointmentStatus.Checked]: 0,
+      [AppointmentStatus.Paid]: 0,
+      [AppointmentStatus.Injected]: 0,
+      [AppointmentStatus.WaitingForResponse]: 0,
+      [AppointmentStatus.Completed]: 0,
+      [AppointmentStatus.Cancelled]: 0,
     },
   });
   const [loading, setLoading] = useState(false);
@@ -53,64 +62,51 @@ const StaffDashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // 1. Số lượng vaccine lẻ và tổng số vaccine
+      // 1. Lấy số lượng vaccine lẻ và tổng số vaccine
       const allVaccines = await vaccineService.getAllVaccines();
       const totalVaccines = Array.isArray(allVaccines) ? allVaccines.length : 0;
       const totalVaccineQuantity = Array.isArray(allVaccines)
         ? allVaccines.reduce((sum, vaccine) => sum + (vaccine.quantity || 0), 0)
         : 0;
 
-      // 2. Số lượng gói vaccine
+      // 2. Lấy số lượng gói vaccine
       const allVaccinePackages = await vaccinePackageService.getAllPackages();
       const totalVaccinePackages = Array.isArray(allVaccinePackages)
         ? allVaccinePackages.length
         : 0;
 
-      // 3. Số lượng trẻ đăng ký tiêm (dựa trên Appointment)
+      // 3. Lấy số lượng trẻ đăng ký tiêm (dựa trên Appointment)
       const allAppointments = await appointmentService.getAllAppointments();
       const totalRegisteredChildren = Array.isArray(allAppointments)
-        ? new Set(allAppointments.map((appt) => appt.childId)).size // Đếm số trẻ duy nhất
+        ? new Set(allAppointments.map((appt) => appt.childId)).size
         : 0;
 
-      // Tính số lượng theo trạng thái lịch hẹn
-      const appointmentStatusCounts = {
-        "Đang chờ": 0,
-        "Đang chờ tiêm": 0,
-        "Đang chờ phản hồi": 0,
-        "Đã hoàn tất": 0,
-        "Đã hủy": 0,
+      // Tính số lượng cho tất cả 7 trạng thái dựa trên enum AppointmentStatus
+      const appointmentStatusCounts: { [key in AppointmentStatus]?: number } = {
+        [AppointmentStatus.Pending]: 0,
+        [AppointmentStatus.Checked]: 0,
+        [AppointmentStatus.Paid]: 0,
+        [AppointmentStatus.Injected]: 0,
+        [AppointmentStatus.WaitingForResponse]: 0,
+        [AppointmentStatus.Completed]: 0,
+        [AppointmentStatus.Cancelled]: 0,
       };
       if (Array.isArray(allAppointments)) {
         allAppointments.forEach((appointment) => {
-          switch (appointment.appointmentStatus) {
-            case 1:
-              appointmentStatusCounts["Đang chờ"] += 1;
-              break;
-            case 2:
-              appointmentStatusCounts["Đang chờ tiêm"] += 1;
-              break;
-            case 3:
-              appointmentStatusCounts["Đang chờ phản hồi"] += 1;
-              break;
-            case 4:
-              appointmentStatusCounts["Đã hoàn tất"] += 1;
-              break;
-            case 5:
-              appointmentStatusCounts["Đã hủy"] += 1;
-              break;
-            default:
-              break;
+          const status = appointment.appointmentStatus as AppointmentStatus;
+          if (appointmentStatusCounts[status] !== undefined) {
+            appointmentStatusCounts[status]! += 1;
           }
         });
       }
 
-      // 4. Số lượng hồ sơ của trẻ
+      // 4. Lấy số lượng hồ sơ của trẻ
       const allChildProfiles = await childProfileService.getAllChildProfiles();
       const totalChildProfiles = Array.isArray(allChildProfiles)
         ? allChildProfiles.length
         : 0;
 
-      // 5. Số lượng lịch tiêm chủng (dựa trên VaccineSchedule)
+      // 5. Lấy số lượng lịch tiêm chủng (dựa trên VaccineSchedule)
       const allVaccineSchedules =
         await vaccineScheduleService.getAllVaccineSchedules();
       const totalVaccineSchedules = Array.isArray(allVaccineSchedules)
@@ -141,30 +137,76 @@ const StaffDashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  // Dữ liệu cho biểu đồ Pie "Tình trạng lịch hẹn"
-  const pieData = [
-    { type: "Đang chờ", value: stats.appointmentStatusCounts["Đang chờ"] },
+  // Định nghĩa thứ tự, nhãn và màu sắc cho tất cả 7 trạng thái
+  // (theo đúng thứ tự enum AppointmentStatus)
+  const statuses = [
     {
-      type: "Đang chờ tiêm",
-      value: stats.appointmentStatusCounts["Đang chờ tiêm"],
+      value: AppointmentStatus.Pending,
+      label: "Chưa Check-in",
+      color: "#FFA500",
     },
     {
-      type: "Đang chờ phản hồi",
-      value: stats.appointmentStatusCounts["Đang chờ phản hồi"],
+      value: AppointmentStatus.Checked,
+      label: "Đã check-in",
+      color: "#4BC0C0",
+    },
+    { value: AppointmentStatus.Paid, label: "Đã thanh toán", color: "#FFD700" },
+    { value: AppointmentStatus.Injected, label: "Đã tiêm", color: "#FF9F40" },
+    {
+      value: AppointmentStatus.WaitingForResponse,
+      label: "Đang chờ phản ứng",
+      color: "#36A2EB",
     },
     {
-      type: "Đã hoàn tất",
-      value: stats.appointmentStatusCounts["Đã hoàn tất"],
+      value: AppointmentStatus.Completed,
+      label: "Đã hoàn tất",
+      color: "#FF6384",
     },
-    { type: "Đã hủy", value: stats.appointmentStatusCounts["Đã hủy"] },
+    { value: AppointmentStatus.Cancelled, label: "Đã hủy", color: "#8B0000" },
   ];
 
+  // Tạo dữ liệu cho biểu đồ Pie với 7 trạng thái (theo đúng thứ tự)
+  const pieData: PieDatum[] = statuses.map((s) => ({
+    type: s.label,
+    value: stats.appointmentStatusCounts[s.value] || 0,
+    color: s.color,
+  }));
+
+  // Cấu hình biểu đồ Pie
   const pieConfig = {
     data: pieData,
     angleField: "value",
     colorField: "type",
-    color: ["#FFCE56", "#4BC0C0", "#36A2EB", "#FF6384", "#9966FF"], // 5 màu cho 5 trạng thái
+    color: (datum: PieDatum) => datum.color,
     height: 300,
+    label: {
+      type: "inner",
+      offset: "-50%",
+      content: ({ type, value }: { type: string; value: number }) =>
+        `${type}: ${value}`,
+      style: {
+        textAlign: "center",
+        fontSize: 14,
+      },
+    },
+    // Tắt các tương tác mặc định
+    interactions: [],
+    tooltip: false,
+    // Tùy chỉnh legend để giữ nguyên thứ tự
+    legend: {
+      custom: true,
+      position: "bottom",
+      // items: là mảng hiển thị cho legend, ta map theo đúng thứ tự statuses
+      items: statuses.map((s) => ({
+        id: s.label,
+        name: s.label,
+        value: s.label,
+        marker: {
+          symbol: "circle",
+          style: { fill: s.color, r: 5 },
+        },
+      })),
+    },
   };
 
   return (
