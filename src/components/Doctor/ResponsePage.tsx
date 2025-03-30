@@ -45,7 +45,6 @@ const ResponsePage: React.FC = () => {
     const [allPaymentDetails, setAllPaymentDetails] = useState<PaymentDetailResponseDTO[]>([]);
     const [vaccineNameMap, setVaccineNameMap] = useState<Map<number, string>>(new Map());
     const [reactionForm] = Form.useForm();
-    const [processedAppointments, setProcessedAppointments] = useState<Set<number>>(new Set());
 
     const getStatusText = (status: number) => {
         let text = "";
@@ -245,8 +244,6 @@ const ResponsePage: React.FC = () => {
             };
             await appointmentService.updateAppointment(selectedAppointment.appointmentId, updateData);
 
-            setProcessedAppointments((prev) => new Set(prev).add(selectedAppointment.appointmentId));
-
             message.success("Đã cập nhật phản ứng", 1.5, () => {
                 fetchAppointments(pagination.current, pagination.pageSize, searchKeyword);
                 setIsReactionModalVisible(false);
@@ -264,18 +261,11 @@ const ResponsePage: React.FC = () => {
             return;
         }
 
-        if (processedAppointments.has(appointment.appointmentId)) {
-            message.warning("Lịch hẹn đã hoàn thành từ trước!");
-            return;
-        }
-
         try {
             const updateData: UpdateAppointmentDTO = {
                 appointmentStatus: AppointmentStatus.Completed,
             };
             await appointmentService.updateAppointment(appointment.appointmentId, updateData);
-
-            setProcessedAppointments((prev) => new Set(prev).add(appointment.appointmentId));
 
             message.success("Lịch hẹn đã hoàn thành!", 1.5, () => {
                 fetchAppointments(pagination.current, pagination.pageSize, searchKeyword);

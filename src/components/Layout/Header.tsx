@@ -27,7 +27,7 @@ const AppHeader: React.FC = () => {
         { name: "Các gói vắc xin cho trẻ em", path: "/vaccine-package" },
       ],
     },
-    { name: "Bảng giá", path: "/vaccine-price" },
+    { name: "Bảng giá Vắc xin", path: "/vaccine-price" },
   ];
 
   const isLoggedIn = !!user;

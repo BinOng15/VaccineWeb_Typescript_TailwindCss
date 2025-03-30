@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AdminLayout from "../../Layout/AdminLayout";
-import { Row, Col, Card, message } from "antd";
+import { Row, Col, Card } from "antd";
 import { Pie } from "@ant-design/charts";
 import userService from "../../../service/userService";
 import appointmentService from "../../../service/appointmentService";
@@ -8,13 +8,34 @@ import childProfileService from "../../../service/childProfileService";
 import vaccinePackageService from "../../../service/vaccinePackageService";
 import vaccinePackageDetailService from "../../../service/vaccinePackageDetailService";
 import paymentService from "../../../service/paymentService";
-import paymentDetailService from "../../../service/paymentDetailService";
 import { AppointmentStatus } from "../../Appointment/CustomerAppointment";
 
-// Define the AppointmentResponseDTO interface based on the service response
+// Define the AppointmentResponseDTO interface
 interface AppointmentResponseDTO {
   appointmentStatus: AppointmentStatus;
-  // Add other properties as needed (e.g., date, userId, etc.)
+}
+
+// Define PaymentResponseDTO interface
+export interface PaymentResponseDTO {
+  paymentId: number;
+  appointmentId: number;
+  userId: number;
+  vaccinePackageId?: number;
+  vaccineId?: number;
+  paymentType: string;
+  totalAmount: number;
+  paymentDate?: Date | string;
+  paymentStatus: PaymentStatus;
+  createdDate: Date | string;
+  createdBy: string;
+  url: string;
+}
+
+// Define PaymentStatus enum
+export enum PaymentStatus {
+  AwaitingPayment = 1,
+  Paid = 2,
+  Aborted = 3,
 }
 
 // Dashboard stats interface
@@ -27,9 +48,6 @@ interface DashboardStats {
   vaccinatedPackages: number;
   pendingPackages: number;
   totalRevenue: number;
-  dailyRevenue: { [key: string]: number };
-  monthlyRevenue: { [key: string]: number };
-  yearlyRevenue: { [key: string]: number };
   appointmentStatusCounts: { [key in AppointmentStatus]: number };
 }
 
@@ -39,31 +57,38 @@ interface PieData {
   value: number;
 }
 
-// CardWidget component for displaying stats
+// CardWidget component for displaying stats with animations
 const CardWidget: React.FC<{
   title: string;
   value: number | string;
-  color?: string;
-}> = ({ title, value, color = "blue" }) => {
+  color: string;
+  icon: string;
+}> = ({ title, value, color, icon }) => {
   return (
     <div
-      className={`bg-white p-4 rounded-lg shadow-md border-l-4 border-${color}-500`}
+      className={`relative bg-gradient-to-r ${color} text-white p-6 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-2xl animate-fadeIn`}
     >
-      <h3 className="text-sm text-gray-600">{title}</h3>
-      <p className="text-2xl font-bold text-gray-800">{value}</p>
+      <div className="absolute top-4 right-4 text-4xl opacity-30">
+        <i className={icon}></i>
+      </div>
+      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <p className="text-3xl font-bold">{value}</p>
     </div>
   );
 };
 
-// DetailedCardWidget component for additional stats
+// DetailedCardWidget component for additional stats with animations
 const DetailedCardWidget: React.FC<{
   title: string;
   total: number;
-}> = ({ title, total }) => {
+  color: string;
+}> = ({ title, total, color }) => {
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500">
-      <h3 className="text-sm text-gray-600">{title}</h3>
-      <p className="text-2xl font-bold text-gray-800">{total}</p>
+    <div
+      className={`bg-gradient-to-r ${color} text-white p-6 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-2xl animate-fadeIn`}
+    >
+      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <p className="text-3xl font-bold">{total}</p>
     </div>
   );
 };
@@ -103,13 +128,10 @@ const AdminDashboard: React.FC = () => {
     vaccinatedPackages: 0,
     pendingPackages: 0,
     totalRevenue: 0,
-    dailyRevenue: {},
-    monthlyRevenue: {},
-    yearlyRevenue: {},
-    appointmentStatusCounts: calculateAppointmentStatusCounts([]), // Initialize with empty array
+    appointmentStatusCounts: calculateAppointmentStatusCounts([]),
   });
   const [loading, setLoading] = useState(false);
-  const [dataFetched, setDataFetched] = useState(false); // Add a flag to track if data is fetched
+  const [dataFetched, setDataFetched] = useState(false);
 
   // Fetch data from services
   const fetchData = async () => {
@@ -123,7 +145,6 @@ const AdminDashboard: React.FC = () => {
         ? allAppointments.length
         : 0;
 
-      // Calculate appointment status counts using the service response
       const appointmentStatusCounts =
         calculateAppointmentStatusCounts(allAppointments);
 
@@ -144,79 +165,30 @@ const AdminDashboard: React.FC = () => {
         await vaccinePackageDetailService.getAllPackagesDetail();
       const vaccinatedCount = Array.isArray(allVaccinePackageDetails)
         ? allVaccinePackageDetails.filter(
-            (d) => d.isActive === "true" || d.isActive === "1"
-          ).length
+          (d) => d.isActive === "true" || d.isActive === "1"
+        ).length
         : 0;
       const unvaccinatedCount = Array.isArray(allVaccinePackageDetails)
         ? allVaccinePackageDetails.length - vaccinatedCount
         : 0;
 
       let totalRevenue = 0;
-      const dailyRevenue: { [key: string]: number } = {};
-      const monthlyRevenue: { [key: string]: number } = {};
-      const yearlyRevenue: { [key: string]: number } = {};
 
+      // Fetch and calculate total revenue based on Paid payments only
       try {
         const allPayments = await paymentService.getAllPayments();
-        totalRevenue = Array.isArray(allPayments)
-          ? allPayments.reduce(
-              (sum, payment) => sum + (payment.totalAmount || 0),
-              0
-            )
-          : 0;
+        const paidPayments = Array.isArray(allPayments)
+          ? allPayments.filter(
+            (payment) => payment.paymentStatus === PaymentStatus.Paid
+          )
+          : [];
 
-        if (Array.isArray(allPayments)) {
-          allPayments.forEach((payment) => {
-            if (payment.paymentDate) {
-              const date = new Date(payment.paymentDate);
-              const dayKey = date.toLocaleDateString();
-              const monthKey = date.toLocaleString("default", {
-                month: "long",
-                year: "numeric",
-              });
-              const yearKey = date.getFullYear().toString();
-
-              dailyRevenue[dayKey] =
-                (dailyRevenue[dayKey] || 0) + (payment.totalAmount || 0);
-              monthlyRevenue[monthKey] =
-                (monthlyRevenue[monthKey] || 0) + (payment.totalAmount || 0);
-              yearlyRevenue[yearKey] =
-                (yearlyRevenue[yearKey] || 0) + (payment.totalAmount || 0);
-            }
-          });
-        }
+        totalRevenue = paidPayments.reduce(
+          (sum, payment) => sum + (payment.totalAmount || 0),
+          0
+        );
       } catch (paymentError) {
         console.warn("Unable to fetch payment data:", paymentError);
-      }
-
-      try {
-        const allPaymentDetails =
-          await paymentDetailService.getAllPaymentDetails();
-        if (Array.isArray(allPaymentDetails)) {
-          allPaymentDetails.forEach((detail) => {
-            const date = detail.administeredDate
-              ? new Date(detail.administeredDate)
-              : new Date();
-            const dayKey = date.toLocaleDateString();
-            const monthKey = date.toLocaleString("default", {
-              month: "long",
-              year: "numeric",
-            });
-            const yearKey = date.getFullYear().toString();
-
-            dailyRevenue[dayKey] =
-              (dailyRevenue[dayKey] || 0) + (detail.price || 0);
-            monthlyRevenue[monthKey] =
-              (monthlyRevenue[monthKey] || 0) + (detail.price || 0);
-            yearlyRevenue[yearKey] =
-              (yearlyRevenue[yearKey] || 0) + (detail.price || 0);
-          });
-        }
-      } catch (paymentDetailError) {
-        console.warn(
-          "Unable to fetch payment detail data:",
-          paymentDetailError
-        );
       }
 
       setStats({
@@ -228,18 +200,12 @@ const AdminDashboard: React.FC = () => {
         vaccinatedPackages,
         pendingPackages,
         totalRevenue,
-        dailyRevenue,
-        monthlyRevenue,
-        yearlyRevenue,
         appointmentStatusCounts,
       });
 
-      setDataFetched(true); // Mark data as fetched
+      setDataFetched(true);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-      message.error(
-        "Unable to load dashboard data: " + (error as Error).message
-      );
     } finally {
       setLoading(false);
     }
@@ -248,20 +214,6 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
-
-  // Calculate latest revenue values
-  const latestDailyRevenueValue = Object.values(stats.dailyRevenue).reduce(
-    (max, value) => (value > max ? value : max),
-    0
-  );
-  const latestMonthlyRevenueValue = Object.values(stats.monthlyRevenue).reduce(
-    (max, value) => (value > max ? value : max),
-    0
-  );
-  const latestYearlyRevenueValue = Object.values(stats.yearlyRevenue).reduce(
-    (max, value) => (value > max ? value : max),
-    0
-  );
 
   // Pie chart data for appointment statuses
   const pieData: PieData[] = [
@@ -296,117 +248,126 @@ const AdminDashboard: React.FC = () => {
     },
   ];
 
-  // Pie chart configuration (updated from the second code)
+  // Pie chart configuration with enhanced visuals
   const pieConfig = {
     data: pieData,
     angleField: "value",
     colorField: "type",
     color: [
-      "#FFCE56",
-      "#4BC0C0",
-      "#36A2EB",
-      "#FF6384",
-      "#9966FF",
-      "#FF9F40",
-      "#E6A0C4",
+      "#FF6F61",
+      "#6B5B95",
+      "#88B04B",
+      "#F7CAC9",
+      "#92A8D1",
+      "#F4A261",
+      "#E2D96C",
     ],
-    height: 300,
+    height: 350,
+    radius: 0.9,
+    innerRadius: 0.6,
     label: {
       type: "inner",
-      offset: "-50%",
-      content: ({ type, value }: PieData) => `${type}: ${value}`, // Display both status name and count
+      offset: "-30%",
+      content: ({ type, value }: PieData) => `${type}: ${value}`,
       style: {
-        textAlign: "center",
         fontSize: 14,
+        textAlign: "center",
+        fill: "#fff",
+        fontWeight: "bold",
       },
     },
-    interactions: [], // Disable all interactions (from second code)
-    tooltip: false, // Disable tooltip on hover (from second code)
+    interactions: [{ type: "element-active" }],
+    statistic: {
+      title: {
+        content: "Tình trạng",
+        style: { fontSize: 18, color: "#333" },
+      },
+      content: {
+        style: { fontSize: 16, color: "#333" },
+      },
+    },
+    legend: {
+      layout: "horizontal",
+      position: "bottom",
+      itemName: {
+        style: { fill: "#333", fontSize: 14 },
+      },
+    },
   };
 
-  // Render the dashboard
+  // Render the dashboard with white background
   return (
     <AdminLayout>
-      <section className="space-y-4 p-2 sm:space-y-6 sm:p-4">
-        <h1 className="text-lg font-bold sm:text-xl md:text-2xl text-center">
+      <section className="space-y-6 p-4 sm:p-6 bg-white min-h-screen">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-center text-gray-800 drop-shadow-lg animate-pulse">
           TRANG CHÍNH CỦA ADMIN
         </h1>
-        <div className="p-6 bg-gray-100 rounded-lg">
-          {loading && <div className="text-center">Đang tải dữ liệu...</div>}
-          <Row gutter={[16, 16]} className="mb-6">
-            <Col xs={24} sm={12} md={6} lg={6}>
+        <div className="p-8 rounded-2xl bg-white shadow-lg">
+          {loading && (
+            <div className="text-center text-gray-600">Đang tải dữ liệu...</div>
+          )}
+          <Row gutter={[24, 24]} className="mb-8">
+            <Col xs={24} sm={12} md={12} lg={6}>
               <CardWidget
                 title="Tổng doanh thu"
                 value={stats.totalRevenue.toLocaleString()}
-                color="orange"
+                color="from-yellow-400 to-orange-500"
+                icon="fas fa-money-bill-wave"
               />
             </Col>
-            <Col xs={24} sm={12} md={6} lg={6}>
-              <CardWidget
-                title="Doanh thu theo ngày"
-                value={latestDailyRevenueValue.toLocaleString()}
-                color="pink"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6} lg={6}>
-              <CardWidget
-                title="Doanh thu theo tháng"
-                value={latestMonthlyRevenueValue.toLocaleString()}
-                color="indigo"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6} lg={6}>
-              <CardWidget
-                title="Doanh thu theo năm"
-                value={latestYearlyRevenueValue.toLocaleString()}
-                color="gray"
-              />
-            </Col>
-          </Row>
-          <Row gutter={[16, 16]} className="mb-6">
-            <Col xs={24} sm={12} md={8} lg={8}>
+            <Col xs={24} sm={12} md={12} lg={6}>
               <CardWidget
                 title="Số lượng người dùng"
                 value={stats.totalUsers}
-                color="blue"
+                color="from-blue-400 to-cyan-500"
+                icon="fas fa-users"
               />
             </Col>
-            <Col xs={24} sm={12} md={8} lg={8}>
+            <Col xs={24} sm={12} md={12} lg={6}>
               <CardWidget
                 title="Số lượng đăng ký tiêm"
                 value={stats.totalAppointments}
-                color="green"
+                color="from-green-400 to-teal-500"
+                icon="fas fa-syringe"
               />
             </Col>
-            <Col xs={24} sm={12} md={8} lg={8}>
+            <Col xs={24} sm={12} md={12} lg={6}>
               <CardWidget
                 title="Số lượng hồ sơ tiêm chủng"
                 value={stats.totalChildProfiles}
-                color="purple"
+                color="from-purple-400 to-pink-500"
+                icon="fas fa-address-book"
               />
             </Col>
           </Row>
-          <Row gutter={[16, 16]} className="mb-6">
+          <Row gutter={[24, 24]} className="mb-8">
             <Col xs={24} sm={12} md={12} lg={12}>
               <DetailedCardWidget
                 title="Số lượng gói vaccine trong hệ thống"
                 total={stats.vaccinatedPackages + stats.pendingPackages}
+                color="from-indigo-400 to-blue-500"
               />
             </Col>
             <Col xs={24} sm={12} md={12} lg={12}>
               <DetailedCardWidget
                 title="Số lượng vaccine trong hệ thống"
                 total={stats.vaccinatedCount + stats.unvaccinatedCount}
+                color="from-red-400 to-pink-500"
               />
             </Col>
           </Row>
-          <Row gutter={[16, 16]}>
+          <Row gutter={[24, 24]}>
             <Col xs={24}>
-              <Card title="Tình trạng đăng ký tiêm">
+              <Card
+                title={<span className="text-gray-800 text-xl font-bold">Tình trạng đăng ký tiêm</span>}
+                className="bg-white border-none rounded-xl shadow-xl"
+                headStyle={{ background: "transparent", color: "#333", border: "none" }}
+                bodyStyle={{ background: "transparent" }}
+              >
                 {dataFetched ? (
                   <Pie {...pieConfig} />
                 ) : (
-                  <div className="text-center">Đang tải biểu đồ...</div>
+                  <div className="text-center text-gray-600">Đang tải biểu đồ...</div>
                 )}
               </Card>
             </Col>
@@ -416,5 +377,45 @@ const AdminDashboard: React.FC = () => {
     </AdminLayout>
   );
 };
+
+// Add custom CSS for animations
+const styles = `
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.8s ease-out forwards;
+  }
+
+  .animate-pulse {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+`;
+
+// Inject styles into the document
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
 
 export default AdminDashboard;

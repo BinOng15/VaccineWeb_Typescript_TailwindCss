@@ -6,7 +6,7 @@ import vaccineProfileService from "../../service/vaccineProfileService";
 import childProfileService from "../../service/childProfileService";
 import diseaseService from "../../service/diseaseService";
 import vaccineScheduleService from "../../service/vaccineScheduleService";
-import vaccinePackageDetailService from "../../service/vaccinePackageDetailService"; // Thêm service mới
+import vaccinePackageDetailService from "../../service/vaccinePackageDetailService";
 import {
   UpdateVaccineProfileDTO,
   VaccineProfileResponseDTO,
@@ -31,7 +31,7 @@ const ChildVaccineSchedule: React.FC = () => {
   const [diseases, setDiseases] = useState<DiseaseResponseDTO[]>([]);
   const [vaccines, setVaccines] = useState<VaccineResponseDTO[]>([]);
   const [vaccineSchedules, setVaccineSchedules] = useState<VaccineScheduleResponseDTO[]>([]);
-  const [vaccinePackageDetails, setVaccinePackageDetails] = useState<VaccinePackageDetailResponseDTO[]>([]); // Thêm state để lưu VaccinePackageDetail
+  const [vaccinePackageDetails, setVaccinePackageDetails] = useState<VaccinePackageDetailResponseDTO[]>([]);
   const [selectedChild, setSelectedChild] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
@@ -130,9 +130,6 @@ const ChildVaccineSchedule: React.FC = () => {
   const fetchAppointments = async (childId: number) => {
     try {
       const data = await appointmentService.getAppointmentsByChildId(childId);
-
-      console.log("All appointments for childId", childId, ":", data);
-
       const completedSingleVaccinations = data.filter((app) => {
         const isCompleted = app.appointmentStatus === AppointmentStatus.Completed;
         const isSingleVaccination =
@@ -141,9 +138,6 @@ const ChildVaccineSchedule: React.FC = () => {
           (app.vaccinePackageId === null || app.vaccinePackageId === 0);
         return isCompleted && isSingleVaccination;
       });
-
-      console.log("Filtered completed single vaccinations:", completedSingleVaccinations);
-
       setAppointments(completedSingleVaccinations);
       if (completedSingleVaccinations.length > 0) {
         setSelectedAppointmentId(completedSingleVaccinations[0].appointmentId);
@@ -162,8 +156,6 @@ const ChildVaccineSchedule: React.FC = () => {
     try {
       const appointment = await appointmentService.getAppointmentById(appointmentId);
       setSelectedAppointment(appointment);
-
-      // Nếu là vaccine gói, lấy VaccinePackageDetail
       if (appointment.vaccinePackageId && appointment.vaccinePackageId !== 0) {
         const packageDetails = await vaccinePackageDetailService.getPackageDetailByVaccinePackageID(appointment.vaccinePackageId);
         setVaccinePackageDetails(packageDetails);
@@ -184,12 +176,10 @@ const ChildVaccineSchedule: React.FC = () => {
     setAppointments([]);
     setSelectedAppointmentId(null);
     setSelectedAppointment(null);
-    setVaccinePackageDetails([]); // Reset vaccine package details
-
+    setVaccinePackageDetails([]);
     if (schedule.isCompleted === 1 && schedule.appointmentId) {
       fetchAppointmentForVaccineProfile(schedule.appointmentId);
     }
-
     fetchAppointments(schedule.childId);
   };
 
@@ -199,7 +189,7 @@ const ChildVaccineSchedule: React.FC = () => {
     setAppointments([]);
     setSelectedAppointmentId(null);
     setSelectedAppointment(null);
-    setVaccinePackageDetails([]); // Reset vaccine package details
+    setVaccinePackageDetails([]);
     if (selectedChild) {
       fetchScheduleData(selectedChild);
     }
@@ -210,7 +200,6 @@ const ChildVaccineSchedule: React.FC = () => {
 
     try {
       setIsUpdating(true);
-
       const selectedAppointment = appointments.find(
         (app) => app.appointmentId === selectedAppointmentId
       );
@@ -228,11 +217,9 @@ const ChildVaccineSchedule: React.FC = () => {
         appointmentId: selectedAppointmentId,
         vaccinationDate: formattedDate,
         isCompleted: 1,
-        childId: selectedAppointment.childId, // Thêm nếu API yêu cầu
+        childId: selectedAppointment.childId,
         diseaseId: selectedSchedule.diseaseId,
       };
-
-      console.log("Payload gửi đi:", JSON.stringify(updateData, null, 2));
 
       await vaccineProfileService.updateVaccineProfile(
         selectedSchedule.vaccineProfileId,
@@ -291,7 +278,6 @@ const ChildVaccineSchedule: React.FC = () => {
     return acc;
   }, {} as Record<number, string>);
 
-  // Tính số liều tối đa cho mỗi bệnh từ vaccineSchedule
   const maxDoseMap = vaccineSchedules.reduce((acc, schedule) => {
     const diseaseId = schedule.diseaseId;
     if (!acc[diseaseId] || schedule.doseNumber > acc[diseaseId]) {
@@ -300,7 +286,6 @@ const ChildVaccineSchedule: React.FC = () => {
     return acc;
   }, {} as Record<number, number>);
 
-  // Đếm số liều đã hoàn thành cho mỗi bệnh
   const completedDosesMap = scheduleData.reduce((acc, profile) => {
     const diseaseId = profile.diseaseId;
     if (profile.isCompleted === 1) {
@@ -312,69 +297,39 @@ const ChildVaccineSchedule: React.FC = () => {
     return acc;
   }, {} as Record<number, number>);
 
-  const uniqueMonths: {
-    monthsDiff: number;
-    scheduledDate: string;
-    range?: string;
-  }[] = [];
-  scheduleData.forEach((item) => {
-    const birthDate = moment(childBirthDate, "DD/MM/YYYY");
-    const scheduledDate = moment(item.scheduledDate, "DD/MM/YYYY");
-    const monthsDiff = scheduledDate.diff(birthDate, "months");
-    const scheduledDateStr = scheduledDate.format("DD/MM/YYYY");
+  // Định nghĩa danh sách tuổi cố định
+  const fixedAgeColumns = [
+    "Sơ sinh",
+    "1 tháng",
+    "2 tháng",
+    "3 tháng",
+    "4 tháng",
+    "5 tháng",
+    "6 tháng",
+    "7 tháng",
+    "8 tháng",
+    "9 tháng",
+    "10 tháng",
+    "11 tháng",
+    "12 tháng",
+    "2-3 tuổi",
+    "4-6 tuổi",
+  ];
 
-    let range: string | undefined;
-    if (monthsDiff >= 24 && monthsDiff <= 36) {
-      range = "2-3 tuổi";
-    } else if (monthsDiff >= 48 && monthsDiff <= 72) {
-      range = "4-6 tuổi";
-    }
-
-    if (!range) {
-      if (
-        !uniqueMonths.some(
-          (m) =>
-            m.monthsDiff === monthsDiff && m.scheduledDate === scheduledDateStr
-        )
-      ) {
-        uniqueMonths.push({ monthsDiff, scheduledDate: scheduledDateStr });
-      }
-    } else {
-      if (!uniqueMonths.some((m) => m.range === range)) {
-        uniqueMonths.push({
-          monthsDiff,
-          scheduledDate: scheduledDateStr,
-          range,
-        });
-      }
-    }
-  });
-
-  uniqueMonths.sort((a, b) => a.monthsDiff - b.monthsDiff);
-
-  const ageColumns = uniqueMonths.map((month) => {
-    if (month.range) {
-      return month.range;
-    }
-    return `Tháng ${month.monthsDiff} (${month.scheduledDate})`;
-  });
-
+  // Ánh xạ dữ liệu lịch tiêm vào các cột
   const scheduleMap = scheduleData.reduce((acc, item) => {
     const birthDate = moment(childBirthDate, "DD/MM/YYYY");
     const scheduledDate = moment(item.scheduledDate, "DD/MM/YYYY");
     const monthsDiff = scheduledDate.diff(birthDate, "months");
 
     let columnIndex = -1;
+
     if (monthsDiff >= 24 && monthsDiff <= 36) {
-      columnIndex = uniqueMonths.findIndex((m) => m.range === "2-3 tuổi");
+      columnIndex = fixedAgeColumns.indexOf("2-3 tuổi");
     } else if (monthsDiff >= 48 && monthsDiff <= 72) {
-      columnIndex = uniqueMonths.findIndex((m) => m.range === "4-6 tuổi");
-    } else {
-      const scheduledDateStr = scheduledDate.format("DD/MM/YYYY");
-      columnIndex = uniqueMonths.findIndex(
-        (m) =>
-          m.monthsDiff === monthsDiff && m.scheduledDate === scheduledDateStr
-      );
+      columnIndex = fixedAgeColumns.indexOf("4-6 tuổi");
+    } else if (monthsDiff >= 0 && monthsDiff <= 12) {
+      columnIndex = monthsDiff;
     }
 
     if (columnIndex === -1) return acc;
@@ -385,14 +340,12 @@ const ChildVaccineSchedule: React.FC = () => {
     return acc;
   }, {} as Record<number, Record<number, VaccineProfileResponseDTO[]>>);
 
-  // Kiểm tra xem bệnh đã hoàn thành đủ liều chưa
   const isDiseaseFullyCompleted = (diseaseId: number) => {
     const maxDoses = maxDoseMap[diseaseId] || 0;
     const completedDoses = completedDosesMap[diseaseId] || 0;
     return completedDoses >= maxDoses;
   };
 
-  // Hàm để lấy trạng thái cuộc hẹn dưới dạng văn bản
   const getAppointmentStatusText = (status: number) => {
     switch (status) {
       case AppointmentStatus.Pending:
@@ -412,14 +365,10 @@ const ChildVaccineSchedule: React.FC = () => {
     }
   };
 
-  // Hàm để lấy tên vaccine từ Appointment
   const getVaccineNameFromAppointment = (appointment: AppointmentResponseDTO) => {
-    // Trường hợp vaccine lẻ
     if (appointment.vaccineId && (!appointment.vaccinePackageId || appointment.vaccinePackageId === 0)) {
       return vaccineMap[appointment.vaccineId] || "Không xác định";
     }
-
-    // Trường hợp vaccine gói
     if (appointment.vaccinePackageId && appointment.vaccinePackageId !== 0) {
       const packageDetail = vaccinePackageDetails.find(
         (detail) => detail.vaccinePackageId === appointment.vaccinePackageId
@@ -428,7 +377,6 @@ const ChildVaccineSchedule: React.FC = () => {
         return vaccineMap[packageDetail.vaccineId] || "Không xác định";
       }
     }
-
     return "Không xác định";
   };
 
@@ -463,7 +411,7 @@ const ChildVaccineSchedule: React.FC = () => {
             <thead>
               <tr className="bg-blue-900 text-white">
                 <th className="border px-20 py-2">Bệnh</th>
-                {ageColumns.map((age, index) => (
+                {fixedAgeColumns.map((age, index) => (
                   <th key={index} className="border px-2 py-2">
                     {age}
                   </th>
@@ -480,7 +428,7 @@ const ChildVaccineSchedule: React.FC = () => {
                       <td className="border px-4 py-2 font-medium">
                         {diseaseMap[parseInt(diseaseId)]}
                       </td>
-                      {ageColumns.map((_, columnIndex) => {
+                      {fixedAgeColumns.map((_, columnIndex) => {
                         const schedules =
                           schedulesForDisease[columnIndex] || [];
                         return (
@@ -517,7 +465,7 @@ const ChildVaccineSchedule: React.FC = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan={ageColumns.length + 1}
+                    colSpan={fixedAgeColumns.length + 1}
                     className="text-center py-4"
                   >
                     {selectedChild
@@ -561,7 +509,6 @@ const ChildVaccineSchedule: React.FC = () => {
       >
         {selectedSchedule && (
           <div className="space-y-6">
-            {/* Phần 1: Thông tin trẻ */}
             <div>
               <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-300 pb-2 mb-4">
                 Thông Tin Trẻ
@@ -576,7 +523,6 @@ const ChildVaccineSchedule: React.FC = () => {
               </div>
             </div>
 
-            {/* Phần 2: Thông tin tiêm chủng */}
             <div>
               <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-300 pb-2 mb-4">
                 Thông Tin Tiêm Chủng
@@ -655,7 +601,6 @@ const ChildVaccineSchedule: React.FC = () => {
               </div>
             </div>
 
-            {/* Phần 3: Trạng thái và cuộc hẹn */}
             <div>
               <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-300 pb-2 mb-4">
                 Trạng Thái và Cuộc Hẹn
@@ -727,7 +672,6 @@ const ChildVaccineSchedule: React.FC = () => {
               </div>
             </div>
 
-            {/* Phần 4: Thông tin chi tiết cuộc hẹn (chỉ hiển thị nếu đã hoàn thành và có appointmentId) */}
             {selectedSchedule.isCompleted === 1 && selectedSchedule.appointmentId && selectedAppointment && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 border-b border-gray-300 pb-2 mb-4">

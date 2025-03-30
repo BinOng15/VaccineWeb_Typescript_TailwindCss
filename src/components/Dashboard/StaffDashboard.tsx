@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Row, Col, Card, message } from "antd";
+import { Row, Col, Card } from "antd";
 import { Pie } from "@ant-design/charts";
 import appointmentService from "../../service/appointmentService";
 import childProfileService from "../../service/childProfileService";
@@ -8,6 +8,7 @@ import vaccineScheduleService from "../../service/vaccineScheduleService";
 import vaccineService from "../../service/vaccineService";
 import { AppointmentStatus } from "../Appointment/CustomerAppointment";
 
+// Định nghĩa interface cho dữ liệu dashboard
 interface StaffDashboardStats {
   totalVaccines: number; // Số lượng vaccine lẻ (số loại vaccine)
   totalVaccineQuantity: number; // Tổng số vaccine (dựa trên quantity)
@@ -18,27 +19,34 @@ interface StaffDashboardStats {
   appointmentStatusCounts: { [key in AppointmentStatus]?: number };
 }
 
+// Định nghĩa interface cho dữ liệu biểu đồ Pie
 interface PieDatum {
   type: string;
   value: number;
   color: string;
 }
 
+// Component CardWidget với giao diện mới và hiệu ứng
 const CardWidget: React.FC<{
   title: string;
   value: number | string;
-  color?: string;
-}> = ({ title, value, color = "blue" }) => {
+  color: string;
+  icon: string;
+}> = ({ title, value, color, icon }) => {
   return (
     <div
-      className={`bg-white p-4 rounded-lg shadow-md border-l-4 border-${color}-500`}
+      className={`relative bg-gradient-to-r ${color} text-white p-6 rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 hover:shadow-2xl animate-fadeIn`}
     >
-      <h3 className="text-sm text-gray-600">{title}</h3>
-      <p className="text-2xl font-bold text-gray-800">{value}</p>
+      <div className="absolute top-4 right-4 text-4xl opacity-30">
+        <i className={icon}></i>
+      </div>
+      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <p className="text-3xl font-bold">{value}</p>
     </div>
   );
 };
 
+// Component StaffDashboard
 const StaffDashboard: React.FC = () => {
   const [stats, setStats] = useState<StaffDashboardStats>({
     totalVaccines: 0,
@@ -59,6 +67,7 @@ const StaffDashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
 
+  // Hàm lấy dữ liệu từ các service
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -125,9 +134,6 @@ const StaffDashboard: React.FC = () => {
       });
     } catch (error) {
       console.error("Lỗi khi lấy dữ liệu Staff Dashboard:", error);
-      message.error(
-        "Không thể tải dữ liệu dashboard: " + (error as Error).message
-      );
     } finally {
       setLoading(false);
     }
@@ -138,65 +144,86 @@ const StaffDashboard: React.FC = () => {
   }, []);
 
   // Định nghĩa thứ tự, nhãn và màu sắc cho tất cả 7 trạng thái
-  // (theo đúng thứ tự enum AppointmentStatus)
   const statuses = [
     {
       value: AppointmentStatus.Pending,
       label: "Chưa Check-in",
-      color: "#FFA500",
+      color: "#FF6F61", // Cam đỏ
     },
     {
       value: AppointmentStatus.Checked,
       label: "Đã check-in",
-      color: "#4BC0C0",
+      color: "#6B5B95", // Tím
     },
-    { value: AppointmentStatus.Paid, label: "Đã thanh toán", color: "#FFD700" },
-    { value: AppointmentStatus.Injected, label: "Đã tiêm", color: "#FF9F40" },
+    {
+      value: AppointmentStatus.Paid,
+      label: "Đã thanh toán",
+      color: "#88B04B", // Xanh lá
+    },
+    {
+      value: AppointmentStatus.Injected,
+      label: "Đã tiêm",
+      color: "#F4A261", // Cam
+    },
     {
       value: AppointmentStatus.WaitingForResponse,
       label: "Đang chờ phản ứng",
-      color: "#36A2EB",
+      color: "#92A8D1", // Xanh lam nhạt
     },
     {
       value: AppointmentStatus.Completed,
       label: "Đã hoàn tất",
-      color: "#FF6384",
+      color: "#F7CAC9", // Hồng nhạt
     },
-    { value: AppointmentStatus.Cancelled, label: "Đã hủy", color: "#8B0000" },
+    {
+      value: AppointmentStatus.Cancelled,
+      label: "Đã hủy",
+      color: "#E2D96C", // Vàng nhạt
+    },
   ];
 
-  // Tạo dữ liệu cho biểu đồ Pie với 7 trạng thái (theo đúng thứ tự)
+  // Tạo dữ liệu cho biểu đồ Pie với 7 trạng thái
   const pieData: PieDatum[] = statuses.map((s) => ({
     type: s.label,
     value: stats.appointmentStatusCounts[s.value] || 0,
     color: s.color,
   }));
 
-  // Cấu hình biểu đồ Pie
+  // Cấu hình biểu đồ Pie với màu sắc sặc sỡ
   const pieConfig = {
     data: pieData,
     angleField: "value",
     colorField: "type",
     color: (datum: PieDatum) => datum.color,
-    height: 300,
+    height: 350,
+    radius: 0.9,
+    innerRadius: 0.6,
     label: {
       type: "inner",
-      offset: "-50%",
+      offset: "-30%",
       content: ({ type, value }: { type: string; value: number }) =>
         `${type}: ${value}`,
       style: {
-        textAlign: "center",
         fontSize: 14,
+        textAlign: "center",
+        fill: "#fff",
+        fontWeight: "bold",
       },
     },
-    // Tắt các tương tác mặc định
-    interactions: [],
+    interactions: [{ type: "element-active" }],
     tooltip: false,
-    // Tùy chỉnh legend để giữ nguyên thứ tự
+    statistic: {
+      title: {
+        content: "Tình trạng",
+        style: { fontSize: 18, color: "#333" },
+      },
+      content: {
+        style: { fontSize: 16, color: "#333" },
+      },
+    },
     legend: {
       custom: true,
       position: "bottom",
-      // items: là mảng hiển thị cho legend, ta map theo đúng thứ tự statuses
       items: statuses.map((s) => ({
         id: s.label,
         name: s.label,
@@ -209,62 +236,79 @@ const StaffDashboard: React.FC = () => {
     },
   };
 
+  // Render giao diện với background trắng
   return (
-    <section className="space-y-4 p-2 sm:space-y-6 sm:p-4">
-      <div className="p-6 bg-gray-100 rounded-lg">
-        {loading && <div className="text-center">Đang tải dữ liệu...</div>}
+    <section className="space-y-6 p-4 sm:p-6 bg-white min-h-screen">
+      <h1 className="text-3xl sm:text-4xl font-extrabold text-center text-gray-800 drop-shadow-lg animate-pulse">
+        TRANG CHÍNH CỦA NHÂN VIÊN
+      </h1>
+      <div className="p-8 rounded-2xl bg-white shadow-lg">
+        {loading && (
+          <div className="text-center text-gray-600">Đang tải dữ liệu...</div>
+        )}
         {/* Hàng 1: 3 cột */}
-        <Row gutter={[16, 16]} className="mb-6">
+        <Row gutter={[24, 24]} className="mb-8">
           <Col xs={24} sm={12} md={8} lg={8}>
             <CardWidget
               title="Số lượng vaccine lẻ"
               value={stats.totalVaccines}
-              color="blue"
+              color="from-blue-400 to-cyan-500"
+              icon="fas fa-vial"
             />
           </Col>
           <Col xs={24} sm={12} md={8} lg={8}>
             <CardWidget
               title="Tổng số vaccine"
               value={stats.totalVaccineQuantity}
-              color="teal"
+              color="from-green-400 to-teal-500"
+              icon="fas fa-syringe"
             />
           </Col>
           <Col xs={24} sm={12} md={8} lg={8}>
             <CardWidget
               title="Số lượng gói vaccine"
               value={stats.totalVaccinePackages}
-              color="green"
+              color="from-yellow-400 to-orange-500"
+              icon="fas fa-box"
             />
           </Col>
         </Row>
         {/* Hàng 2: 3 cột */}
-        <Row gutter={[16, 16]} className="mb-6">
+        <Row gutter={[24, 24]} className="mb-8">
           <Col xs={24} sm={12} md={8} lg={8}>
             <CardWidget
               title="Số lượng trẻ đăng ký tiêm"
               value={stats.totalRegisteredChildren}
-              color="orange"
+              color="from-orange-400 to-red-500"
+              icon="fas fa-child"
             />
           </Col>
           <Col xs={24} sm={12} md={8} lg={8}>
             <CardWidget
               title="Số lượng hồ sơ của trẻ"
               value={stats.totalChildProfiles}
-              color="purple"
+              color="from-purple-400 to-pink-500"
+              icon="fas fa-address-book"
             />
           </Col>
           <Col xs={24} sm={12} md={8} lg={8}>
             <CardWidget
               title="Số lượng lịch tiêm chủng"
               value={stats.totalVaccineSchedules}
-              color="pink"
+              color="from-indigo-400 to-blue-500"
+              icon="fas fa-calendar-alt"
             />
           </Col>
         </Row>
         {/* Hàng 3: Biểu đồ Pie */}
-        <Row gutter={[16, 16]} justify="center">
+        <Row gutter={[24, 24]} justify="center">
           <Col xs={24} lg={12}>
-            <Card title="Tình trạng lịch hẹn">
+            <Card
+              title={<span className="text-gray-800 text-xl font-bold">Tình trạng lịch hẹn</span>}
+              className="bg-white border-none rounded-xl shadow-xl"
+              headStyle={{ background: "transparent", color: "#333", border: "none" }}
+              bodyStyle={{ background: "transparent" }}
+            >
               <Pie {...pieConfig} />
             </Card>
           </Col>
@@ -273,5 +317,45 @@ const StaffDashboard: React.FC = () => {
     </section>
   );
 };
+
+// Thêm CSS cho hiệu ứng
+const styles = `
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.8s ease-out forwards;
+  }
+
+  .animate-pulse {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+`;
+
+// Inject styles vào document
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = styles;
+document.head.appendChild(styleSheet);
 
 export default StaffDashboard;
