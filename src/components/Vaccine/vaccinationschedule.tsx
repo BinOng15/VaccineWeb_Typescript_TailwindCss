@@ -49,28 +49,31 @@ const VaccinationSchedule: React.FC = () => {
   }, {} as Record<number, string>);
 
   // Tạo danh sách các cột tuổi (1 tháng, 2 tháng, ..., 12 tháng, 2 tuổi)
-  const ageColumns = [...Array(12).keys()]
+  const ageColumns = [0, ...Array(12).keys()]
     .map((i) => `${i + 1} tháng`)
     .concat(["2-3 tuổi", "4-6 tuổi"]);
+  const displayAgeColumns = ageColumns.map((age, index) =>
+    index === 0 ? "Sơ sinh" : age
+  );
 
-  // Ánh xạ lịch tiêm vào các cột tuổi dựa trên ageInMonths
   const scheduleMap = scheduleData.reduce((acc, item) => {
     const age = item.ageInMonths;
     let columnIndex: number;
-
-    if (age <= 12) {
-      columnIndex = age - 1; // 1-12 tháng vào cột 0-11
+    if (age === 0) {
+      columnIndex = 0; // Xử lý 0 tháng
+    } else if (age <= 12) {
+      columnIndex = age; // Từ 1 đến 12 tháng
     } else if (age >= 24 && age <= 36) {
-      columnIndex = 12; // 24-36 tháng vào cột "2-3 tuổi" (cột 12)
+      columnIndex = 13; // 2-3 tuổi
     } else if (age >= 48 && age <= 72) {
-      columnIndex = 13; // 48-72 tháng vào cột "4-6 tuổi" (cột 13)
+      columnIndex = 14; // 4-6 tuổi
     } else {
-      return acc; // Bỏ qua nếu tuổi không nằm trong khoảng
+      return acc;
     }
 
     if (!acc[item.diseaseId]) acc[item.diseaseId] = {};
     acc[item.diseaseId][columnIndex] = acc[item.diseaseId][columnIndex] || [];
-    acc[item.diseaseId][columnIndex].push(item); // Lưu mảng các lịch tiêm trong cùng khoảng tuổi
+    acc[item.diseaseId][columnIndex].push(item);
     return acc;
   }, {} as Record<number, Record<number, VaccineScheduleResponseDTO[]>>);
 
@@ -88,7 +91,7 @@ const VaccinationSchedule: React.FC = () => {
               <thead>
                 <tr className="bg-blue-900 text-white">
                   <th className="border px-4 py-2">Bệnh</th>
-                  {ageColumns.map((age, index) => (
+                  {displayAgeColumns.map((age, index) => (
                     <th key={index} className="border px-4 py-2">
                       {age}
                     </th>

@@ -15,11 +15,6 @@ const DoctorSidebar: React.FC = () => {
   const menuItems = [
     { key: "/doctor/dashboard", icon: <DashOutlined />, label: "Bảng chính" },
     {
-      key: "/doctor/vaccination-record",
-      icon: <SolutionOutlined />,
-      label: "Quản lý tiêm chủng",
-    },
-    {
       key: "/doctor/confirm-injection",
       icon: <ExceptionOutlined />,
       label: "Xác nhận tiêm chủng",
@@ -28,6 +23,11 @@ const DoctorSidebar: React.FC = () => {
       key: "/doctor/response",
       icon: <FileUnknownOutlined />,
       label: "Ghi nhận phản ứng",
+    },
+    {
+      key: "/doctor/vaccination-record",
+      icon: <SolutionOutlined />,
+      label: "Đã hoàn thành",
     },
 
   ];

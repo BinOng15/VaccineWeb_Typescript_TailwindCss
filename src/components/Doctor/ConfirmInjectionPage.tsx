@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
-import { Table, Input, Space, Row, Col, Modal, message, Tag } from "antd";
-import { ReloadOutlined, EyeOutlined, CheckOutlined } from "@ant-design/icons";
+import { Table, Input, Space, Row, Col, Modal, message, Tag, Button, Descriptions } from "antd";
+import { ReloadOutlined, EyeOutlined, CheckOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import moment from "moment";
 import appointmentService from "../../service/appointmentService";
 import childProfileService from "../../service/childProfileService";
@@ -56,65 +56,35 @@ const ConfirmInjectionPage: React.FC = () => {
         switch (status) {
             case AppointmentStatus.Pending:
                 text = "Đã lên lịch";
-                style = {
-                    color: "#1890ff",
-                    backgroundColor: "#e6f7ff",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                };
+                style = { color: "#1890ff", backgroundColor: "#e6f7ff", padding: "2px 8px", borderRadius: "4px" };
                 break;
             case AppointmentStatus.Checked:
                 text = "Đã check in";
-                style = {
-                    color: "#fa8c16",
-                    backgroundColor: "#fff7e6",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                };
+                style = { color: "#fa8c16", backgroundColor: "#fff7e6", padding: "2px 8px", borderRadius: "4px" };
                 break;
             case AppointmentStatus.Paid:
                 text = "Đã thanh toán";
-                style = {
-                    color: "#722ed1",
-                    backgroundColor: "#f9f0ff",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                };
+                style = { color: "#722ed1", backgroundColor: "#f9f0ff", padding: "2px 8px", borderRadius: "4px" };
                 break;
             case AppointmentStatus.Injected:
                 text = "Đã tiêm";
-                style = {
-                    color: "#08979c",
-                    backgroundColor: "#e6fffb",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                };
+                style = { color: "#08979c", backgroundColor: "#e6fffb", padding: "2px 8px", borderRadius: "4px" };
+                break;
+            case AppointmentStatus.WaitingForResponse:
+                text = "Chờ Phản Ứng";
+                style = { color: "#d4b106", backgroundColor: "#fffbe6", padding: "2px 8px", borderRadius: "4px" };
                 break;
             case AppointmentStatus.Completed:
                 text = "Hoàn thành";
-                style = {
-                    color: "#52c41a",
-                    backgroundColor: "#f6ffed",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                };
+                style = { color: "#52c41a", backgroundColor: "#f6ffed", padding: "2px 8px", borderRadius: "4px" };
                 break;
             case AppointmentStatus.Cancelled:
                 text = "Đã hủy";
-                style = {
-                    color: "#ff4d4f",
-                    backgroundColor: "#fff1f0",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                };
+                style = { color: "#ff4d4f", backgroundColor: "#fff1f0", padding: "2px 8px", borderRadius: "4px" };
                 break;
             default:
                 text = String(status);
-                style = {
-                    color: "#000",
-                    padding: "2px 8px",
-                    borderRadius: "4px",
-                };
+                style = { color: "#000", padding: "2px 8px", borderRadius: "4px" };
         }
 
         return <span style={style}>{text}</span>;
@@ -122,20 +92,14 @@ const ConfirmInjectionPage: React.FC = () => {
 
     const getStatusColor = (status: number) => {
         switch (status) {
-            case AppointmentStatus.Pending:
-                return "blue";
-            case AppointmentStatus.Checked:
-                return "gold";
-            case AppointmentStatus.Paid:
-                return "purple";
-            case AppointmentStatus.Injected:
-                return "cyan";
-            case AppointmentStatus.Completed:
-                return "green";
-            case AppointmentStatus.Cancelled:
-                return "red";
-            default:
-                return "default";
+            case AppointmentStatus.Pending: return "blue";
+            case AppointmentStatus.Checked: return "gold";
+            case AppointmentStatus.Paid: return "purple";
+            case AppointmentStatus.Injected: return "cyan";
+            case AppointmentStatus.WaitingForResponse: return "yellow";
+            case AppointmentStatus.Completed: return "green";
+            case AppointmentStatus.Cancelled: return "red";
+            default: return "default";
         }
     };
 
@@ -158,24 +122,21 @@ const ConfirmInjectionPage: React.FC = () => {
             const allAppointments = await appointmentService.getAllAppointments();
 
             let filteredAppointments = allAppointments.filter(
-                (appointment) => appointment.appointmentStatus === AppointmentStatus.Paid // Chỉ lấy các lịch hẹn có trạng thái Paid (3)
+                (appointment) =>
+                    appointment.appointmentStatus === AppointmentStatus.Paid ||
+                    appointment.appointmentStatus === AppointmentStatus.Injected
             );
 
             if (keyword) {
                 filteredAppointments = filteredAppointments.filter(
                     (appointment) =>
                         appointment.appointmentId.toString().includes(keyword) ||
-                        moment(appointment.appointmentDate)
-                            .format("DD/MM/YYYY")
-                            .includes(keyword)
+                        moment(appointment.appointmentDate).format("DD/MM/YYYY").includes(keyword)
                 );
             }
 
             const startIndex = (page - 1) * pageSize;
-            const paginatedAppointments = filteredAppointments.slice(
-                startIndex,
-                startIndex + pageSize
-            );
+            const paginatedAppointments = filteredAppointments.slice(startIndex, startIndex + pageSize);
 
             const childIds = [
                 ...new Set(
@@ -188,11 +149,7 @@ const ConfirmInjectionPage: React.FC = () => {
             const childPromises = childIds.map(async (childId) => {
                 try {
                     const child: ChildProfileResponseDTO = await childProfileService.getChildProfileById(childId);
-                    return {
-                        childId,
-                        childFullName: child.fullName || "N/A",
-                        userId: child.userId,
-                    };
+                    return { childId, childFullName: child.fullName || "N/A", userId: child.userId };
                 } catch (error) {
                     console.error(`Lỗi khi lấy child ${childId}:`, error);
                     return { childId, childFullName: "N/A", userId: null };
@@ -201,11 +158,7 @@ const ConfirmInjectionPage: React.FC = () => {
 
             const childrenData = await Promise.all(childPromises);
             const userIds = [
-                ...new Set(
-                    childrenData
-                        .map((child) => child.userId)
-                        .filter((id): id is number => id !== null)
-                ),
+                ...new Set(childrenData.map((child) => child.userId).filter((id): id is number => id !== null)),
             ];
 
             const userPromises = userIds.map(async (userId) => {
@@ -218,9 +171,7 @@ const ConfirmInjectionPage: React.FC = () => {
                 }
             });
 
-            const usersData = (await Promise.all(userPromises)).filter(
-                (user) => user !== null
-            ) as UserResponseDTO[];
+            const usersData = (await Promise.all(userPromises)).filter((user) => user !== null) as UserResponseDTO[];
             const userMap = usersData.reduce((acc, user) => {
                 acc[user.userId] = user.fullName || "N/A";
                 return acc;
@@ -285,12 +236,9 @@ const ConfirmInjectionPage: React.FC = () => {
 
         try {
             const updateAppointmentData: UpdateAppointmentDTO = {
-                appointmentStatus: AppointmentStatus.Injected, // Chuyển sang trạng thái Injected (4)
+                appointmentStatus: AppointmentStatus.Injected,
             };
-            await appointmentService.updateAppointment(
-                appointment.appointmentId,
-                updateAppointmentData
-            );
+            await appointmentService.updateAppointment(appointment.appointmentId, updateAppointmentData);
             message.success("Đã xác nhận tiêm thành công!");
             fetchAppointments(pagination.current, pagination.pageSize, searchKeyword);
         } catch (error) {
@@ -298,6 +246,26 @@ const ConfirmInjectionPage: React.FC = () => {
             message.error("Xác nhận tiêm thất bại.");
         }
     };
+
+    const handleMoveToWaiting = async (appointment: AppointmentResponseDTO) => {
+        if (appointment.appointmentStatus !== AppointmentStatus.Injected) {
+            message.error("Chỉ có thể chuyển sang Chờ Phản Ứng khi đã tiêm!");
+            return;
+        }
+
+        try {
+            const updateAppointmentData: UpdateAppointmentDTO = {
+                appointmentStatus: AppointmentStatus.WaitingForResponse,
+            };
+            await appointmentService.updateAppointment(appointment.appointmentId, updateAppointmentData);
+            message.success("Đã chuyển sang trạng thái Chờ Phản Ứng!");
+            fetchAppointments(pagination.current, pagination.pageSize, searchKeyword);
+        } catch (error) {
+            console.error("Lỗi khi chuyển trạng thái:", error);
+            message.error("Chuyển trạng thái thất bại.");
+        }
+    };
+
 
     useEffect(() => {
         fetchAppointments();
@@ -429,15 +397,24 @@ const ConfirmInjectionPage: React.FC = () => {
                         style={{ color: "blue", cursor: "pointer", fontSize: "18px" }}
                         title="Chi tiết lịch tiêm"
                     />
-                    <CheckOutlined
-                        onClick={() => handleConfirmInjection(appointment)}
-                        style={{
-                            color: appointment.appointmentStatus === AppointmentStatus.Paid ? "green" : "gray",
-                            cursor: appointment.appointmentStatus === AppointmentStatus.Paid ? "pointer" : "not-allowed",
-                            fontSize: "18px",
-                        }}
-                        title="Xác nhận tiêm"
-                    />
+                    {appointment.appointmentStatus === AppointmentStatus.Paid ? (
+                        <CheckOutlined
+                            onClick={() => handleConfirmInjection(appointment)}
+                            style={{ color: "green", cursor: "pointer", fontSize: "18px" }}
+                            title="Xác nhận tiêm"
+                        />
+                    ) : appointment.appointmentStatus === AppointmentStatus.Injected ? (
+                        <ArrowRightOutlined
+                            onClick={() => handleMoveToWaiting(appointment)}
+                            style={{ color: "orange", cursor: "pointer", fontSize: "18px" }}
+                            title="Chuyển sang Chờ Phản Ứng"
+                        />
+                    ) : (
+                        <ArrowRightOutlined
+                            style={{ color: "gray", cursor: "not-allowed", fontSize: "18px" }}
+                            title="Không thể chuyển"
+                        />
+                    )}
                 </Space>
             ),
         },
@@ -481,79 +458,85 @@ const ConfirmInjectionPage: React.FC = () => {
             />
 
             <Modal
-                title="Chi tiết Lịch hẹn"
-                open={isDetailModalVisible}
+                title="CHI TIẾT LỊCH HẸN TIÊM CHỦNG"
+                visible={isDetailModalVisible}
                 onCancel={handleCloseModal}
-                footer={null}
+                footer={
+                    selectedAppointment?.appointmentStatus === AppointmentStatus.Paid ? (
+                        <div style={{ textAlign: "right" }}>
+                            <Button
+                                type="primary"
+                                icon={<CheckOutlined />}
+                                onClick={() => handleConfirmInjection(selectedAppointment)}
+                                style={{ marginRight: 8 }}
+                            >
+                                Xác nhận tiêm
+                            </Button>
+                        </div>
+                    ) : null
+                }
+                centered
+                style={{ width: "800px", maxHeight: "600px" }}
+                bodyStyle={{ maxHeight: "500px", overflowY: "auto" }}
             >
                 {selectedAppointment && (
-                    <div style={{ padding: 16 }}>
-                        <p>
-                            <strong>Tên Phụ huynh:</strong>{" "}
-                            {selectedAppointment.childId !== null &&
-                                childMap[selectedAppointment.childId]?.userFullName
+                    <Descriptions bordered column={1}>
+                        <Descriptions.Item label="Tên Phụ huynh">
+                            {selectedAppointment.childId !== null && childMap[selectedAppointment.childId]?.userFullName
                                 ? childMap[selectedAppointment.childId].userFullName
                                 : "N/A"}
-                        </p>
-                        <p>
-                            <strong>Tên Trẻ em:</strong>{" "}
-                            {selectedAppointment.childId !== null &&
-                                childMap[selectedAppointment.childId]?.childFullName
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Tên Trẻ em">
+                            {selectedAppointment.childId !== null && childMap[selectedAppointment.childId]?.childFullName
                                 ? childMap[selectedAppointment.childId].childFullName
                                 : "N/A"}
-                        </p>
-                        <p>
-                            <strong>Tên Vaccine/Gói Vaccine:</strong>{" "}
-                            {(() => {
-                                if (selectedAppointment.vaccineId) {
-                                    const vaccine = vaccines.find((v) => v.vaccineId === selectedAppointment.vaccineId);
-                                    const vaccineDisease = vaccineDiseases.find((vd) => vd.vaccineId === selectedAppointment.vaccineId);
-                                    const disease = vaccineDisease ? diseases.find((d) => d.diseaseId === vaccineDisease.diseaseId) : null;
-                                    return `${vaccine ? vaccine.name : "Không tìm thấy vắc xin"} - ${disease ? disease.name : "Không xác định"} (Số lượng: ${vaccine ? vaccine.quantity : "N/A"}, Giá: ${vaccine ? new Intl.NumberFormat("vi-VN").format(vaccine.price) : "N/A"} VND)`;
-                                }
-                                if (selectedAppointment.vaccinePackageId) {
-                                    const packageItem = vaccinePackages.find((p) => p.vaccinePackageId === selectedAppointment.vaccinePackageId);
-                                    return `${packageItem ? packageItem.name : "Không tìm thấy gói vắc xin"} (Giá: ${packageItem ? new Intl.NumberFormat("vi-VN").format(packageItem.totalPrice) : "N/A"} VND)`;
-                                }
-                                return "N/A";
-                            })()}
-                        </p>
-                        <p>
-                            <strong>Mũi Tiêm:</strong>{" "}
-                            {allPaymentDetails.length > 0
-                                ? (() => {
-                                    const selectedDetail = allPaymentDetails.find(
-                                        (detail) =>
-                                            detail.paymentDetailId ===
-                                            selectedAppointment?.paymentDetailId
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Tên Vắc xin">
+                            {vaccines.find((v) => v.vaccineId === selectedAppointment.vaccineId)?.name || "N/A"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Tên Gói Vắc xin">
+                            {vaccinePackages.find((p) => p.vaccinePackageId === selectedAppointment.vaccinePackageId)?.name || "N/A"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Mũi tiêm đã chọn">
+                            {selectedAppointment.paymentDetailId ? (
+                                (() => {
+                                    const selectedPaymentDetail = allPaymentDetails.find(
+                                        (detail) => detail.paymentDetailId === selectedAppointment.paymentDetailId
                                     );
-                                    const vaccineNameWithDisease =
-                                        selectedDetail && selectedDetail.vaccinePackageDetailId
-                                            ? vaccineNameMap.get(
-                                                selectedDetail.vaccinePackageDetailId
-                                            ) || "Không xác định - Không xác định"
-                                            : "N/A";
-                                    const statusText =
-                                        selectedDetail?.isCompleted === 1 ? " (Hoàn thành)" : "";
-                                    return selectedDetail?.doseSequence
-                                        ? `Mũi ${selectedDetail.doseSequence} - ${vaccineNameWithDisease}${statusText}`
-                                        : "N/A";
+                                    if (!selectedPaymentDetail) return "Không tìm thấy thông tin mũi tiêm";
+                                    const vaccineNameWithDisease = vaccineNameMap.get(selectedPaymentDetail.vaccinePackageDetailId) || "Không xác định - Không xác định";
+                                    const statusText = selectedPaymentDetail.isCompleted === 1 ? " (Hoàn thành)" : " (Chưa hoàn thành)";
+                                    return `Mũi ${selectedPaymentDetail.doseSequence} - ${vaccineNameWithDisease}${statusText} - Ngày dự kiến: ${selectedPaymentDetail.scheduledDate ? moment(selectedPaymentDetail.scheduledDate, "DD/MM/YYYY").format("DD/MM/YYYY") : "Chưa xác định"}`;
                                 })()
-                                : "N/A"}
-                        </p>
-                        <p>
-                            <strong>Ngày hẹn:</strong>{" "}
+                            ) : (
+                                "Chưa chọn mũi tiêm"
+                            )}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Trạng thái hẹn">
+                            {getStatusText(selectedAppointment.appointmentStatus)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Ngày hẹn">
                             {selectedAppointment.appointmentDate
                                 ? moment(selectedAppointment.appointmentDate, "DD/MM/YYYY").format("DD/MM/YYYY")
                                 : "N/A"}
-                        </p>
-                        <p>
-                            <strong>Trạng thái:</strong>{" "}
-                            <Tag color={getStatusColor(selectedAppointment.appointmentStatus)}>
-                                {getStatusText(selectedAppointment.appointmentStatus)}
-                            </Tag>
-                        </p>
-                    </div>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Ngày tạo">
+                            {selectedAppointment.createdDate
+                                ? moment(selectedAppointment.createdDate, "DD/MM/YYYY").format("DD/MM/YYYY")
+                                : "N/A"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Người tạo">
+                            {selectedAppointment.createdBy || "N/A"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Ngày sửa đổi">
+                            {selectedAppointment.modifiedDate
+                                ? moment(selectedAppointment.modifiedDate, "DD/MM/YYYY").format("DD/MM/YYYY")
+                                : "N/A"}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Người sửa đổi">
+                            {selectedAppointment.modifiedBy || "N/A"}
+                        </Descriptions.Item>
+                    </Descriptions>
                 )}
             </Modal>
         </div>

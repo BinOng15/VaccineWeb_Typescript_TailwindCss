@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
-import { message, Spin, Modal, Button, Select, Form, InputNumber } from "antd";
+import { message, Spin, Modal, Button, Select, Form } from "antd";
 import vaccineScheduleService from "../../service/vaccineScheduleService";
 import diseaseService from "../../service/diseaseService";
 import {
@@ -18,31 +18,48 @@ const AddScheduleModal: React.FC<{
   onClose: () => void;
   onAdd: (data: CreateVaccineSchedule) => void;
   diseases: DiseaseResponseDTO[];
-}> = ({ visible, onClose, onAdd, diseases }) => {
+  existingSchedules: VaccineScheduleResponseDTO[];
+}> = ({ visible, onClose, onAdd, diseases, existingSchedules }) => {
   const [form] = Form.useForm();
+
+  const getNextDoseNumber = (diseaseId: number) => {
+    const schedulesForDisease = existingSchedules.filter(
+      (schedule) => schedule.diseaseId === diseaseId
+    );
+    if (schedulesForDisease.length === 0) return 1; // Bắt đầu từ 1 nếu chưa có lịch nào
+    const maxDoseNumber = Math.max(
+      ...schedulesForDisease.map((schedule) => schedule.doseNumber)
+    );
+    return maxDoseNumber + 1; // Tăng dần từ giá trị lớn nhất
+  };
+
+  const handleDiseaseChange = (diseaseId: number) => {
+    const nextDoseNumber = getNextDoseNumber(diseaseId);
+    form.setFieldsValue({ doseNumber: nextDoseNumber });
+  };
 
   const handleFinish = (values: any) => {
     let ageInMonths: number;
     if (values.ageInMonths === "24-36") {
-      ageInMonths = 24; // Lấy giá trị đầu tiên của khoảng "2-3 tuổi"
+      ageInMonths = 24;
     } else if (values.ageInMonths === "48-72") {
-      ageInMonths = 48; // Lấy giá trị đầu tiên của khoảng "4-6 tuổi"
+      ageInMonths = 48;
     } else {
-      ageInMonths = parseInt(values.ageInMonths); // 1-12 tháng
+      ageInMonths = parseInt(values.ageInMonths);
     }
 
     const newSchedule: CreateVaccineSchedule = {
       diseaseId: values.diseaseId,
       ageInMonths: ageInMonths.toString(),
-      doseNumber: values.doseNumber,
+      doseNumber: getNextDoseNumber(values.diseaseId), // Thêm doseNumber vào đây
     };
     onAdd(newSchedule);
     form.resetFields();
     onClose();
   };
 
-  // Danh sách độ tuổi
   const ageOptions = [
+    { label: "0 tháng", value: "0" },
     ...Array(12)
       .fill(0)
       .map((_, i) => ({ label: `${i + 1} tháng`, value: (i + 1).toString() })),
@@ -63,7 +80,7 @@ const AddScheduleModal: React.FC<{
           label="Bệnh"
           rules={[{ required: true, message: "Vui lòng chọn bệnh!" }]}
         >
-          <Select placeholder="Chọn bệnh">
+          <Select placeholder="Chọn bệnh" onChange={handleDiseaseChange}>
             {diseases.map((disease) => (
               <Option key={disease.diseaseId} value={disease.diseaseId}>
                 {disease.name}
@@ -86,16 +103,12 @@ const AddScheduleModal: React.FC<{
           </Select>
         </Form.Item>
 
-        <Form.Item
-          name="doseNumber"
-          label="Liều số"
-          rules={[{ required: true, message: "Vui lòng nhập liều số!" }]}
-        >
-          <InputNumber
-            min={1}
-            placeholder="Nhập liều số"
-            style={{ width: "100%" }}
-          />
+        <Form.Item name="doseNumber" label="Liều thứ" initialValue={1}>
+          <Select disabled>
+            <Option value={form.getFieldValue("doseNumber")}>
+              {form.getFieldValue("doseNumber") || 1}
+            </Option>
+          </Select>
         </Form.Item>
       </Form>
     </Modal>
@@ -109,22 +122,28 @@ const EditScheduleModal: React.FC<{
   onUpdate: (data: UpdateVaccineSchedule) => void;
   selectedSchedule: VaccineScheduleResponseDTO | null;
   diseases: DiseaseResponseDTO[];
-}> = ({ visible, onClose, onUpdate, selectedSchedule, diseases }) => {
+  existingSchedules: VaccineScheduleResponseDTO[];
+}> = ({ visible, onClose, onUpdate, selectedSchedule, diseases, existingSchedules }) => {
   const [form] = Form.useForm();
+
+  const getNextDoseNumber = (diseaseId: number, currentScheduleId?: number) => {
+    const schedulesForDisease = existingSchedules.filter(
+      (schedule) => schedule.diseaseId === diseaseId && schedule.vaccineScheduleId !== currentScheduleId
+    );
+    if (schedulesForDisease.length === 0) return 1;
+    const maxDoseNumber = Math.max(
+      ...schedulesForDisease.map((schedule) => schedule.doseNumber)
+    );
+    return maxDoseNumber + 1;
+  };
 
   useEffect(() => {
     if (selectedSchedule) {
       let ageValue: string = selectedSchedule.ageInMonths.toString();
-      if (
-        selectedSchedule.ageInMonths >= 24 &&
-        selectedSchedule.ageInMonths <= 36
-      ) {
-        ageValue = "24-36"; // Gán khoảng "2-3 tuổi"
-      } else if (
-        selectedSchedule.ageInMonths >= 48 &&
-        selectedSchedule.ageInMonths <= 72
-      ) {
-        ageValue = "48-72"; // Gán khoảng "4-6 tuổi"
+      if (selectedSchedule.ageInMonths >= 24 && selectedSchedule.ageInMonths <= 36) {
+        ageValue = "24-36";
+      } else if (selectedSchedule.ageInMonths >= 48 && selectedSchedule.ageInMonths <= 72) {
+        ageValue = "48-72";
       }
       form.setFieldsValue({
         diseaseId: selectedSchedule.diseaseId,
@@ -134,14 +153,19 @@ const EditScheduleModal: React.FC<{
     }
   }, [selectedSchedule, form]);
 
+  const handleDiseaseChange = (diseaseId: number) => {
+    const nextDoseNumber = getNextDoseNumber(diseaseId, selectedSchedule?.vaccineScheduleId);
+    form.setFieldsValue({ doseNumber: nextDoseNumber });
+  };
+
   const handleFinish = (values: any) => {
     let ageInMonths: number;
     if (values.ageInMonths === "24-36") {
-      ageInMonths = 24; // Lấy giá trị đầu tiên của khoảng "2-3 tuổi"
+      ageInMonths = 24;
     } else if (values.ageInMonths === "48-72") {
-      ageInMonths = 48; // Lấy giá trị đầu tiên của khoảng "4-6 tuổi"
+      ageInMonths = 48;
     } else {
-      ageInMonths = parseInt(values.ageInMonths); // 1-12 tháng
+      ageInMonths = parseInt(values.ageInMonths);
     }
 
     const updatedSchedule: UpdateVaccineSchedule = {
@@ -154,8 +178,8 @@ const EditScheduleModal: React.FC<{
     onClose();
   };
 
-  // Danh sách độ tuổi
   const ageOptions = [
+    { label: "0 tháng", value: "0" }, // Thêm 0 tháng
     ...Array(12)
       .fill(0)
       .map((_, i) => ({ label: `${i + 1} tháng`, value: (i + 1).toString() })),
@@ -176,7 +200,7 @@ const EditScheduleModal: React.FC<{
           label="Bệnh"
           rules={[{ required: true, message: "Vui lòng chọn bệnh!" }]}
         >
-          <Select placeholder="Chọn bệnh">
+          <Select placeholder="Chọn bệnh" onChange={handleDiseaseChange}>
             {diseases.map((disease) => (
               <Option key={disease.diseaseId} value={disease.diseaseId}>
                 {disease.name}
@@ -197,16 +221,12 @@ const EditScheduleModal: React.FC<{
             ))}
           </Select>
         </Form.Item>
-        <Form.Item
-          name="doseNumber"
-          label="Liều số"
-          rules={[{ required: true, message: "Vui lòng nhập liều số!" }]}
-        >
-          <InputNumber
-            min={1}
-            placeholder="Nhập liều số"
-            style={{ width: "100%" }}
-          />
+        <Form.Item name="doseNumber" label="Liều thứ" initialValue={1}>
+          <Select disabled>
+            <Option value={form.getFieldValue("doseNumber")}>
+              {form.getFieldValue("doseNumber") || 1}
+            </Option>
+          </Select>
         </Form.Item>
       </Form>
     </Modal>
@@ -214,17 +234,13 @@ const EditScheduleModal: React.FC<{
 };
 
 const VaccineScheduleStaff: React.FC = () => {
-  const [scheduleData, setScheduleData] = useState<
-    VaccineScheduleResponseDTO[]
-  >([]);
+  const [scheduleData, setScheduleData] = useState<VaccineScheduleResponseDTO[]>([]);
   const [diseases, setDiseases] = useState<DiseaseResponseDTO[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [isAddModalVisible, setIsAddModalVisible] = useState<boolean>(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
-  const [isDetailModalVisible, setIsDetailModalVisible] =
-    useState<boolean>(false);
-  const [selectedSchedule, setSelectedSchedule] =
-    useState<VaccineScheduleResponseDTO | null>(null);
+  const [isDetailModalVisible, setIsDetailModalVisible] = useState<boolean>(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<VaccineScheduleResponseDTO | null>(null);
 
   useEffect(() => {
     fetchScheduleData();
@@ -256,9 +272,7 @@ const VaccineScheduleStaff: React.FC = () => {
 
   const handleAddSchedule = async (data: CreateVaccineSchedule) => {
     try {
-      const newSchedule = await vaccineScheduleService.createVaccineSchedule(
-        data
-      );
+      const newSchedule = await vaccineScheduleService.createVaccineSchedule(data);
       setScheduleData([...scheduleData, newSchedule]);
       message.success("Thêm lịch tiêm chủng thành công!");
     } catch (error) {
@@ -269,19 +283,15 @@ const VaccineScheduleStaff: React.FC = () => {
   const handleUpdateSchedule = async (data: UpdateVaccineSchedule) => {
     if (!selectedSchedule) return;
     try {
-      const updatedSchedule =
-        await vaccineScheduleService.updateVaccineSchedule(
-          selectedSchedule.vaccineScheduleId,
-          data
-        );
-      setScheduleData(
-        scheduleData.map((schedule) =>
-          schedule.vaccineScheduleId === updatedSchedule.vaccineScheduleId
-            ? updatedSchedule
-            : schedule
-        )
+      await vaccineScheduleService.updateVaccineSchedule(
+        selectedSchedule.vaccineScheduleId,
+        data
       );
+      await fetchScheduleData(); // Làm mới toàn bộ dữ liệu từ server
       message.success("Cập nhật lịch tiêm chủng thành công!");
+      setIsEditModalVisible(false); // Đóng modal chỉnh sửa
+      setSelectedSchedule(null); // Xóa lựa chọn hiện tại
+      setIsDetailModalVisible(false); // Đóng modal chi tiết
     } catch (error) {
       message.error("Không thể cập nhật lịch tiêm chủng!");
     }
@@ -290,17 +300,15 @@ const VaccineScheduleStaff: React.FC = () => {
   const handleDeleteSchedule = async () => {
     if (!selectedSchedule) return;
     try {
-      await vaccineScheduleService.deleteVaccineSchedule(
-        selectedSchedule.vaccineScheduleId
-      );
+      await vaccineScheduleService.deleteVaccineSchedule(selectedSchedule.vaccineScheduleId);
       setScheduleData(
         scheduleData.filter(
-          (schedule) =>
-            schedule.vaccineScheduleId !== selectedSchedule.vaccineScheduleId
+          (schedule) => schedule.vaccineScheduleId !== selectedSchedule.vaccineScheduleId
         )
       );
       message.success("Xóa lịch tiêm chủng thành công!");
       setSelectedSchedule(null);
+      setIsDetailModalVisible(false)
     } catch (error) {
       message.error("Không thể xóa lịch tiêm chủng!");
     }
@@ -308,29 +316,27 @@ const VaccineScheduleStaff: React.FC = () => {
 
   const handleCellClick = async (diseaseId: number, ageIndex: number) => {
     let ageInMonthsRange: number[] = [];
-
-    if (ageIndex < 12) {
-      ageInMonthsRange = [ageIndex + 1]; // 1-12 tháng
-    } else if (ageIndex === 12) {
-      ageInMonthsRange = Array.from({ length: 13 }, (_, i) => 24 + i); // 24-36 tháng cho "2-3 tuổi"
+    if (ageIndex === 0) {
+      ageInMonthsRange = [0]; // Xử lý 0 tháng
+    } else if (ageIndex < 13) {
+      ageInMonthsRange = [ageIndex]; // Từ 1 đến 12 tháng
     } else if (ageIndex === 13) {
-      ageInMonthsRange = Array.from({ length: 25 }, (_, i) => 48 + i); // 48-72 tháng cho "4-6 tuổi"
+      ageInMonthsRange = Array.from({ length: 13 }, (_, i) => 24 + i); // 2-3 tuổi
+    } else if (ageIndex === 14) {
+      ageInMonthsRange = Array.from({ length: 25 }, (_, i) => 48 + i); // 4-6 tuổi
     }
 
     const schedules = scheduleData.filter(
       (item) =>
-        item.diseaseId === diseaseId &&
-        ageInMonthsRange.includes(item.ageInMonths)
+        item.diseaseId === diseaseId && ageInMonthsRange.includes(item.ageInMonths)
     );
 
     if (schedules.length > 0) {
-      // Lấy lịch đầu tiên trong danh sách để hiển thị chi tiết
       const schedule = schedules[0];
       try {
-        const detailedSchedule =
-          await vaccineScheduleService.getVaccineScheduleById(
-            schedule.vaccineScheduleId
-          );
+        const detailedSchedule = await vaccineScheduleService.getVaccineScheduleById(
+          schedule.vaccineScheduleId
+        );
         setSelectedSchedule(detailedSchedule);
         setIsDetailModalVisible(true);
       } catch (error) {
@@ -339,35 +345,36 @@ const VaccineScheduleStaff: React.FC = () => {
     }
   };
 
-  // Tạo bản đồ bệnh ID -> tên bệnh và vaccine ID -> tên vaccine
   const diseaseMap = diseases.reduce((acc, disease) => {
     acc[disease.diseaseId] = disease.name;
     return acc;
   }, {} as Record<number, string>);
 
-  // Tạo danh sách các cột tuổi (1 tháng, 2 tháng, ..., 12 tháng, 2 tuổi)
-  const ageColumns = [...Array(12).keys()]
+  const ageColumns = [0, ...Array(12).keys()]
     .map((i) => `${i + 1} tháng`)
     .concat(["2-3 tuổi", "4-6 tuổi"]);
+  const displayAgeColumns = ageColumns.map((age, index) =>
+    index === 0 ? "Sơ sinh" : age
+  );
 
-  // Ánh xạ lịch tiêm vào các cột tuổi dựa trên ageInMonths
   const scheduleMap = scheduleData.reduce((acc, item) => {
     const age = item.ageInMonths;
     let columnIndex: number;
-
-    if (age <= 12) {
-      columnIndex = age - 1; // 1-12 tháng vào cột 0-11
+    if (age === 0) {
+      columnIndex = 0; // Xử lý 0 tháng
+    } else if (age <= 12) {
+      columnIndex = age; // Từ 1 đến 12 tháng
     } else if (age >= 24 && age <= 36) {
-      columnIndex = 12; // 24-36 tháng vào cột "2-3 tuổi" (cột 12)
+      columnIndex = 13; // 2-3 tuổi
     } else if (age >= 48 && age <= 72) {
-      columnIndex = 13; // 48-72 tháng vào cột "4-6 tuổi" (cột 13)
+      columnIndex = 14; // 4-6 tuổi
     } else {
-      return acc; // Bỏ qua nếu tuổi không nằm trong khoảng
+      return acc;
     }
 
     if (!acc[item.diseaseId]) acc[item.diseaseId] = {};
     acc[item.diseaseId][columnIndex] = acc[item.diseaseId][columnIndex] || [];
-    acc[item.diseaseId][columnIndex].push(item); // Lưu mảng các lịch tiêm trong cùng khoảng tuổi
+    acc[item.diseaseId][columnIndex].push(item);
     return acc;
   }, {} as Record<number, Record<number, VaccineScheduleResponseDTO[]>>);
 
@@ -377,7 +384,6 @@ const VaccineScheduleStaff: React.FC = () => {
         LỊCH TIÊM CHỦNG CỦA HỆ THỐNG PEDIVAX
       </h1>
 
-      {/* Các nút chức năng */}
       <div className="flex justify-center space-x-4 mb-6">
         <Button
           type="primary"
@@ -388,14 +394,13 @@ const VaccineScheduleStaff: React.FC = () => {
         </Button>
       </div>
 
-      {/* Bảng hiển thị lịch tiêm */}
       <div className="overflow-x-auto bg-white border border-gray-300">
         <Spin spinning={loading} size="large">
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-blue-900 text-white">
                 <th className="border px-4 py-2">Bệnh</th>
-                {ageColumns.map((age, index) => (
+                {displayAgeColumns.map((age, index) => (
                   <th key={index} className="border px-4 py-2">
                     {age}
                   </th>
@@ -405,28 +410,22 @@ const VaccineScheduleStaff: React.FC = () => {
             <tbody>
               {Object.keys(diseaseMap).length > 0 ? (
                 Object.entries(diseaseMap).map(([diseaseId]) => {
-                  const schedulesForDisease =
-                    scheduleMap[parseInt(diseaseId)] || {};
-                  let scheduleIndex = 1; // Bắt đầu số thứ tự từ 1
-
+                  const schedulesForDisease = scheduleMap[parseInt(diseaseId)] || {};
+                  let scheduleIndex = 1;
                   return (
                     <tr key={diseaseId} className="odd:bg-gray-100">
                       <td className="border px-4 py-2 font-medium">
                         {diseaseMap[parseInt(diseaseId)]}
                       </td>
                       {ageColumns.map((_, columnIndex) => {
-                        const schedules =
-                          schedulesForDisease[columnIndex] || [];
-                        const displayNumber =
-                          schedules.length > 0 ? scheduleIndex++ : "";
-
+                        const schedules = schedulesForDisease[columnIndex] || [];
+                        const displayNumber = schedules.length > 0 ? scheduleIndex++ : "";
                         return (
                           <td
                             key={columnIndex}
                             className="border px-4 py-2 text-center cursor-pointer hover:bg-gray-200"
                             onClick={() =>
-                              schedules.length > 0 &&
-                              handleCellClick(parseInt(diseaseId), columnIndex)
+                              schedules.length > 0 && handleCellClick(parseInt(diseaseId), columnIndex)
                             }
                           >
                             {displayNumber}
@@ -438,10 +437,7 @@ const VaccineScheduleStaff: React.FC = () => {
                 })
               ) : (
                 <tr>
-                  <td
-                    colSpan={ageColumns.length + 1}
-                    className="text-center py-4"
-                  >
+                  <td colSpan={ageColumns.length + 1} className="text-center py-4">
                     Không có lịch tiêm chủng nào được tìm thấy
                   </td>
                 </tr>
@@ -451,13 +447,12 @@ const VaccineScheduleStaff: React.FC = () => {
         </Spin>
       </div>
 
-      {/* Modal hiển thị chi tiết */}
       <Modal
         title="CHI TIẾT LỊCH TIÊM CHỦNG"
         visible={isDetailModalVisible}
         onCancel={() => setIsDetailModalVisible(false)}
         footer={null}
-        style={{ textAlign: "center" }} // Căn giữa toàn bộ modal
+        style={{ textAlign: "center" }}
       >
         {selectedSchedule && (
           <div
@@ -470,14 +465,13 @@ const VaccineScheduleStaff: React.FC = () => {
             }}
           >
             <p>
-              <strong>Tên bệnh:</strong>{" "}
-              {diseaseMap[selectedSchedule.diseaseId]}
+              <strong>Tên bệnh:</strong> {diseaseMap[selectedSchedule.diseaseId]}
             </p>
             <p>
               <strong>Độ tuổi (tháng):</strong> {selectedSchedule.ageInMonths}
             </p>
             <p>
-              <strong>Liều số:</strong> {selectedSchedule.doseNumber}
+              <strong>Liều thứ:</strong> {selectedSchedule.doseNumber}
             </p>
             <div style={{ marginTop: "20px" }}>
               <Button
@@ -501,21 +495,21 @@ const VaccineScheduleStaff: React.FC = () => {
         )}
       </Modal>
 
-      {/* Modal thêm mới */}
       <AddScheduleModal
         visible={isAddModalVisible}
         onClose={() => setIsAddModalVisible(false)}
         onAdd={handleAddSchedule}
         diseases={diseases}
+        existingSchedules={scheduleData}
       />
 
-      {/* Modal chỉnh sửa */}
       <EditScheduleModal
         visible={isEditModalVisible}
         onClose={() => setIsEditModalVisible(false)}
         onUpdate={handleUpdateSchedule}
         selectedSchedule={selectedSchedule}
         diseases={diseases}
+        existingSchedules={scheduleData}
       />
     </div>
   );
