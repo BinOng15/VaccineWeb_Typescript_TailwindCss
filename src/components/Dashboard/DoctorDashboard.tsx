@@ -244,7 +244,7 @@ const styles = `
     100% {
       transform: scale(1);
     }
-  }
+  }n
 `;
 
 // Inject styles vào document

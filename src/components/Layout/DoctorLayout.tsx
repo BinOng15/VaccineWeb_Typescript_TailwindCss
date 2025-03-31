@@ -16,7 +16,7 @@ const DoctorLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <HeaderDoctor collapsed={collapsed} setCollapsed={setCollapsed} />
-      <Layout>
+      <Layout style={{ marginTop: 64 }}>
         <Sider
           collapsible
           collapsed={collapsed}

@@ -372,6 +372,15 @@ const VaccineRegistration: React.FC = () => {
           return;
         }
 
+        // Kiểm tra tuổi của trẻ so với ageInMonths của gói vaccine
+        if (childAgeInMonthsAtAppointment < selectedPackage.ageInMonths) {
+          notification.error({
+            message: "Error",
+            description: `Trẻ phải đủ ${selectedPackage.ageInMonths} tháng mới đăng ký được gói này!`,
+          });
+          return;
+        }
+
         const packageDetails = await vaccinePackageDetailService.getPackageDetailByVaccinePackageID(selectedPackageId);
         vaccineIdsToCheck = packageDetails.map((detail: VaccinePackageDetailResponseDTO) => detail.vaccineId);
       }
@@ -741,20 +750,20 @@ const VaccineRegistration: React.FC = () => {
               onChange={(date) => setAppointmentDate(date)}
               placeholder="Chọn ngày hẹn"
               disabledDate={(current) => {
-                if (!current) return false;
+                if (!current) return false; // Nếu không có ngày hiện tại, không vô hiệu hóa
 
                 // Vô hiệu hóa các ngày trước ngày hiện tại
                 const today = dayjs().startOf("day");
                 if (current.isBefore(today, "day")) {
                   console.log(`Disabled: ${current.format("DD/MM/YYYY")} is before today`);
-                  return true;
+                  return true; // Ngày trước hôm nay sẽ bị làm mờ
                 }
 
                 // Tìm thông tin trẻ được chọn
                 const selectedChild = childProfiles.find((profile) => profile.childId.toString() === selectedChildId);
                 if (!selectedChild || !selectedChild.dateOfBirth) {
                   console.log("No child selected or missing dateOfBirth");
-                  return false; // Nếu không có trẻ hoặc ngày sinh, không vô hiệu hóa thêm
+                  return false; // Không có trẻ hoặc ngày sinh, không vô hiệu hóa thêm
                 }
 
                 const birthDate = dayjs(selectedChild.dateOfBirth, "DD/MM/YYYY");
@@ -767,28 +776,28 @@ const VaccineRegistration: React.FC = () => {
                   // Kiểm tra tuổi tại scheduledDate
                   if (minAgeInMonths !== null && ageInMonthsAtScheduledDate < minAgeInMonths) {
                     console.log(`Disabled all: Child age ${ageInMonthsAtScheduledDate} < ${minAgeInMonths} at scheduled date ${scheduledDate.format("DD/MM/YYYY")}`);
-                    return true; // Vô hiệu hóa tất cả nếu trẻ chưa đủ tuổi
+                    return true; // Vô hiệu hóa tất cả ngày nếu trẻ chưa đủ tuổi
                   }
 
                   // Nếu đủ tuổi, chỉ cho phép chọn scheduledDate
                   const isDisabled = !current.isSame(scheduledDate, "day");
                   console.log(`Uncompleted dose: current=${current.format("DD/MM/YYYY")}, scheduled=${scheduledDate.format("DD/MM/YYYY")}, disabled=${isDisabled}`);
-                  return isDisabled;
+                  return isDisabled; // Chỉ ngày scheduledDate sáng, các ngày khác mờ
                 }
 
                 // Trường hợp không chọn liều chưa hoàn thành
                 if (minDateBasedOnAge && current.isBefore(minDateBasedOnAge, "day")) {
                   console.log(`Disabled: ${current.format("DD/MM/YYYY")} is before minDateBasedOnAge ${minDateBasedOnAge.format("DD/MM/YYYY")}`);
-                  return true;
+                  return true; // Các ngày trước minDateBasedOnAge bị mờ
                 }
 
                 const minDateBasedOnPackage = calculateMinAppointmentDate();
                 if (minDateBasedOnPackage && current.isBefore(minDateBasedOnPackage, "day")) {
                   console.log(`Disabled: ${current.format("DD/MM/YYYY")} is before minDateBasedOnPackage ${minDateBasedOnPackage.format("DD/MM/YYYY")}`);
-                  return true;
+                  return true; // Các ngày trước minDateBasedOnPackage bị mờ
                 }
 
-                return false;
+                return false; // Các ngày còn lại sáng bình thường
               }}
             />
           </div>

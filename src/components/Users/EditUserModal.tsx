@@ -181,16 +181,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         </Form.Item>
 
         <Form.Item
-          label="Mật khẩu"
-          name="password"
-          rules={[
-            { required: false }, // Optional for edit
-          ]}
-        >
-          <Input placeholder="Nhập mật khẩu mới (nếu muốn thay đổi)" />
-        </Form.Item>
-
-        <Form.Item
           label="Họ và Tên"
           name="fullName"
           rules={[{ required: true, message: "Vui lòng nhập họ và tên!" }]}

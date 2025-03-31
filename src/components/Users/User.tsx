@@ -8,10 +8,9 @@ import {
   Row,
   Col,
   Modal,
-  message,
+  notification,
 } from "antd";
 import EditUserModal from "./EditUserModal";
-import AddUserModal from "./AddUserButton"; // Giả định tên file là AddUserButton.tsx
 import {
   EditOutlined,
   ReloadOutlined,
@@ -21,6 +20,7 @@ import {
 import { UserResponseDTO } from "../../models/User";
 import userService from "../../service/userService";
 import { ColumnType } from "antd/es/table";
+import AddUserModal from "./AddUserButton";
 
 const { Search } = Input;
 
@@ -30,7 +30,7 @@ interface User extends UserResponseDTO {
 
 const UserComponent: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]); // Dữ liệu sau khi lọc
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     current: 1,
@@ -53,15 +53,19 @@ const UserComponent: React.FC = () => {
       const activeUsers = response.filter((user) => user.isActive === "Active");
       setUsers(activeUsers);
       applyPaginationAndFilter(activeUsers, searchKeyword, pagination);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching users:", error);
-      message.error("Failed to fetch users: " + (error as Error).message);
+      notification.error({
+        message: "Lỗi",
+        description:
+          error.response?.data?.message || "Không thể lấy danh sách người dùng!",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Áp dụng phân trang và lọc
+  // Áp dụng phân trang và lọc (tìm kiếm trên 3 trường: fullName, email, phoneNumber)
   const applyPaginationAndFilter = (
     data: User[],
     keyword: string,
@@ -69,8 +73,11 @@ const UserComponent: React.FC = () => {
   ) => {
     let filtered = data;
     if (keyword) {
+      const keywordLower = keyword.toLowerCase();
       filtered = data.filter((user) =>
-        user.fullName.toLowerCase().includes(keyword.toLowerCase())
+        (user.fullName?.toLowerCase() || "").includes(keywordLower) ||
+        (user.email?.toLowerCase() || "").includes(keywordLower) ||
+        (user.phoneNumber?.toLowerCase() || "").includes(keywordLower)
       );
     }
 
@@ -81,13 +88,13 @@ const UserComponent: React.FC = () => {
     setFilteredUsers(paginatedData);
     setPagination({
       ...pag,
-      total: filtered.length, // Tổng số bản ghi sau khi lọc
+      total: filtered.length,
     });
   };
 
   useEffect(() => {
     fetchUsers();
-  }, []); // Xóa dependency activeTab vì không còn sử dụng
+  }, []);
 
   // Xử lý thay đổi phân trang
   const handleTableChange = (pagination: any) => {
@@ -103,7 +110,7 @@ const UserComponent: React.FC = () => {
   // Xử lý tìm kiếm
   const onSearch = (value: string) => {
     setSearchKeyword(value);
-    setPagination((prev) => ({ ...prev, current: 1 })); // Reset về trang 1 khi tìm kiếm
+    setPagination((prev) => ({ ...prev, current: 1 }));
     applyPaginationAndFilter(users, value, {
       ...pagination,
       current: 1,
@@ -131,7 +138,10 @@ const UserComponent: React.FC = () => {
   const handleUpdate = (user: User) => {
     if (!user.userId || typeof user.userId !== "number") {
       console.error("Invalid user in handleUpdate:", user);
-      message.error("Invalid user data for editing");
+      notification.error({
+        message: "Lỗi",
+        description: "Dữ liệu người dùng không hợp lệ để chỉnh sửa!",
+      });
       return;
     }
     console.log("Editing User with ID:", user.userId);
@@ -142,7 +152,10 @@ const UserComponent: React.FC = () => {
   const handleViewDetail = (user: User) => {
     if (!user.userId || typeof user.userId !== "number") {
       console.error("Dữ liệu người dùng không khả dụng:", user);
-      message.error("Dữ liệu người dùng không khả dụng");
+      notification.error({
+        message: "Lỗi",
+        description: "Dữ liệu người dùng không khả dụng!",
+      });
       return;
     }
     console.log("Viewing User with ID:", user.userId);
@@ -160,13 +173,18 @@ const UserComponent: React.FC = () => {
       onOk: async () => {
         try {
           await userService.deleteUser(userId);
-          message.success("Người dùng đã được xóa thành công");
+          notification.success({
+            message: "Thành công",
+            description: "Người dùng đã được xóa thành công!",
+          });
           fetchUsers();
-        } catch (error) {
+        } catch (error: any) {
           console.error("Lỗi khi xóa người dùng:", error);
-          message.error(
-            "Không thể xóa người dùng: " + (error as Error).message
-          );
+          notification.error({
+            message: "Lỗi",
+            description:
+              error.response?.data?.message || "Không thể xóa người dùng!",
+          });
         }
       },
       onCancel() {
@@ -250,7 +268,7 @@ const UserComponent: React.FC = () => {
         <Col>
           <Space className="custom-search">
             <Search
-              placeholder="Tìm kiếm theo từ khóa"
+              placeholder="Tìm kiếm theo tên, email hoặc số điện thoại"
               onSearch={onSearch}
               enterButton
               allowClear
@@ -275,7 +293,7 @@ const UserComponent: React.FC = () => {
       </Row>
       <Table
         columns={columns}
-        dataSource={filteredUsers} // Sử dụng dữ liệu đã phân trang và lọc
+        dataSource={filteredUsers}
         rowKey="userId"
         pagination={{
           current: pagination.current,
@@ -304,7 +322,7 @@ const UserComponent: React.FC = () => {
       )}
 
       <Modal
-        title="User Details"
+        title="Chi tiết Người dùng"
         visible={isDetailModalVisible}
         onCancel={handleCloseModal}
         footer={null}
@@ -315,24 +333,24 @@ const UserComponent: React.FC = () => {
               <strong>Email:</strong> {selectedUser.email || "N/A"}
             </p>
             <p>
-              <strong>Full Name:</strong> {selectedUser.fullName || "N/A"}
+              <strong>Họ và Tên:</strong> {selectedUser.fullName || "N/A"}
             </p>
             <p>
-              <strong>Status:</strong>{" "}
-              {selectedUser.isActive === "Active" ? "Active" : "Inactive"}
+              <strong>Trạng thái:</strong>{" "}
+              {selectedUser.isActive === "Active" ? "Hoạt động" : "Không hoạt động"}
             </p>
             <p>
-              <strong>Phone Number:</strong> {selectedUser.phoneNumber || "N/A"}
+              <strong>Số điện thoại:</strong> {selectedUser.phoneNumber || "N/A"}
             </p>
             <p>
-              <strong>Address:</strong> {selectedUser.address || "N/A"}
+              <strong>Địa chỉ:</strong> {selectedUser.address || "N/A"}
             </p>
             <p>
-              <strong>Role:</strong>{" "}
+              <strong>Vai trò:</strong>{" "}
               {selectedUser.role === "Staff"
-                ? "Staff"
+                ? "Nhân viên"
                 : selectedUser.role === "Doctor"
-                  ? "Doctor"
+                  ? "Bác sĩ"
                   : "N/A"}
             </p>
           </div>

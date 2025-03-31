@@ -6,7 +6,7 @@ import userService from "../../../service/userService";
 import appointmentService from "../../../service/appointmentService";
 import childProfileService from "../../../service/childProfileService";
 import vaccinePackageService from "../../../service/vaccinePackageService";
-import vaccinePackageDetailService from "../../../service/vaccinePackageDetailService";
+import vaccineService from "../../../service/vaccineService"; // Thêm import vaccineService
 import paymentService from "../../../service/paymentService";
 import { AppointmentStatus } from "../../Appointment/CustomerAppointment";
 
@@ -44,7 +44,6 @@ interface DashboardStats {
   totalAppointments: number;
   totalChildProfiles: number;
   vaccinatedCount: number;
-  unvaccinatedCount: number;
   vaccinatedPackages: number;
   pendingPackages: number;
   totalRevenue: number;
@@ -124,7 +123,6 @@ const AdminDashboard: React.FC = () => {
     totalAppointments: 0,
     totalChildProfiles: 0,
     vaccinatedCount: 0,
-    unvaccinatedCount: 0,
     vaccinatedPackages: 0,
     pendingPackages: 0,
     totalRevenue: 0,
@@ -161,15 +159,10 @@ const AdminDashboard: React.FC = () => {
         ? allVaccinePackages.length - vaccinatedPackages
         : 0;
 
-      const allVaccinePackageDetails =
-        await vaccinePackageDetailService.getAllPackagesDetail();
-      const vaccinatedCount = Array.isArray(allVaccinePackageDetails)
-        ? allVaccinePackageDetails.filter(
-          (d) => d.isActive === "true" || d.isActive === "1"
-        ).length
-        : 0;
-      const unvaccinatedCount = Array.isArray(allVaccinePackageDetails)
-        ? allVaccinePackageDetails.length - vaccinatedCount
+      // Sử dụng vaccineService.getAllVaccines để tính số lượng vaccine
+      const allVaccines = await vaccineService.getAllVaccines();
+      const vaccinatedCount = Array.isArray(allVaccines)
+        ? allVaccines.filter((vaccine) => vaccine.isActive === 1).length
         : 0;
 
       let totalRevenue = 0;
@@ -196,7 +189,6 @@ const AdminDashboard: React.FC = () => {
         totalAppointments,
         totalChildProfiles,
         vaccinatedCount,
-        unvaccinatedCount,
         vaccinatedPackages,
         pendingPackages,
         totalRevenue,
@@ -351,7 +343,7 @@ const AdminDashboard: React.FC = () => {
             <Col xs={24} sm={12} md={12} lg={12}>
               <DetailedCardWidget
                 title="Số lượng vaccine trong hệ thống"
-                total={stats.vaccinatedCount + stats.unvaccinatedCount}
+                total={stats.vaccinatedCount}
                 color="from-red-400 to-pink-500"
               />
             </Col>
